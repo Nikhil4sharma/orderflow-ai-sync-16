@@ -60,3 +60,8 @@ export function getOrderStageNumber(status: string): number {
       return 0;
   }
 }
+
+// Function to get all departments
+export function getDepartments(): string[] {
+  return ['Sales', 'Production', 'Design', 'Prepress'];
+}
