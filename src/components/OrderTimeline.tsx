@@ -52,6 +52,22 @@ const OrderTimeline: React.FC<OrderTimelineProps> = ({
     console.log("Editing status update:", update);
   };
 
+  // Get department-specific styles for visual differentiation
+  const getDepartmentStyles = (department: string) => {
+    switch (department) {
+      case "Design":
+        return "bg-blue-500";
+      case "Production":
+        return "bg-amber-500";
+      case "Prepress":
+        return "bg-purple-500";
+      case "Sales":
+        return "bg-green-500";
+      default:
+        return "bg-primary";
+    }
+  };
+
   return (
     <div className="space-y-4 mt-4 glass-card p-6 rounded-lg">
       <h3 className="text-lg font-medium">Order Timeline</h3>
@@ -60,7 +76,7 @@ const OrderTimeline: React.FC<OrderTimelineProps> = ({
           <div key={update.id} className="timeline-item">
             <div className="flex items-start mb-1">
               <div className="mr-4 mt-1">
-                <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+                <div className={`h-8 w-8 rounded-full ${getDepartmentStyles(update.department)} flex items-center justify-center`}>
                   <ClipboardCheck className="h-5 w-5 text-white" />
                 </div>
               </div>

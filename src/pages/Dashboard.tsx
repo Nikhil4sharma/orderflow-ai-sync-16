@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useOrders } from "@/contexts/OrderContext";
 import OrderCard from "@/components/OrderCard";
 import OrderFilters from "@/components/OrderFilters";
@@ -10,11 +10,18 @@ import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 
 const Dashboard: React.FC = () => {
-  const { orders, filterOrdersByDepartment, filterOrdersByStatus } = useOrders();
+  const { orders, filterOrdersByDepartment, filterOrdersByStatus, currentUser } = useOrders();
   const [departmentFilter, setDepartmentFilter] = useState<Department | 'All'>('All');
   const [statusFilter, setStatusFilter] = useState<string | 'All'>('All');
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
+
+  // Set initial department filter based on user's department
+  useEffect(() => {
+    if (currentUser && currentUser.department) {
+      setDepartmentFilter(currentUser.department);
+    }
+  }, [currentUser]);
 
   // Filter orders based on filters and search
   const filteredOrders = filterOrdersByDepartment(departmentFilter)
@@ -30,22 +37,31 @@ const Dashboard: React.FC = () => {
       );
     });
 
+  // Only show orders for the user's department unless they're an admin
+  const userCanSeeAllDepartments = currentUser.role === 'Admin';
+  const visibleOrders = userCanSeeAllDepartments
+    ? filteredOrders
+    : filteredOrders.filter(order => order.currentDepartment === currentUser.department);
+
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold mb-1">OrderFlow Dashboard</h1>
           <p className="text-muted-foreground">
-            {filteredOrders.length} {filteredOrders.length === 1 ? 'order' : 'orders'} found
+            {visibleOrders.length} {visibleOrders.length === 1 ? 'order' : 'orders'} found
           </p>
         </div>
-        <Button 
-          className="mt-4 sm:mt-0" 
-          onClick={() => navigate('/new-order')}
-        >
-          <PlusIcon className="h-4 w-4 mr-2" />
-          New Order
-        </Button>
+        {/* Only show New Order button for Sales team and Admins */}
+        {(currentUser.department === 'Sales' || currentUser.role === 'Admin') && (
+          <Button 
+            className="mt-4 sm:mt-0" 
+            onClick={() => navigate('/new-order')}
+          >
+            <PlusIcon className="h-4 w-4 mr-2" />
+            New Order
+          </Button>
+        )}
       </div>
 
       <div className="mb-6">
@@ -63,15 +79,16 @@ const Dashboard: React.FC = () => {
       <OrderFilters
         departmentFilter={departmentFilter}
         statusFilter={statusFilter}
-        onDepartmentChange={setDepartmentFilter}
+        onDepartmentChange={userCanSeeAllDepartments ? setDepartmentFilter : () => {}}
         onStatusChange={setStatusFilter}
+        disableDepartmentFilter={!userCanSeeAllDepartments}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredOrders.map((order) => (
+        {visibleOrders.map((order) => (
           <OrderCard key={order.id} order={order} />
         ))}
-        {filteredOrders.length === 0 && (
+        {visibleOrders.length === 0 && (
           <div className="col-span-full text-center py-8">
             <p className="text-muted-foreground">No orders found matching your filters</p>
           </div>

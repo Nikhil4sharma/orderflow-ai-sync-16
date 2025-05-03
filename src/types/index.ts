@@ -35,6 +35,7 @@ export interface StatusUpdate {
   timestamp: string;
   updatedBy: string;
   editableUntil?: string; // Time until which this update can be edited
+  selectedProduct?: string; // ID of the product this update is for
 }
 
 export interface Order {
@@ -69,7 +70,8 @@ export interface Order {
 export interface User {
   id: string;
   name: string;
+  email?: string;
+  password?: string;
   department: Department;
   role: string;
 }
-

@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import { mockOrders, mockUsers } from "@/lib/mock-data";
 import { Department, Order, StatusUpdate, User } from "@/types";
 import { addHours } from "date-fns";
@@ -7,7 +7,9 @@ import { addHours } from "date-fns";
 interface OrderContextType {
   orders: Order[];
   currentUser: User;
+  users: User[];
   loading: boolean;
+  isAuthenticated: boolean;
   setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
   setCurrentUser: React.Dispatch<React.SetStateAction<User>>;
   addOrder: (order: Order) => void;
@@ -16,6 +18,9 @@ interface OrderContextType {
   updateStatusUpdate: (orderId: string, updateId: string, statusUpdate: Partial<StatusUpdate>) => void;
   filterOrdersByDepartment: (department: Department | 'All') => Order[];
   filterOrdersByStatus: (status: string | 'All') => Order[];
+  loginUser: (user: User) => void;
+  logoutUser: () => void;
+  addUser: (user: User) => void;
 }
 
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
@@ -23,21 +28,39 @@ const OrderContext = createContext<OrderContextType | undefined>(undefined);
 // Initialize the mock orders with payment fields
 const enhancedMockOrders = mockOrders.map(order => ({
   ...order,
-  paidAmount: 0,
-  pendingAmount: order.amount,
-  paymentStatus: "Not Paid" as const,
-  paymentHistory: [],
-  productStatus: order.items.map((item, index) => ({
+  paidAmount: order.paidAmount || 0,
+  pendingAmount: order.pendingAmount || order.amount,
+  paymentStatus: order.paymentStatus || "Not Paid" as const,
+  paymentHistory: order.paymentHistory || [],
+  productStatus: order.productStatus || order.items.map((item, index) => ({
     id: `prod-${index}-${order.id}`,
     name: item,
     status: "processing" as const,
   }))
 }));
 
+// Enhanced mock users with email and password for login
+const enhancedMockUsers = mockUsers.map(user => ({
+  ...user,
+  email: user.email || `${user.name.toLowerCase().replace(/\s+/g, '.')}@orderflow.com`,
+  password: user.password || "password123"
+}));
+
 export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [orders, setOrders] = useState<Order[]>(enhancedMockOrders);
+  const [users, setUsers] = useState<User[]>(enhancedMockUsers);
   const [currentUser, setCurrentUser] = useState<User>(mockUsers[0]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+
+  // Check for stored authentication
+  useEffect(() => {
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+      setCurrentUser(JSON.parse(storedUser));
+      setIsAuthenticated(true);
+    }
+  }, []);
 
   const addOrder = (order: Order) => {
     setOrders(prev => [...prev, order]);
@@ -113,11 +136,29 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return orders.filter(order => order.status === status);
   };
 
+  const loginUser = (user: User) => {
+    setCurrentUser(user);
+    setIsAuthenticated(true);
+    localStorage.setItem('currentUser', JSON.stringify(user));
+  };
+
+  const logoutUser = () => {
+    setCurrentUser({} as User);
+    setIsAuthenticated(false);
+    localStorage.removeItem('currentUser');
+  };
+
+  const addUser = (user: User) => {
+    setUsers(prev => [...prev, user]);
+  };
+
   return (
     <OrderContext.Provider value={{ 
       orders, 
-      currentUser, 
-      loading, 
+      currentUser,
+      users, 
+      loading,
+      isAuthenticated,
       setOrders, 
       setCurrentUser, 
       addOrder, 
@@ -125,7 +166,10 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       addStatusUpdate,
       updateStatusUpdate,
       filterOrdersByDepartment,
-      filterOrdersByStatus
+      filterOrdersByStatus,
+      loginUser,
+      logoutUser,
+      addUser
     }}>
       {children}
     </OrderContext.Provider>

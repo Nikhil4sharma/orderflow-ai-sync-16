@@ -24,7 +24,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
   };
 
   return (
-    <Card className="w-full hover:shadow-md transition-shadow animate-fade-in">
+    <Card className="w-full hover:shadow-md transition-shadow animate-fade-in glass-card">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <div>
@@ -44,16 +44,12 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
             <p className="text-muted-foreground">Created:</p>
             <p>{formatDate(order.createdAt)}</p>
           </div>
-          <div>
-            <p className="text-muted-foreground">Amount:</p>
-            <p>${order.amount.toFixed(2)}</p>
-          </div>
         </div>
         <div className="mt-2">
           <p className="text-muted-foreground text-sm mb-1">Items:</p>
           <div className="flex flex-wrap gap-1">
             {order.items.map((item, index) => (
-              <Badge key={index} variant="outline" className="bg-brand-lightPurple">
+              <Badge key={index} variant="outline" className="bg-brand-lightBlue">
                 {item}
               </Badge>
             ))}

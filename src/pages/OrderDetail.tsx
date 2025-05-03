@@ -1,16 +1,17 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useOrders } from "@/contexts/OrderContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Clipboard, ClipboardCheck, IndianRupee, Clock } from "lucide-react";
+import { ArrowLeft, Clipboard, ClipboardCheck, IndianRupee, Clock, Tag } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
 import OrderTimeline from "@/components/OrderTimeline";
 import ProductStatusList from "@/components/ProductStatusList";
 import PaymentHistory from "@/components/PaymentHistory";
 import { Department, OrderStatus, PaymentStatus } from "@/types";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { format, isAfter, addHours, parseISO } from "date-fns";
 
@@ -20,6 +21,7 @@ const OrderDetail: React.FC = () => {
   const { orders, updateOrder, addStatusUpdate, currentUser } = useOrders();
   const order = orders.find((o) => o.id === id);
   
+  // Form state
   const [status, setStatus] = useState<OrderStatus>(order?.status || "New");
   const [department, setDepartment] = useState<Department>(order?.currentDepartment || "Sales");
   const [remarks, setRemarks] = useState<string>("");
@@ -28,12 +30,16 @@ const OrderDetail: React.FC = () => {
   const [paymentDate, setPaymentDate] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<string>("");
   const [paymentRemarks, setPaymentRemarks] = useState<string>("");
+  const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
 
   // Check if user can edit the amount (only admin and sales team)
   const canEditAmount = currentUser.department === "Sales" || currentUser.role === "Admin";
   
   // Check if user can view the amount (only admin and sales team)
   const canViewAmount = currentUser.department === "Sales" || currentUser.role === "Admin";
+  
+  // Check if user can update product status
+  const canUpdateProductStatus = true; // All users can update product status
 
   useEffect(() => {
     if (order) {
@@ -41,6 +47,11 @@ const OrderDetail: React.FC = () => {
       setDepartment(order.currentDepartment);
       setTotalAmount(order.amount.toString());
       setPaidAmount(order.paidAmount?.toString() || "0");
+      
+      // Select first product by default
+      if (order.productStatus && order.productStatus.length > 0) {
+        setSelectedProduct(order.productStatus[0].id);
+      }
     }
   }, [order]);
 
@@ -117,7 +128,8 @@ const OrderDetail: React.FC = () => {
       department: department,
       status: status,
       remarks: remarks,
-      editableUntil
+      editableUntil,
+      selectedProduct: selectedProduct || undefined
     });
 
     // Reset remarks after submitting
@@ -332,6 +344,35 @@ const OrderDetail: React.FC = () => {
                 </div>
               </div>
 
+              {order.productStatus && order.productStatus.length > 0 && (
+                <div>
+                  <label
+                    htmlFor="product"
+                    className="block text-sm font-medium leading-6"
+                  >
+                    Select Product (Optional)
+                  </label>
+                  <div className="mt-2">
+                    <Select
+                      value={selectedProduct || ""}
+                      onValueChange={setSelectedProduct}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select product (optional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">All Products</SelectItem>
+                        {order.productStatus.map((product) => (
+                          <SelectItem key={product.id} value={product.id}>
+                            {product.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+
               {canEditAmount && (
                 <div>
                   <label
@@ -496,21 +537,31 @@ const OrderDetail: React.FC = () => {
 
       {/* Product Status Section */}
       <div className="mt-8">
-        <h2 className="text-2xl font-semibold mb-4">Product Status</h2>
-        <ProductStatusList orderId={order.id} products={order.productStatus || []} />
+        <h2 className="text-2xl font-semibold mb-4 flex items-center">
+          <Tag className="h-5 w-5 mr-2" /> Product Status
+        </h2>
+        <ProductStatusList 
+          orderId={order.id} 
+          products={order.productStatus || []}
+          canEdit={canUpdateProductStatus}
+        />
       </div>
 
       {/* Payment History Section (only visible to Sales and Admin) */}
       {canViewAmount && order.paymentHistory && order.paymentHistory.length > 0 && (
         <div className="mt-8">
-          <h2 className="text-2xl font-semibold mb-4">Payment History</h2>
+          <h2 className="text-2xl font-semibold mb-4 flex items-center">
+            <IndianRupee className="h-5 w-5 mr-2" /> Payment History
+          </h2>
           <PaymentHistory payments={order.paymentHistory} />
         </div>
       )}
 
       {/* Order Timeline */}
       <div className="mt-8">
-        <h2 className="text-2xl font-semibold mb-4">Order Timeline</h2>
+        <h2 className="text-2xl font-semibold mb-4 flex items-center">
+          <ClipboardCheck className="h-5 w-5 mr-2" /> Order Timeline
+        </h2>
         <OrderTimeline 
           statusHistory={order.statusHistory} 
           currentUser={currentUser}
