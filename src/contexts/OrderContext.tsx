@@ -1,331 +1,240 @@
 
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
-import { User, Order, StatusUpdate, Department, FilterOptions, GoogleSheetConfig, OrderStatus } from '@/types';
+import { User, Order, StatusUpdate, Department, FilterOptions, GoogleSheetConfig } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { addHours } from 'date-fns';
 import { demoOrders } from '@/lib/demo-orders';
 import { filterOrdersByMultipleCriteria } from '@/lib/utils';
-import { syncOrdersWithGoogleSheet, importOrdersFromSheet } from '@/utils/googleSheetUtils';
-import { toast } from 'sonner';
 
-// Define the context type
+// Define the context interface
 interface OrderContextType {
   orders: Order[];
-  users: User[];
+  filteredOrders: Order[];
+  filterOptions: FilterOptions;
   currentUser: User | null;
   isAuthenticated: boolean;
+  setFilterOptions: (options: FilterOptions) => void;
   addOrder: (order: Order) => void;
   updateOrder: (order: Order) => void;
-  addStatusUpdate: (orderId: string, statusUpdate: Omit<any, 'id' | 'timestamp' | 'updatedBy'>) => void;
-  updateStatusUpdate: (orderId: string, updateId: string, updates: Partial<StatusUpdate>) => void;
   deleteOrder: (orderId: string) => void;
+  getOrderById: (orderId: string) => Order | undefined;
+  addStatusUpdate: (orderId: string, update: Partial<StatusUpdate>) => void;
+  updateStatusUpdate: (orderId: string, updateId: string, update: Partial<StatusUpdate>) => void;
   loginUser: (user: User) => void;
   logoutUser: () => void;
-  setCurrentUser: (user: User) => void;
-  addUser: (user: User) => void;
-  removeUser: (userId: string) => void;
-  filterOrdersByDepartment: (department: string) => Order[];
-  filterOrdersByStatus: (status: string) => Order[];
-  filterOrdersByMultipleCriteria: (filters: FilterOptions) => Order[];
-  getUsersByDepartment: (department: Department) => User[];
-  getOrdersForCurrentUser: () => Order[];
-  syncWithGoogleSheet: (config: GoogleSheetConfig) => Promise<boolean>;
-  importFromGoogleSheet: (config: GoogleSheetConfig) => Promise<boolean>;
-  googleSheetConfig: GoogleSheetConfig | null;
-  setGoogleSheetConfig: (config: GoogleSheetConfig) => void;
+  canEditStatusUpdate: (update: StatusUpdate) => boolean;
+  exportOrders: () => void;
+  importOrders: (orders: Order[]) => void;
 }
 
 // Create the context with a default value
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
-// Sample initial data
-const initialOrders: Order[] = demoOrders;
-
-const initialUsers: User[] = [
-  {
-    id: 'admin1',
-    name: 'Admin User',
-    email: 'admin@orderflow.com',
-    password: 'admin123',
-    department: 'Sales',
-    role: 'Admin',
-  },
-  {
-    id: 'sales1',
-    name: 'Sales User',
-    email: 'sales@orderflow.com',
-    password: 'sales123',
-    department: 'Sales',
-    role: 'Member',
-  },
-  {
-    id: 'design1',
-    name: 'Design User',
-    email: 'design@orderflow.com',
-    password: 'design123',
-    department: 'Design',
-    role: 'Member',
-  },
-  {
-    id: 'prod1',
-    name: 'Production User',
-    email: 'production@orderflow.com',
-    password: 'production123',
-    department: 'Production',
-    role: 'Member',
-  },
-  {
-    id: 'prepress1',
-    name: 'Prepress User',
-    email: 'prepress@orderflow.com',
-    password: 'prepress123',
-    department: 'Prepress',
-    role: 'Member',
-  },
-];
-
+// Provider component
 interface OrderProviderProps {
   children: ReactNode;
 }
 
-// Provider component
 export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
-  const [orders, setOrders] = useState<Order[]>(initialOrders);
-  const [users, setUsers] = useState<User[]>(initialUsers);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [googleSheetConfig, setGoogleSheetConfig] = useState<GoogleSheetConfig | null>(null);
-
+  const [orders, setOrders] = useState<Order[]>(() => {
+    const savedOrders = localStorage.getItem('orders');
+    return savedOrders ? JSON.parse(savedOrders) : demoOrders;
+  });
+  
+  const [filterOptions, setFilterOptions] = useState<FilterOptions>({
+    department: 'All',
+    status: 'All',
+    searchQuery: '',
+    dateRange: null,
+  });
+  
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    const savedUser = localStorage.getItem('currentUser');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
+  
+  const isAuthenticated = Boolean(currentUser);
+  
+  // Apply filters to get filtered orders
+  const filteredOrders = filterOrdersByMultipleCriteria(orders, filterOptions);
+  
+  // Add a new order
   const addOrder = useCallback((order: Order) => {
-    setOrders(prev => [...prev, order]);
+    const newOrder: Order = {
+      ...order,
+      id: order.id || uuidv4(),
+      createdAt: order.createdAt || new Date().toISOString(),
+      statusHistory: order.statusHistory || [],
+    };
+    
+    setOrders(prevOrders => {
+      const updatedOrders = [...prevOrders, newOrder];
+      localStorage.setItem('orders', JSON.stringify(updatedOrders));
+      return updatedOrders;
+    });
   }, []);
-
+  
+  // Update an existing order
   const updateOrder = useCallback((updatedOrder: Order) => {
-    setOrders(prev => prev.map(order => 
-      order.id === updatedOrder.id ? updatedOrder : order
-    ));
+    setOrders(prevOrders => {
+      const newOrders = prevOrders.map(order => 
+        order.id === updatedOrder.id ? updatedOrder : order
+      );
+      localStorage.setItem('orders', JSON.stringify(newOrders));
+      return newOrders;
+    });
   }, []);
-
-  const addStatusUpdate = useCallback((orderId: string, statusUpdate: Omit<StatusUpdate, 'id' | 'timestamp' | 'updatedBy'>) => {
-    setOrders(prev => {
-      return prev.map(order => {
+  
+  // Delete an order
+  const deleteOrder = useCallback((orderId: string) => {
+    setOrders(prevOrders => {
+      const newOrders = prevOrders.filter(order => order.id !== orderId);
+      localStorage.setItem('orders', JSON.stringify(newOrders));
+      return newOrders;
+    });
+  }, []);
+  
+  // Get an order by ID
+  const getOrderById = useCallback((orderId: string) => {
+    return orders.find(order => order.id === orderId);
+  }, [orders]);
+  
+  // Add a status update to an order
+  const addStatusUpdate = useCallback((orderId: string, update: Partial<StatusUpdate>) => {
+    setOrders(prevOrders => {
+      const newOrders = prevOrders.map(order => {
         if (order.id === orderId) {
-          const now = new Date();
-          const editableUntil = addHours(now, 1).toISOString();
-          
-          const newStatusUpdate: StatusUpdate = {
+          const timestamp = new Date().toISOString();
+          const newUpdate: StatusUpdate = {
             id: uuidv4(),
             orderId: orderId,
-            timestamp: new Date().toISOString(),
-            updatedBy: currentUser?.name || 'Unknown User',
-            editableUntil,
-            ...statusUpdate,
+            timestamp,
+            department: update.department || order.currentDepartment,
+            status: update.status || order.status,
+            remarks: update.remarks || '',
+            updatedBy: currentUser?.name || 'System',
+            estimatedTime: update.estimatedTime,
+            editableUntil: addHours(new Date(), 24).toISOString(),
+            selectedProduct: update.selectedProduct
           };
           
           return {
             ...order,
-            statusHistory: [...order.statusHistory, newStatusUpdate]
+            statusHistory: [...(order.statusHistory || []), newUpdate]
           };
         }
         return order;
       });
+      
+      localStorage.setItem('orders', JSON.stringify(newOrders));
+      return newOrders;
     });
   }, [currentUser]);
-
-  const updateStatusUpdate = useCallback((orderId: string, updateId: string, updates: Partial<StatusUpdate>) => {
-    setOrders(prev => {
-      return prev.map(order => {
+  
+  // Update a status update in an order
+  const updateStatusUpdate = useCallback((orderId: string, updateId: string, updatedFields: Partial<StatusUpdate>) => {
+    setOrders(prevOrders => {
+      const newOrders = prevOrders.map(order => {
         if (order.id === orderId) {
-          const updatedHistory = order.statusHistory.map(update => 
-            update.id === updateId ? { ...update, ...updates } : update
+          const updatedStatusHistory = order.statusHistory.map(update => 
+            update.id === updateId 
+              ? { ...update, ...updatedFields, editedAt: new Date().toISOString() } 
+              : update
           );
           
           return {
             ...order,
-            statusHistory: updatedHistory
+            statusHistory: updatedStatusHistory
           };
         }
         return order;
       });
+      
+      localStorage.setItem('orders', JSON.stringify(newOrders));
+      return newOrders;
     });
   }, []);
-
-  const deleteOrder = useCallback((orderId: string) => {
-    setOrders(prev => prev.filter(order => order.id !== orderId));
-  }, []);
-
+  
+  // Login user
   const loginUser = useCallback((user: User) => {
     setCurrentUser(user);
-    setIsAuthenticated(true);
+    localStorage.setItem('currentUser', JSON.stringify(user));
+    localStorage.setItem('username', user.name); // For legacy compatibility
   }, []);
-
+  
+  // Logout user
   const logoutUser = useCallback(() => {
     setCurrentUser(null);
-    setIsAuthenticated(false);
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('username');
   }, []);
-
-  const addUser = useCallback((user: User) => {
-    setUsers(prev => [...prev, user]);
+  
+  // Check if a status update can be edited (within 24 hours)
+  const canEditStatusUpdate = useCallback((update: StatusUpdate) => {
+    if (!update.editableUntil) return false;
+    
+    const now = new Date();
+    const editableUntil = new Date(update.editableUntil);
+    
+    return now < editableUntil;
   }, []);
-
-  const removeUser = useCallback((userId: string) => {
-    setUsers(prev => prev.filter(user => user.id !== userId));
+  
+  // Export orders to JSON
+  const exportOrders = useCallback(() => {
+    const dataStr = JSON.stringify(orders, null, 2);
+    const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
+    
+    const exportFileDefaultName = `orders_export_${new Date().toISOString().slice(0, 10)}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+  }, [orders]);
+  
+  // Import orders from JSON
+  const importOrders = useCallback((importedOrders: Order[]) => {
+    setOrders(prevOrders => {
+      const updatedOrders = [...importedOrders];
+      localStorage.setItem('orders', JSON.stringify(updatedOrders));
+      return updatedOrders;
+    });
   }, []);
-
-  const filterOrdersByDepartment = useCallback((department: string) => {
-    if (department === 'All') return orders;
-    return orders.filter(order => order.currentDepartment === department);
-  }, [orders]);
-
-  const filterOrdersByStatus = useCallback((status: string) => {
-    if (status === 'All') return orders;
-    return orders.filter(order => order.status === status);
-  }, [orders]);
-
-  const filteredOrdersByMultipleCriteria = useCallback((filters: FilterOptions) => {
-    return filterOrdersByMultipleCriteria(orders, filters);
-  }, [orders]);
-
-  const getUsersByDepartment = useCallback((department: Department) => {
-    if (department === 'All' as any) return users;
-    return users.filter(user => user.department === department);
-  }, [users]);
-
-  const getOrdersForCurrentUser = useCallback(() => {
-    if (!currentUser) return [];
-    
-    // Admin can see all orders
-    if (currentUser.role === 'Admin') return orders;
-    
-    // Sales can see all orders
-    if (currentUser.department === 'Sales') return orders;
-    
-    // Other departments only see orders assigned to them
-    return orders.filter(order => order.currentDepartment === currentUser.department);
-  }, [orders, currentUser]);
-
-  const syncWithGoogleSheet = useCallback(async (config: GoogleSheetConfig) => {
-    try {
-      const result = await syncOrdersWithGoogleSheet(orders, config);
-      
-      if (result.success) {
-        setGoogleSheetConfig(config);
-        toast.success(result.message);
-        return true;
-      } else {
-        toast.error(result.message);
-        return false;
-      }
-    } catch (error) {
-      console.error("Error syncing with Google Sheet:", error);
-      toast.error(`Error syncing with Google Sheet: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      return false;
-    }
-  }, [orders]);
-
-  const importFromGoogleSheet = useCallback(async (config: GoogleSheetConfig) => {
-    try {
-      const result = await importOrdersFromSheet(config);
-      
-      if (result.success && result.orders) {
-        // Add each imported order
-        result.orders.forEach(orderData => {
-          // Skip if order with this sheet ID already exists
-          if (orderData.sheetSyncId && orders.some(o => o.sheetSyncId === orderData.sheetSyncId)) {
-            return;
-          }
-          
-          // Create order with required fields
-          const order = {
-            id: `import-${uuidv4()}`,
-            orderNumber: orderData.orderNumber || `ORD-${Date.now()}`,
-            clientName: orderData.clientName || "Imported Client",
-            amount: orderData.amount || 0,
-            paidAmount: orderData.paidAmount || 0,
-            pendingAmount: orderData.pendingAmount || 0,
-            items: orderData.items || [],
-            createdAt: orderData.createdAt || new Date().toISOString(),
-            status: orderData.status || 'New',
-            currentDepartment: orderData.currentDepartment || 'Sales',
-            paymentStatus: orderData.paymentStatus || 'Not Paid',
-            statusHistory: [{
-              id: uuidv4(),
-              orderId: uuidv4(),
-              department: 'Sales',
-              status: 'Imported from Google Sheet',
-              timestamp: new Date().toISOString(),
-              updatedBy: currentUser?.name || 'System'
-            }],
-            sheetSyncId: orderData.sheetSyncId
-          } as Order;
-          
-          addOrder(order);
-        });
-        
-        setGoogleSheetConfig(config);
-        toast.success(result.message);
-        return true;
-      } else {
-        toast.error(result.message);
-        return false;
-      }
-    } catch (error) {
-      console.error("Error importing from Google Sheet:", error);
-      toast.error(`Error importing from Google Sheet: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      return false;
-    }
-  }, [orders, currentUser, addOrder]);
-
-  const value = {
+  
+  const contextValue: OrderContextType = {
     orders,
-    users,
+    filteredOrders,
+    filterOptions,
     currentUser,
     isAuthenticated,
+    setFilterOptions,
     addOrder,
     updateOrder,
+    deleteOrder,
+    getOrderById,
     addStatusUpdate,
     updateStatusUpdate,
-    deleteOrder,
     loginUser,
     logoutUser,
-    setCurrentUser,
-    addUser,
-    removeUser,
-    filterOrdersByDepartment,
-    filterOrdersByStatus,
-    filterOrdersByMultipleCriteria: filteredOrdersByMultipleCriteria,
-    getUsersByDepartment,
-    getOrdersForCurrentUser,
-    syncWithGoogleSheet,
-    importFromGoogleSheet,
-    googleSheetConfig,
-    setGoogleSheetConfig,
+    canEditStatusUpdate,
+    exportOrders,
+    importOrders,
   };
-
-  return <OrderContext.Provider value={value}>{children}</OrderContext.Provider>;
+  
+  return (
+    <OrderContext.Provider value={contextValue}>
+      {children}
+    </OrderContext.Provider>
+  );
 };
 
-// Create a hook for using the OrderContext
+// Custom hook to use the order context
 export const useOrders = () => {
   const context = useContext(OrderContext);
+  
   if (context === undefined) {
     throw new Error('useOrders must be used within an OrderProvider');
   }
+  
   return context;
-};
-
-// Export the useOrdersExtended function to provide the additional functionality
-export const useOrdersExtended = () => {
-  const originalContext = useOrders();
-  
-  const removeUser = (userId: string) => {
-    // Since we can't modify the original context directly in the read-only file,
-    // we now have a proper removeUser function in our context implementation
-    originalContext.removeUser(userId);
-  };
-  
-  return {
-    ...originalContext,
-    removeUser
-  };
 };

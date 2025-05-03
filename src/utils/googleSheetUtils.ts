@@ -1,96 +1,90 @@
 
-import { Order, GoogleSheetConfig } from "@/types";
-import { toast } from "sonner";
+import { GoogleSheetConfig, Order } from "@/types";
 
-// Mock function for Google Sheets API connection
-// In a real application, this would use the Google Sheets API
-export async function syncOrdersWithGoogleSheet(
+// Validate Google Sheet configuration
+export const validateGoogleSheetConfig = (config: GoogleSheetConfig): boolean => {
+  return Boolean(config.sheetId && config.tabName);
+};
+
+// Simulated function to sync orders with Google Sheets
+export const syncOrdersWithGoogleSheet = async (
   orders: Order[],
   config: GoogleSheetConfig
-): Promise<{success: boolean, message: string}> {
+): Promise<{ success: boolean; message: string }> => {
   try {
-    // Since we can't actually connect to Google Sheets in this demo,
-    // we'll simulate the process and return a success response
+    // In a real application, this would make API calls to Google Sheets API
+    console.log("Simulating sync to Google Sheets:", config);
     
-    console.log("Simulating Google Sheets sync with config:", config);
-    console.log("Orders to sync:", orders);
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
     
-    // In a real implementation, you'd use the Google Sheets API
-    // to read/write data from/to the specified sheet
+    // Simulate successful sync
+    console.log(`Successfully synced ${orders.length} orders to sheet ${config.sheetId}`);
     
-    // Mark orders as synced
-    const syncedOrders = orders.map(order => ({
-      ...order,
-      lastSyncedAt: new Date().toISOString(),
-      sheetSyncId: order.sheetSyncId || `sheet-${Math.random().toString(36).substr(2, 9)}`
-    }));
-    
-    // Return success
     return {
       success: true,
-      message: `Successfully synced ${orders.length} orders with Google Sheet`
+      message: `Successfully exported ${orders.length} orders to Google Sheet`
     };
   } catch (error) {
-    console.error("Error syncing with Google Sheet:", error);
+    console.error("Error syncing with Google Sheets:", error);
     return {
       success: false,
-      message: `Error syncing with Google Sheet: ${error instanceof Error ? error.message : 'Unknown error'}`
+      message: `Error exporting to Google Sheet: ${error instanceof Error ? error.message : String(error)}`
     };
   }
-}
+};
 
-// Function to convert Google Sheets data to order objects
-export function convertSheetDataToOrders(sheetData: any[]): Partial<Order>[] {
-  // This is a mock implementation
-  // In a real application, you'd map columns from the sheet to the order properties
-  
-  return sheetData.map(row => ({
-    orderNumber: row[0],
-    clientName: row[1],
-    items: row[2]?.split(',').map((item: string) => item.trim()) || [],
-    amount: parseFloat(row[3]) || 0,
-    paidAmount: parseFloat(row[4]) || 0,
-    pendingAmount: parseFloat(row[5]) || 0,
-    createdAt: row[6] || new Date().toISOString(),
-    status: row[7] || 'New',
-    currentDepartment: row[8] || 'Sales',
-    paymentStatus: row[9] || 'Not Paid',
-    sheetSyncId: row[10] || `sheet-${Math.random().toString(36).substr(2, 9)}`
-  }));
-}
-
-// Function to handle importing orders from Google Sheet
-export async function importOrdersFromSheet(
+// Simulated function to import orders from Google Sheets
+export const importOrdersFromSheet = async (
   config: GoogleSheetConfig
-): Promise<{success: boolean, message: string, orders?: Partial<Order>[]}> {
+): Promise<{ success: boolean; message: string; orders?: Partial<Order>[] }> => {
   try {
-    // Since we can't actually connect to Google Sheets in this demo,
-    // we'll simulate the process with mock data
+    // In a real application, this would make API calls to Google Sheets API
+    console.log("Simulating import from Google Sheets:", config);
     
-    // Mock sheet data (in a real app, this would come from the Google Sheets API)
-    const mockSheetData = [
-      ["ORD-2023-001", "Demo Client", "Business Cards,Flyers", "1500", "1000", "500", "2023-05-01", "In Progress", "Design", "Partially Paid"],
-      ["ORD-2023-002", "Sample Corp", "Brochures,Letterheads", "2500", "0", "2500", "2023-05-02", "New", "Sales", "Not Paid"],
-      ["ORD-2023-003", "Test Ltd", "Banners", "3500", "3500", "0", "2023-05-03", "Completed", "Production", "Paid"],
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Simulate successful import with mock data
+    const mockImportedOrders: Partial<Order>[] = [
+      {
+        orderNumber: "SHEET-001",
+        clientName: "Imported Client 1",
+        amount: 15000,
+        paidAmount: 10000,
+        pendingAmount: 5000,
+        items: ["Imported Item 1", "Imported Item 2"],
+        status: "New",
+        currentDepartment: "Sales",
+        paymentStatus: "Partially Paid",
+        sheetSyncId: "row-1"
+      },
+      {
+        orderNumber: "SHEET-002",
+        clientName: "Imported Client 2",
+        amount: 8000,
+        paidAmount: 8000,
+        pendingAmount: 0,
+        items: ["Imported Item 3"],
+        status: "New",
+        currentDepartment: "Sales",
+        paymentStatus: "Paid",
+        sheetSyncId: "row-2"
+      }
     ];
     
-    const orders = convertSheetDataToOrders(mockSheetData);
+    console.log(`Successfully imported ${mockImportedOrders.length} orders from sheet ${config.sheetId}`);
     
     return {
       success: true,
-      message: `Successfully imported ${orders.length} orders from Google Sheet`,
-      orders
+      message: `Successfully imported ${mockImportedOrders.length} orders from Google Sheet`,
+      orders: mockImportedOrders
     };
   } catch (error) {
-    console.error("Error importing from Google Sheet:", error);
+    console.error("Error importing from Google Sheets:", error);
     return {
       success: false,
-      message: `Error importing from Google Sheet: ${error instanceof Error ? error.message : 'Unknown error'}`
+      message: `Error importing from Google Sheet: ${error instanceof Error ? error.message : String(error)}`
     };
   }
-}
-
-// Function to validate Google Sheet API key
-export function validateGoogleSheetConfig(config: GoogleSheetConfig): boolean {
-  return Boolean(config.sheetId && config.tabName);
-}
+};

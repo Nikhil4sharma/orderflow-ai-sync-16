@@ -1,0 +1,116 @@
+
+// User types
+export type UserRole = "Admin" | "Member";
+export type Department = "Sales" | "Design" | "Production" | "Prepress";
+
+export interface User {
+  id: string;
+  name: string;
+  department: Department;
+  role: UserRole;
+  email?: string;
+}
+
+// Order status types
+export type OrderStatus = "New" | "In Progress" | "Completed" | "On Hold" | "Issue" | "Verified" | "Dispatched";
+export type PaymentStatus = "Not Paid" | "Partially Paid" | "Paid";
+export type StatusType = "processing" | "completed" | "issue";
+
+// Production stage type
+export type ProductionStage = "Material Preparation" | "Machine Setup" | "Printing" | "Finishing" | "Quality Check" | "Packing";
+
+// Status update interface
+export interface StatusUpdate {
+  id: string;
+  orderId: string;
+  timestamp: string;
+  department: string;
+  status: string;
+  remarks?: string;
+  updatedBy: string;
+  estimatedTime?: string;
+  editableUntil?: string;
+  editedAt?: string;
+  selectedProduct?: string;
+}
+
+// Product status interface
+export interface ProductStatus {
+  id: string;
+  name: string;
+  status: StatusType;
+  remarks?: string;
+}
+
+// Production stage details
+export interface ProductionStageDetails {
+  stage: ProductionStage;
+  status: StatusType;
+  remarks?: string;
+  timeline?: string;
+}
+
+// Courier partner types
+export type CourierPartner = "Shree Maruti" | "DTDC" | "FedEx" | "DHL" | "BlueDart" | "Other";
+export type DeliveryType = "Normal" | "Express";
+
+// Dispatch details
+export interface DispatchDetails {
+  address: string;
+  contactNumber: string;
+  courierPartner: CourierPartner;
+  deliveryType: DeliveryType;
+  trackingNumber?: string;
+  dispatchDate: string;
+  verifiedBy: string;
+}
+
+// Payment record
+export interface PaymentRecord {
+  id: string;
+  amount: number;
+  date: string;
+  method: string;
+  remarks?: string;
+}
+
+// Google Sheet configuration
+export interface GoogleSheetConfig {
+  sheetId: string;
+  tabName: string;
+  apiKey?: string;
+}
+
+// Filter options
+export interface FilterOptions {
+  department: Department | 'All';
+  status: string | 'All';
+  searchQuery?: string;
+  dateRange: { start: Date; end: Date } | null;
+}
+
+// Order interface
+export interface Order {
+  id: string;
+  orderNumber: string;
+  clientName: string;
+  createdAt: string;
+  status: OrderStatus;
+  currentDepartment: Department;
+  items: string[];
+  amount: number;
+  paidAmount: number;
+  pendingAmount: number;
+  paymentStatus: PaymentStatus;
+  paymentHistory?: PaymentRecord[];
+  designStatus?: string;
+  designRemarks?: string;
+  designTimeline?: string;
+  prepressStatus?: string;
+  prepressRemarks?: string;
+  productionStages?: ProductionStageDetails[];
+  productStatus?: ProductStatus[];
+  dispatchDetails?: DispatchDetails;
+  statusHistory: StatusUpdate[];
+  sheetSyncId?: string;
+}

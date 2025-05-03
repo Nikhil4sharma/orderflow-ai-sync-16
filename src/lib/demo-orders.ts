@@ -1,324 +1,275 @@
 
-import { Order } from '@/types';
-import { addHours } from 'date-fns';
+import { Order, OrderStatus, PaymentStatus } from "@/types";
+import { v4 as uuidv4 } from "uuid";
+import { addDays, subDays, format } from "date-fns";
 
-const now = new Date();
-const yesterday = new Date(now);
-yesterday.setDate(yesterday.getDate() - 1);
+// Generate a random date between two dates
+const randomDate = (start: Date, end: Date) => {
+  return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+};
 
-// Sample Users for the status updates
-const sampleUsers = ['John Smith', 'Emma Davis', 'Michael Johnson', 'Sarah Wilson'];
-
-// Helper function to get a random user
-const getRandomUser = () => sampleUsers[Math.floor(Math.random() * sampleUsers.length)];
-
-// Helper to create a status update
-const createStatusUpdate = (
-  orderId: string,
-  department: 'Sales' | 'Design' | 'Production' | 'Prepress',
-  status: string,
-  timestamp: Date,
-  remarks?: string,
-  selectedProduct?: string
-) => ({
-  id: `upd-${Math.random().toString(36).substring(2, 9)}`,
-  orderId,
-  department,
-  status,
-  remarks: remarks || '',
-  timestamp: timestamp.toISOString(),
-  updatedBy: getRandomUser(),
-  editableUntil: addHours(timestamp, 1).toISOString(),
-  selectedProduct
-});
-
-// Create demo orders based on the screenshot data
+// Generate demo orders
 export const demoOrders: Order[] = [
   {
-    id: 'ord-52041',
-    orderNumber: 'Order #52041',
-    clientName: 'United MSG',
-    amount: 2077,
-    paidAmount: 2077,
+    id: "order-1",
+    orderNumber: "ORD-2023-001",
+    clientName: "Rajesh Industries",
+    createdAt: subDays(new Date(), 15).toISOString(),
+    status: "Completed" as OrderStatus,
+    currentDepartment: "Production",
+    items: ["Brochures", "Catalogs"],
+    amount: 15000,
+    paidAmount: 15000,
     pendingAmount: 0,
-    items: ['Quick Cards'],
-    createdAt: new Date('2025-04-01').toISOString(),
-    status: 'Completed',
-    currentDepartment: 'Sales',
+    paymentStatus: "Paid" as PaymentStatus,
     statusHistory: [
-      createStatusUpdate('ord-52041', 'Sales', 'New', new Date('2025-04-01T09:00:00')),
-      createStatusUpdate('ord-52041', 'Design', 'In Progress', new Date('2025-04-01T10:30:00')),
-      createStatusUpdate('ord-52041', 'Production', 'In Progress', new Date('2025-04-01T14:00:00')),
-      createStatusUpdate('ord-52041', 'Production', 'Completed', new Date('2025-04-01T17:00:00')),
-      createStatusUpdate('ord-52041', 'Sales', 'Completed', new Date('2025-04-01T18:00:00'))
+      {
+        id: uuidv4(),
+        orderId: "order-1",
+        timestamp: subDays(new Date(), 15).toISOString(),
+        department: "Sales",
+        status: "New",
+        remarks: "New order created",
+        updatedBy: "Sales User"
+      },
+      {
+        id: uuidv4(),
+        orderId: "order-1",
+        timestamp: subDays(new Date(), 14).toISOString(),
+        department: "Design",
+        status: "In Progress",
+        remarks: "Design work started",
+        updatedBy: "Design User"
+      },
+      {
+        id: uuidv4(),
+        orderId: "order-1",
+        timestamp: subDays(new Date(), 10).toISOString(),
+        department: "Production",
+        status: "In Progress",
+        remarks: "Production started",
+        updatedBy: "Production User"
+      },
+      {
+        id: uuidv4(),
+        orderId: "order-1",
+        timestamp: subDays(new Date(), 5).toISOString(),
+        department: "Production",
+        status: "Completed",
+        remarks: "Order ready for dispatch",
+        updatedBy: "Production User"
+      }
     ],
     productStatus: [
       {
-        id: 'prod-52041-1',
-        name: 'Quick Cards',
-        status: 'completed'
-      }
-    ],
-    paymentStatus: 'Paid',
-    paymentHistory: [
+        id: "prod-1",
+        name: "Brochures",
+        status: "completed",
+        remarks: "Printing completed with high-quality finish"
+      },
       {
-        id: 'pay-52041-1',
-        amount: 2077,
-        date: new Date('2025-04-01T12:00:00').toISOString(),
-        method: 'Bank Transfer',
-        remarks: 'Invoice paid in full'
+        id: "prod-2",
+        name: "Catalogs",
+        status: "completed",
+        remarks: "All items packed and ready"
       }
     ]
   },
   {
-    id: 'ord-52045',
-    orderNumber: 'Order #52045',
-    clientName: 'Poonam Patel',
-    amount: 1238,
-    paidAmount: 1238,
-    pendingAmount: 0,
-    items: ['NFC Card'],
-    createdAt: new Date('2025-04-02').toISOString(),
-    status: 'Completed',
-    currentDepartment: 'Sales',
+    id: "order-2",
+    orderNumber: "ORD-2023-002",
+    clientName: "Global Tech Solutions",
+    createdAt: subDays(new Date(), 7).toISOString(),
+    status: "In Progress" as OrderStatus,
+    currentDepartment: "Design",
+    items: ["Business Cards", "Letterheads"],
+    amount: 8500,
+    paidAmount: 4250,
+    pendingAmount: 4250,
+    paymentStatus: "Partially Paid" as PaymentStatus,
     statusHistory: [
-      createStatusUpdate('ord-52045', 'Sales', 'New', new Date('2025-04-02T09:30:00')),
-      createStatusUpdate('ord-52045', 'Production', 'In Progress', new Date('2025-04-02T11:00:00')),
-      createStatusUpdate('ord-52045', 'Production', 'Completed', new Date('2025-04-02T16:00:00')),
-      createStatusUpdate('ord-52045', 'Sales', 'Completed', new Date('2025-04-02T17:30:00'))
+      {
+        id: uuidv4(),
+        orderId: "order-2",
+        timestamp: subDays(new Date(), 7).toISOString(),
+        department: "Sales",
+        status: "New",
+        remarks: "New order received with 50% advance payment",
+        updatedBy: "Sales User"
+      },
+      {
+        id: uuidv4(),
+        orderId: "order-2",
+        timestamp: subDays(new Date(), 5).toISOString(),
+        department: "Design",
+        status: "In Progress",
+        remarks: "Working on initial designs",
+        updatedBy: "Design User"
+      }
     ],
     productStatus: [
       {
-        id: 'prod-52045-1',
-        name: 'NFC Card',
-        status: 'completed'
-      }
-    ],
-    paymentStatus: 'Paid',
-    paymentHistory: [
+        id: "prod-3",
+        name: "Business Cards",
+        status: "processing",
+        remarks: "Waiting for client approval"
+      },
       {
-        id: 'pay-52045-1',
-        amount: 1238,
-        date: new Date('2025-04-02T10:15:00').toISOString(),
-        method: 'Cash',
-        remarks: 'Paid at pickup'
+        id: "prod-4",
+        name: "Letterheads",
+        status: "processing",
+        remarks: "Initial design work started"
       }
     ]
   },
   {
-    id: 'ord-52054',
-    orderNumber: 'Order #52054',
-    clientName: 'Art Muse',
-    amount: 92294,
+    id: "order-3",
+    orderNumber: "ORD-2023-003",
+    clientName: "Sunrise Pharmaceuticals",
+    createdAt: subDays(new Date(), 2).toISOString(),
+    status: "New" as OrderStatus,
+    currentDepartment: "Sales",
+    items: ["Packaging Boxes", "Labels"],
+    amount: 22000,
     paidAmount: 0,
-    pendingAmount: 92294,
-    items: ['Letterhead+ Biz Card EP+Envelopes'],
-    createdAt: new Date('2025-04-05').toISOString(),
-    status: 'In Progress',
-    currentDepartment: 'Design',
+    pendingAmount: 22000,
+    paymentStatus: "Not Paid" as PaymentStatus,
     statusHistory: [
-      createStatusUpdate('ord-52054', 'Sales', 'New', new Date('2025-04-05T11:00:00')),
-      createStatusUpdate('ord-52054', 'Design', 'In Progress', new Date('2025-04-05T14:00:00'))
+      {
+        id: uuidv4(),
+        orderId: "order-3",
+        timestamp: subDays(new Date(), 2).toISOString(),
+        department: "Sales",
+        status: "New",
+        remarks: "Client requested quote, awaiting payment confirmation",
+        updatedBy: "Sales User"
+      }
     ],
     productStatus: [
       {
-        id: 'prod-52054-1',
-        name: 'Letterhead',
-        status: 'processing'
+        id: "prod-5",
+        name: "Packaging Boxes",
+        status: "processing",
+        remarks: "Waiting for payment confirmation"
       },
       {
-        id: 'prod-52054-2',
-        name: 'Business Cards',
-        status: 'processing'
-      },
-      {
-        id: 'prod-52054-3',
-        name: 'Envelopes',
-        status: 'processing'
+        id: "prod-6",
+        name: "Labels",
+        status: "processing",
+        remarks: "Specifications received"
       }
-    ],
-    paymentStatus: 'Not Paid',
-    paymentHistory: []
+    ]
   },
   {
-    id: 'ord-52059',
-    orderNumber: 'Order #52059',
-    clientName: 'Raghav',
-    amount: 2950,
-    paidAmount: 2950,
+    id: "order-4",
+    orderNumber: "ORD-2023-004",
+    clientName: "Green Valley Organics",
+    createdAt: subDays(new Date(), 20).toISOString(),
+    status: "On Hold" as OrderStatus,
+    currentDepartment: "Production",
+    items: ["Banners", "Flyers"],
+    amount: 12500,
+    paidAmount: 12500,
     pendingAmount: 0,
-    items: ['Biz Card Design'],
-    createdAt: new Date('2025-04-08').toISOString(),
-    status: 'Completed',
-    currentDepartment: 'Sales',
+    paymentStatus: "Paid" as PaymentStatus,
     statusHistory: [
-      createStatusUpdate('ord-52059', 'Sales', 'New', new Date('2025-04-08T10:00:00')),
-      createStatusUpdate('ord-52059', 'Design', 'In Progress', new Date('2025-04-08T12:00:00')),
-      createStatusUpdate('ord-52059', 'Design', 'Completed', new Date('2025-04-08T15:30:00')),
-      createStatusUpdate('ord-52059', 'Sales', 'Completed', new Date('2025-04-08T16:45:00'))
+      {
+        id: uuidv4(),
+        orderId: "order-4",
+        timestamp: subDays(new Date(), 20).toISOString(),
+        department: "Sales",
+        status: "New",
+        remarks: "New order with full payment",
+        updatedBy: "Sales User"
+      },
+      {
+        id: uuidv4(),
+        orderId: "order-4",
+        timestamp: subDays(new Date(), 18).toISOString(),
+        department: "Design",
+        status: "In Progress",
+        remarks: "Design work started",
+        updatedBy: "Design User"
+      },
+      {
+        id: uuidv4(),
+        orderId: "order-4",
+        timestamp: subDays(new Date(), 12).toISOString(),
+        department: "Production",
+        status: "On Hold",
+        remarks: "Material shortage, waiting for new stock",
+        updatedBy: "Production User"
+      }
     ],
     productStatus: [
       {
-        id: 'prod-52059-1',
-        name: 'Biz Card Design',
-        status: 'completed'
-      }
-    ],
-    paymentStatus: 'Paid',
-    paymentHistory: [
+        id: "prod-7",
+        name: "Banners",
+        status: "processing",
+        remarks: "Material shortage"
+      },
       {
-        id: 'pay-52059-1',
-        amount: 2950,
-        date: new Date('2025-04-08T16:50:00').toISOString(),
-        method: 'UPI',
-        remarks: '07AAQFM7949A1ZY'
+        id: "prod-8",
+        name: "Flyers",
+        status: "completed",
+        remarks: "Ready for dispatch"
       }
     ]
   },
   {
-    id: 'ord-52064',
-    orderNumber: 'Order #52064',
-    clientName: 'Palak',
-    amount: 979,
-    paidAmount: 979,
-    pendingAmount: 0,
-    items: ['Sample Kit'],
-    createdAt: new Date('2025-04-08').toISOString(),
-    status: 'Completed',
-    currentDepartment: 'Sales',
+    id: "order-5",
+    orderNumber: "ORD-2023-005",
+    clientName: "City Hospital",
+    createdAt: subDays(new Date(), 5).toISOString(),
+    status: "Issue" as OrderStatus,
+    currentDepartment: "Prepress",
+    items: ["Prescription Pads", "Appointment Cards"],
+    amount: 7500,
+    paidAmount: 3750,
+    pendingAmount: 3750,
+    paymentStatus: "Partially Paid" as PaymentStatus,
     statusHistory: [
-      createStatusUpdate('ord-52064', 'Sales', 'New', new Date('2025-04-08T11:15:00')),
-      createStatusUpdate('ord-52064', 'Production', 'In Progress', new Date('2025-04-08T13:00:00')),
-      createStatusUpdate('ord-52064', 'Production', 'Completed', new Date('2025-04-08T15:45:00')),
-      createStatusUpdate('ord-52064', 'Sales', 'Completed', new Date('2025-04-08T16:30:00'))
+      {
+        id: uuidv4(),
+        orderId: "order-5",
+        timestamp: subDays(new Date(), 5).toISOString(),
+        department: "Sales",
+        status: "New",
+        remarks: "New order with 50% advance",
+        updatedBy: "Sales User"
+      },
+      {
+        id: uuidv4(),
+        orderId: "order-5",
+        timestamp: subDays(new Date(), 4).toISOString(),
+        department: "Design",
+        status: "Completed",
+        remarks: "Design finalized",
+        updatedBy: "Design User"
+      },
+      {
+        id: uuidv4(),
+        orderId: "order-5",
+        timestamp: subDays(new Date(), 2).toISOString(),
+        department: "Prepress",
+        status: "Issue",
+        remarks: "File resolution issues, need to contact client",
+        updatedBy: "Prepress User"
+      }
     ],
     productStatus: [
       {
-        id: 'prod-52064-1',
-        name: 'Sample Kit',
-        status: 'completed'
-      }
-    ],
-    paymentStatus: 'Paid',
-    paymentHistory: [
+        id: "prod-9",
+        name: "Prescription Pads",
+        status: "issue",
+        remarks: "Resolution too low for printing"
+      },
       {
-        id: 'pay-52064-1',
-        amount: 979,
-        date: new Date('2025-04-08T11:30:00').toISOString(),
-        method: 'Cash',
-        remarks: '07AAECN1867B1ZO'
+        id: "prod-10",
+        name: "Appointment Cards",
+        status: "processing",
+        remarks: "Awaiting prepress approval"
       }
     ]
-  },
-  {
-    id: 'ord-52085',
-    orderNumber: 'Order #52085',
-    clientName: 'Sameer Abrol',
-    amount: 170741,
-    paidAmount: 50000,
-    pendingAmount: 120741,
-    items: ['Metal Cards', 'Letterhead', 'Envelope', 'Design', 'Business Card', 'Pouch'],
-    createdAt: new Date('2025-04-10').toISOString(),
-    status: 'In Progress',
-    currentDepartment: 'Production',
-    statusHistory: [
-      createStatusUpdate('ord-52085', 'Sales', 'New', new Date('2025-04-10T09:00:00')),
-      createStatusUpdate('ord-52085', 'Design', 'In Progress', new Date('2025-04-10T11:30:00')),
-      createStatusUpdate('ord-52085', 'Design', 'Completed', new Date('2025-04-11T15:00:00')),
-      createStatusUpdate('ord-52085', 'Production', 'In Progress', new Date('2025-04-11T16:00:00'))
-    ],
-    productStatus: [
-      {
-        id: 'prod-52085-1',
-        name: 'Metal Cards',
-        status: 'processing'
-      },
-      {
-        id: 'prod-52085-2',
-        name: 'Letterhead',
-        status: 'processing'
-      },
-      {
-        id: 'prod-52085-3',
-        name: 'Envelope',
-        status: 'processing'
-      },
-      {
-        id: 'prod-52085-4',
-        name: 'Business Card',
-        status: 'processing'
-      },
-      {
-        id: 'prod-52085-5',
-        name: 'Pouch',
-        status: 'processing'
-      }
-    ],
-    paymentStatus: 'Partially Paid',
-    paymentHistory: [
-      {
-        id: 'pay-52085-1',
-        amount: 50000,
-        date: new Date('2025-04-10T10:00:00').toISOString(),
-        method: 'Bank Transfer',
-        remarks: 'Advance payment 5%'
-      }
-    ]
-  },
-  // Add more demo orders as needed based on the screenshot
-  {
-    id: 'ord-52072',
-    orderNumber: 'Order #52072',
-    clientName: 'Jitendra Dhanjani',
-    amount: 5308,
-    paidAmount: 0,
-    pendingAmount: 5308,
-    items: ['Sample Kit + Stationary Design'],
-    createdAt: new Date('2025-04-12').toISOString(),
-    status: 'In Progress',
-    currentDepartment: 'Design',
-    statusHistory: [
-      createStatusUpdate('ord-52072', 'Sales', 'New', new Date('2025-04-12T10:20:00')),
-      createStatusUpdate('ord-52072', 'Design', 'In Progress', new Date('2025-04-12T14:15:00'))
-    ],
-    productStatus: [
-      {
-        id: 'prod-52072-1',
-        name: 'Sample Kit',
-        status: 'processing'
-      },
-      {
-        id: 'prod-52072-2',
-        name: 'Stationary Design',
-        status: 'processing'
-      }
-    ],
-    paymentStatus: 'Not Paid',
-    paymentHistory: []
-  },
-  {
-    id: 'ord-52214',
-    orderNumber: 'Order #52214',
-    clientName: 'Dr. Yashwant',
-    amount: 2950,
-    paidAmount: 0,
-    pendingAmount: 2950,
-    items: ['Business Card Design'],
-    createdAt: new Date('2025-04-24').toISOString(),
-    status: 'In Progress',
-    currentDepartment: 'Design',
-    statusHistory: [
-      createStatusUpdate('ord-52214', 'Sales', 'New', new Date('2025-04-24T09:45:00')),
-      createStatusUpdate('ord-52214', 'Design', 'In Progress', new Date('2025-04-24T11:30:00')),
-    ],
-    productStatus: [
-      {
-        id: 'prod-52214-1',
-        name: 'Business Card Design',
-        status: 'processing'
-      }
-    ],
-    paymentStatus: 'Not Paid',
-    paymentHistory: []
   }
 ];
