@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
-import { Department, Order } from "@/types";
+import { Department, DesignStatus, Order, PrepressStatus } from "@/types";
 import { format } from "date-fns";
 import DatePickerWithPopover from "./DatePickerWithPopover";
 
@@ -38,13 +38,13 @@ const DepartmentStatusForm: React.FC<DepartmentStatusFormProps> = ({ order, depa
   const getStatusOptions = () => {
     switch (department) {
       case 'Design':
-        return ['Working on it', 'Pending Feedback', 'Completed'];
+        return ['Working on it', 'Pending Feedback from Sales Team', 'Forwarded to Prepress'];
       case 'Prepress':
-        return ['Pending', 'Reviewing', 'Ready'];
+        return ['Waiting for approval', 'Forwarded to production', 'Working on it'];
       case 'Production':
         return ['In Progress', 'On Hold', 'Completed', 'Issue'];
       default:
-        return ['New', 'In Progress', 'On Hold', 'Completed', 'Issue'];
+        return ['In Progress', 'On Hold', 'Completed', 'Issue'];
     }
   };
   
@@ -59,12 +59,12 @@ const DepartmentStatusForm: React.FC<DepartmentStatusFormProps> = ({ order, depa
     // Update department-specific fields
     switch (department) {
       case 'Design':
-        updatedOrder.designStatus = status as any;
+        updatedOrder.designStatus = status as DesignStatus;
         updatedOrder.designRemarks = remarks;
         updatedOrder.designTimeline = timeline ? timeline.toISOString() : undefined;
         break;
       case 'Prepress':
-        updatedOrder.prepressStatus = status as any;
+        updatedOrder.prepressStatus = status as PrepressStatus;
         updatedOrder.prepressRemarks = remarks;
         break;
       case 'Production':
@@ -77,9 +77,9 @@ const DepartmentStatusForm: React.FC<DepartmentStatusFormProps> = ({ order, depa
     }
     
     // Update general order status
-    if (['Completed', 'Ready'].includes(status)) {
+    if (['Completed', 'Ready', 'Forwarded to Prepress', 'Forwarded to production'].includes(status)) {
       updatedOrder.status = 'Completed';
-    } else if (['Working on it', 'In Progress', 'Pending', 'Reviewing'].includes(status)) {
+    } else if (['Working on it', 'In Progress', 'Waiting for approval'].includes(status)) {
       updatedOrder.status = 'In Progress';
     }
     

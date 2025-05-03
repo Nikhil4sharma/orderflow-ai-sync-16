@@ -16,7 +16,7 @@ interface OrderFiltersProps {
   statusFilter: string | 'All';
   onDepartmentChange: (value: Department | 'All') => void;
   onStatusChange: (value: string | 'All') => void;
-  disableDepartmentFilter?: boolean; // Added this prop
+  disableDepartmentFilter?: boolean;
 }
 
 const OrderFilters: React.FC<OrderFiltersProps> = ({
@@ -24,10 +24,10 @@ const OrderFilters: React.FC<OrderFiltersProps> = ({
   statusFilter,
   onDepartmentChange,
   onStatusChange,
-  disableDepartmentFilter = false, // Default to false if not provided
+  disableDepartmentFilter = false,
 }) => {
   const departments = ['All', ...getDepartments()];
-  const statuses = ['All', 'New', 'In Progress', 'Completed', 'On Hold', 'Issue'];
+  const statuses = ['All', 'In Progress', 'Completed', 'On Hold', 'Issue'];
 
   return (
     <div className="flex flex-col sm:flex-row gap-4 mb-6">

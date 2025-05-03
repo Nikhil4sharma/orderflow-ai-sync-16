@@ -1,11 +1,13 @@
 
 export type Department = 'Sales' | 'Production' | 'Design' | 'Prepress';
 
-export type ProductionStage = 'Printing' | 'Cutting' | 'Pasting' | 'Foiling' | 'Electroplating' | 'Letterpress' | 'Embossing' | 'Ready to Dispatch';
+export type ProductionStage = 'Printing' | 'Cutting' | 'Pasting' | 'Foiling' | 'Electroplating' | 'Letterpress' | 'Embossed' | 'Diecut' | 'Quality Check' | 'Ready to Dispatch';
 
-export type DesignStatus = 'Working on it' | 'Pending Feedback' | 'Completed';
+export type DesignStatus = 'Working on it' | 'Pending Feedback from Sales Team' | 'Forwarded to Prepress';
 
-export type OrderStatus = 'New' | 'In Progress' | 'Completed' | 'On Hold' | 'Issue' | 'Verified' | 'Dispatched';
+export type PrepressStatus = 'Waiting for approval' | 'Forwarded to production' | 'Working on it';
+
+export type OrderStatus = 'In Progress' | 'Completed' | 'On Hold' | 'Issue' | 'Verified' | 'Dispatched' | 'Ready to Dispatch';
 
 export type StatusType = 'completed' | 'processing' | 'issue';
 
@@ -75,7 +77,7 @@ export interface Order {
   designStatus?: DesignStatus;
   designTimeline?: string;
   designRemarks?: string;
-  prepressStatus?: 'Pending' | 'Reviewing' | 'Ready';
+  prepressStatus?: PrepressStatus;
   prepressRemarks?: string;
   statusHistory: StatusUpdate[];
   paymentStatus: PaymentStatus;

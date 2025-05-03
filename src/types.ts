@@ -13,12 +13,18 @@ export interface User {
 }
 
 // Order status types
-export type OrderStatus = "New" | "In Progress" | "Completed" | "On Hold" | "Issue" | "Verified" | "Dispatched" | "Ready to Dispatch";
+export type OrderStatus = "In Progress" | "Completed" | "On Hold" | "Issue" | "Verified" | "Dispatched" | "Ready to Dispatch";
 export type PaymentStatus = "Not Paid" | "Partially Paid" | "Paid";
 export type StatusType = "processing" | "completed" | "issue";
 
+// Design team status types
+export type DesignStatus = "Working on it" | "Pending Feedback from Sales Team" | "Forwarded to Prepress";
+
+// Prepress status types
+export type PrepressStatus = "Waiting for approval" | "Forwarded to production" | "Working on it";
+
 // Production stage type
-export type ProductionStage = "Material Preparation" | "Machine Setup" | "Printing" | "Finishing" | "Quality Check" | "Packing";
+export type ProductionStage = "Printing" | "Pasting" | "Cutting" | "Foiling" | "Letterpress" | "Embossed" | "Diecut" | "Quality Check" | "Ready to Dispatch";
 
 // Status update interface
 export interface StatusUpdate {
@@ -107,10 +113,10 @@ export interface Order {
   pendingAmount: number;
   paymentStatus: PaymentStatus;
   paymentHistory?: PaymentRecord[];
-  designStatus?: string;
+  designStatus?: DesignStatus;
   designRemarks?: string;
   designTimeline?: string;
-  prepressStatus?: string;
+  prepressStatus?: PrepressStatus;
   prepressRemarks?: string;
   productionStages?: ProductionStageDetails[];
   productStatus?: ProductStatus[];

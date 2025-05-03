@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useOrders } from "@/contexts/OrderContext";
 import { Button } from "@/components/ui/button";
 import { Department } from "@/types";
-import { Search, PlusIcon, Filter, ArrowUpDown } from "lucide-react";
+import { Search, PlusIcon, Filter, ArrowUpDown, Clock, CheckCircle, AlertTriangle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import {
@@ -58,7 +58,7 @@ const Dashboard: React.FC = () => {
   }, [currentUser]);
 
   // Define the limited set of status filters
-  const allowedStatuses = ["New", "In Progress", "Completed", "Issue"];
+  const allowedStatuses = ["In Progress", "Completed", "Issue"];
 
   // Filter orders based on filters and search
   const filteredOrders = filterOrdersByDepartment(departmentFilter)
@@ -128,7 +128,7 @@ const Dashboard: React.FC = () => {
         {/* Only show New Order button for Sales team and Admins */}
         {(currentUser.department === 'Sales' || currentUser.role === 'Admin') && (
           <Button 
-            className="mt-4 sm:mt-0" 
+            className="mt-4 sm:mt-0 bg-primary hover:bg-primary/90" 
             onClick={() => navigate('/new-order')}
           >
             <PlusIcon className="h-4 w-4 mr-2" />
@@ -156,7 +156,7 @@ const Dashboard: React.FC = () => {
                 Department
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>Filter by department</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem 
@@ -203,7 +203,7 @@ const Dashboard: React.FC = () => {
                 Status
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>Filter by status</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem 
@@ -233,11 +233,18 @@ const Dashboard: React.FC = () => {
           className="w-full"
           onValueChange={(value) => setStatusFilter(value === 'all' ? 'All' : value)}
         >
-          <TabsList className="grid grid-cols-4 h-auto">
-            <TabsTrigger value="all" className="py-2">All</TabsTrigger>
-            <TabsTrigger value="New" className="py-2">New</TabsTrigger>
-            <TabsTrigger value="In Progress" className="py-2">In Progress</TabsTrigger>
-            <TabsTrigger value="Completed" className="py-2">Completed</TabsTrigger>
+          <TabsList className="grid grid-cols-3 h-auto">
+            <TabsTrigger value="all" className="py-2">
+              All
+            </TabsTrigger>
+            <TabsTrigger value="In Progress" className="py-2 flex items-center">
+              <Clock className="h-3.5 w-3.5 mr-1.5" />
+              In Progress
+            </TabsTrigger>
+            <TabsTrigger value="Completed" className="py-2 flex items-center">
+              <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
+              Completed
+            </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -313,7 +320,11 @@ const Dashboard: React.FC = () => {
                       {order.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">{order.currentDepartment}</TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    <Badge variant="secondary" className="font-normal">
+                      {order.currentDepartment}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="hidden md:table-cell text-right">
                     ₹{order.amount.toLocaleString()}
                   </TableCell>
