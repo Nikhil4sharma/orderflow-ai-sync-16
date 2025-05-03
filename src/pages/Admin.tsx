@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { User, ArrowLeft, Shield, UserPlus } from "lucide-react";
+import { User, ArrowLeft, Shield, UserPlus, Settings, FolderPlus, LayoutDashboard } from "lucide-react";
 import { Department, User as UserType } from "@/types";
 
 const Admin: React.FC = () => {
@@ -116,7 +116,7 @@ const Admin: React.FC = () => {
                 className="w-full justify-start"
                 onClick={() => navigate("/admin/departments")}
               >
-                <User className="h-4 w-4 mr-2" />
+                <FolderPlus className="h-4 w-4 mr-2" />
                 Manage Departments
               </Button>
               <Button 
@@ -124,8 +124,16 @@ const Admin: React.FC = () => {
                 className="w-full justify-start"
                 onClick={() => navigate("/admin/settings")}
               >
-                <User className="h-4 w-4 mr-2" />
+                <Settings className="h-4 w-4 mr-2" />
                 System Settings
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => navigate("/")}
+              >
+                <LayoutDashboard className="h-4 w-4 mr-2" />
+                Return to Dashboard
               </Button>
             </div>
           </CardContent>
@@ -248,7 +256,7 @@ const Admin: React.FC = () => {
                     <td className="p-3">{user.department}</td>
                     <td className="p-3">{user.role}</td>
                     <td className="p-3 text-right">
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => navigate("/admin/users")}>
                         Edit
                       </Button>
                     </td>

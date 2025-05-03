@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Link } from "react-router-dom";
+import ThemeToggle from "./ThemeToggle";
 
 const Layout: React.FC = () => {
   const { currentUser, logoutUser } = useOrders();
@@ -33,6 +34,8 @@ const Layout: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-2">
+            <ThemeToggle />
+            
             <Button variant="ghost" size="icon">
               <Bell className="h-5 w-5" />
             </Button>
