@@ -1,90 +1,44 @@
 
-import { type ClassValue, clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
-import { FilterOptions, Order } from "@/types";
-import { endOfDay, isWithinInterval, parseISO, startOfDay } from "date-fns";
+import { type ClassValue, clsx } from "clsx"
+import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+  return twMerge(clsx(inputs))
 }
 
-// Filter orders by multiple criteria
-export function filterOrdersByMultipleCriteria(orders: Order[], filterOptions: FilterOptions): Order[] {
-  return orders.filter(order => {
-    // Filter by department
-    if (filterOptions.department && filterOptions.department !== 'All') {
-      if (order.currentDepartment !== filterOptions.department) {
-        return false;
-      }
-    }
-    
-    // Filter by status
-    if (filterOptions.status && filterOptions.status !== 'All') {
-      if (order.status !== filterOptions.status) {
-        return false;
-      }
-    }
-    
-    // Filter by search query
-    if (filterOptions.searchQuery) {
-      const query = filterOptions.searchQuery.toLowerCase();
-      const searchableFields = [
-        order.orderNumber,
-        order.clientName,
-        order.id,
-        ...(order.items || [])
-      ].map(item => (item || '').toString().toLowerCase());
-      
-      if (!searchableFields.some(field => field.includes(query))) {
-        return false;
-      }
-    }
-    
-    // Filter by date range
-    if (filterOptions.dateRange) {
-      const orderDate = parseISO(order.createdAt);
-      const { start, end } = filterOptions.dateRange;
-      
-      if (start && end) {
-        // Set time to start of day for start and end of day for end
-        const startDate = startOfDay(start);
-        const endDate = endOfDay(end);
-        
-        if (!isWithinInterval(orderDate, { start: startDate, end: endDate })) {
-          return false;
-        }
-      }
-    }
-    
-    // If it passes all filters, include it
-    return true;
-  });
-}
-
-// Format currency
-export function formatCurrency(amount: number): string {
+export const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
     maximumFractionDigits: 2
   }).format(amount);
-}
+};
 
-// Get workflow stage number (for progress indicators)
-export function getWorkflowStageNumber(status: string): number {
-  const workflowStages = ["New", "In Progress", "Completed", "Verified", "Dispatched"];
-  const stageIndex = workflowStages.findIndex(stage => stage === status);
-  return stageIndex !== -1 ? stageIndex + 1 : 1;
-}
+export const generateOrderNumber = () => {
+  const prefix = 'ORD';
+  const timestamp = Date.now().toString().slice(-8);
+  const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+  return `${prefix}-${timestamp}-${random}`;
+};
 
-// Get total workflow stages
-export function getTotalWorkflowStages(): number {
-  return 5; // New, In Progress, Completed, Verified, Dispatched
-}
+// Generate a unique ID
+export const generateId = () => {
+  return Date.now().toString(36) + Math.random().toString(36).substring(2);
+};
 
-// Calculate workflow progress percentage
-export function calculateWorkflowProgress(status: string): number {
-  const current = getWorkflowStageNumber(status);
-  const total = getTotalWorkflowStages();
-  return Math.floor((current / total) * 100);
-}
+// Given the department and status, determine if a notification should be sent
+export const shouldSendNotification = (department: string, status: string) => {
+  if (department === 'Design' && status === 'Pending Feedback from Sales Team') {
+    return true;
+  }
+  
+  if (department === 'Prepress' && status === 'Waiting for approval') {
+    return true;
+  }
+  
+  if (department === 'Production' && status === 'Ready to Dispatch') {
+    return true;
+  }
+  
+  return false;
+};

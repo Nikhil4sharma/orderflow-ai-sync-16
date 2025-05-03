@@ -1,70 +1,129 @@
 
-// User types
-export type UserRole = "Admin" | "Sales" | "Design" | "Production" | "Prepress" | "Member";
-export type Department = "Sales" | "Design" | "Production" | "Prepress";
-
-export interface User {
+export type User = {
   id: string;
   name: string;
+  email: string;
   department: Department;
-  role: UserRole;
-  email?: string;
-  password?: string; // Added password field to fix build errors
-}
+  role: Role;
+  permissions: PermissionKey[];
+};
 
-// Order status types
-export type OrderStatus = "In Progress" | "Completed" | "On Hold" | "Issue" | "Verified" | "Dispatched" | "Ready to Dispatch";
-export type PaymentStatus = "Not Paid" | "Partially Paid" | "Paid";
+export type Role = "Admin" | "Manager" | "User";
+
+export type Department = "Sales" | "Design" | "Prepress" | "Production";
+
+// Updated order status to match the workflow
+export type OrderStatus = 
+  | "In Progress"
+  | "On Hold"
+  | "Completed"
+  | "Dispatched"
+  | "Issue";
+
+// Design department specific statuses
+export type DesignStatus = 
+  | "Working on it" 
+  | "Pending Feedback from Sales Team" 
+  | "Forwarded to Prepress";
+
+// Prepress department specific statuses
+export type PrepressStatus = 
+  | "Waiting for approval" 
+  | "Working on it" 
+  | "Forwarded to production";
+
+// Production specific status
+export type ProductionStatus = 
+  | "In Progress"
+  | "On Hold"
+  | "Ready to Dispatch"
+  | "Completed"
+  | "Issue";
+
+export type ProductionStage = 
+  | "Printing" 
+  | "Pasting" 
+  | "Cutting" 
+  | "Foiling"
+  | "Letterpress" 
+  | "Embossed" 
+  | "Diecut" 
+  | "Quality Check"
+  | "Ready to Dispatch";
+
+export type PaymentStatus = "Not Paid" | "Partial" | "Paid";
+
+export type CourierPartner = "Shree Maruti" | "DTDC" | "FedEx" | "DHL" | "BlueDart" | "Other";
+
+export type DeliveryType = "Normal" | "Express";
+
 export type StatusType = "processing" | "completed" | "issue";
 
-// Design team status types
-export type DesignStatus = "Working on it" | "Pending Feedback from Sales Team" | "Forwarded to Prepress";
-
-// Prepress status types
-export type PrepressStatus = "Waiting for approval" | "Forwarded to production" | "Working on it";
-
-// Production stage type
-export type ProductionStage = "Printing" | "Pasting" | "Cutting" | "Foiling" | "Letterpress" | "Embossed" | "Diecut" | "Quality Check" | "Ready to Dispatch";
-
-// Status update interface
-export interface StatusUpdate {
+export type Order = {
   id: string;
-  orderId: string;
-  timestamp: string;
-  department: string;
-  status: string;
-  remarks?: string;
-  updatedBy: string;
-  estimatedTime?: string;
-  editableUntil?: string;
-  editedAt?: string;
-  selectedProduct?: string;
-}
+  orderNumber: string;
+  clientName: string;
+  amount: number;
+  paidAmount: number;
+  pendingAmount: number;
+  items: string[];
+  createdAt: string;
+  status: OrderStatus;
+  currentDepartment: Department;
+  paymentStatus: PaymentStatus;
+  statusHistory: StatusUpdate[];
+  sheetSyncId?: string;
+  
+  // Department specific status fields
+  designStatus?: DesignStatus;
+  designRemarks?: string;
+  designTimeline?: string;
+  
+  prepressStatus?: PrepressStatus;
+  prepressRemarks?: string;
+  
+  // Production related fields
+  productionStages?: ProductionStageStatus[];
+  
+  // Product status 
+  productStatus?: ProductStatus[];
+  
+  // Payment records
+  paymentHistory?: PaymentRecord[];
+  
+  // Address information
+  deliveryAddress?: string;
+  contactNumber?: string;
+  
+  // Dispatch details
+  dispatchDetails?: DispatchDetails;
+};
 
-// Product status interface
-export interface ProductStatus {
-  id: string;
-  name: string;
-  status: StatusType;
-  remarks?: string;
-  estimatedCompletion?: string; // Added for timeline estimation
-  assignedDepartment?: Department; // Track which department is responsible
-}
-
-// Production stage details
-export interface ProductionStageDetails {
+export type ProductionStageStatus = {
   stage: ProductionStage;
   status: StatusType;
   remarks?: string;
   timeline?: string;
-}
+};
 
-// Courier partner types
-export type CourierPartner = "Shree Maruti" | "DTDC" | "FedEx" | "DHL" | "BlueDart" | "Other";
-export type DeliveryType = "Normal" | "Express";
+export type ProductStatus = {
+  id: string;
+  name: string;
+  status: StatusType;
+  remarks?: string;
+  estimatedCompletion?: string;
+  assignedDepartment?: Department;
+};
 
-// Dispatch details
-export interface DispatchDetails {
+export type PaymentRecord = {
+  id: string;
+  amount: number;
+  date: string;
+  method: string;
+  remarks?: string;
+};
+
+export type DispatchDetails = {
   address: string;
   contactNumber: string;
   courierPartner: CourierPartner;
@@ -72,78 +131,63 @@ export interface DispatchDetails {
   trackingNumber?: string;
   dispatchDate: string;
   verifiedBy: string;
-}
+};
 
-// Payment record
-export interface PaymentRecord {
-  id: string;
-  amount: number;
-  date: string;
-  method: string;
+export type StatusUpdate = {
+  id?: string;
+  orderId?: string;
+  timestamp?: string;
+  department: Department;
+  status: string;
   remarks?: string;
-}
+  updatedBy?: string;
+  editableUntil?: string;
+  estimatedTime?: string;
+  selectedProduct?: string;
+};
 
-// Google Sheet configuration
-export interface GoogleSheetConfig {
+export type GoogleSheetConfig = {
   sheetId: string;
   tabName: string;
   apiKey?: string;
-}
+};
 
-// Filter options
-export interface FilterOptions {
-  department: Department | 'All';
-  status: string | 'All';
-  searchQuery?: string;
-  dateRange: { start: Date; end: Date } | null;
-  searchTerm?: string;
-}
-
-// Order interface
-export interface Order {
-  id: string;
-  orderNumber: string;
-  clientName: string;
-  createdAt: string;
-  status: OrderStatus;
-  currentDepartment: Department;
-  items: string[];
-  amount: number;
-  paidAmount: number;
-  pendingAmount: number;
-  paymentStatus: PaymentStatus;
-  paymentHistory?: PaymentRecord[];
-  designStatus?: DesignStatus;
-  designRemarks?: string;
-  designTimeline?: string;
-  prepressStatus?: PrepressStatus;
-  prepressRemarks?: string;
-  productionStages?: ProductionStageDetails[];
-  productStatus?: ProductStatus[];
-  dispatchDetails?: DispatchDetails;
-  statusHistory: StatusUpdate[];
-  sheetSyncId?: string;
-  lastPaymentDate?: string;
-  // Added fields for contact and address info
-  contactNumber?: string;
-  deliveryAddress?: string;
-}
-
-// Permission interfaces
-export interface Permission {
-  name: string;
-  description: string;
-  key: PermissionKey;
-}
-
+// Permission system
 export type PermissionKey = 
-  | "view_financial_data" 
-  | "dispatch_orders" 
-  | "verify_orders"
-  | "update_order_status"
-  | "view_full_timeline"
-  | "view_address_details"
-  | "edit_orders"
-  | "admin_dashboard"
+  | "view_orders" 
+  | "create_orders" 
+  | "update_orders"
+  | "delete_orders"
+  | "view_users"
   | "manage_users"
-  | "update_product_status"; // New permission for updating product-level status
+  | "manage_departments"
+  | "update_order_status"
+  | "verify_orders"
+  | "dispatch_orders"
+  | "view_reports"
+  | "export_data"
+  | "view_analytics"
+  | "manage_settings"
+  | "view_address_details";
+
+// Notification type
+export type Notification = {
+  id: string;
+  title: string;
+  message: string;
+  timestamp: string;
+  isRead: boolean;
+  type: NotificationType;
+  orderId?: string;
+  forDepartments: Department[];
+  forRoles?: Role[];
+};
+
+export type NotificationType = 
+  | "status_update"
+  | "approval_request"
+  | "feedback_request"
+  | "ready_for_dispatch"
+  | "order_completed"
+  | "order_issue"
+  | "payment_received";

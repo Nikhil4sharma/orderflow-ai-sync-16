@@ -26,8 +26,10 @@
     --ring: 215 20.2% 65.1%;
     --radius: 0.5rem;
 
+    /* Brand colors */
     --brand-blue: 221.2 83.2% 53.3%;
-    --brand-lightBlue: 213.3 94.4% 90.8%;
+    --brand-lightBlue: 213.8 100% 96.9%;
+    --brand-amber: 38 92% 50%;
   }
 
   .dark {
@@ -50,7 +52,11 @@
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
     --ring: 216 34% 17%;
-    --radius: 0.5rem;
+
+    /* Brand colors - dark mode */
+    --brand-blue: 221.2 83.2% 60%;
+    --brand-lightBlue: 213.8 70% 20%;
+    --brand-amber: 38 92% 40%;
   }
 }
 
@@ -64,37 +70,92 @@
   }
 }
 
+/* Glass card effect */
 .glass-card {
-  backdrop-filter: blur(8px);
-  background-color: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+  @apply backdrop-blur-sm bg-background/80 border border-border/30 shadow-sm;
 }
 
-.dark .glass-card {
-  background-color: rgba(20, 20, 40, 0.5);
-}
+/* Animation classes */
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
 
-.animate-fade-in {
-  animation: fadeIn 0.5s ease-in-out;
+  .animate-slide-in {
+    animation: slideIn 0.4s ease-out;
+  }
+
+  .animate-slide-from-bottom {
+    animation: slideFromBottom 0.4s ease-out;
+  }
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
-/* Helper classes for status colors */
-.status-new { @apply bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200; }
-.status-in-progress { @apply bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200; }
-.status-completed { @apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200; }
-.status-on-hold { @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200; }
-.status-issue { @apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200; }
-.status-verified { @apply bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200; }
-.status-dispatched { @apply bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200; }
+@keyframes slideIn {
+  from {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideFromBottom {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted));
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted));
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
+
+/* Timeline styling */
+.timeline-item {
+  position: relative;
+  padding-bottom: 24px;
+}
+
+.timeline-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 19px; /* Half of the avatar width (40px) minus half of the line width (2px) */
+  top: 32px;
+  bottom: 0;
+  width: 2px;
+  background: hsl(var(--border));
+}

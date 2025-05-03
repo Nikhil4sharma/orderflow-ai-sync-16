@@ -1,164 +1,72 @@
 
-import { User, Department, UserRole, Order, PermissionKey } from "@/types";
+import { Order, PermissionKey, User } from "@/types";
 
-// Define role-based permissions map
-const rolePermissions: Record<UserRole, PermissionKey[]> = {
-  Admin: [
-    "view_financial_data",
-    "dispatch_orders",
-    "verify_orders",
-    "update_order_status",
-    "view_full_timeline",
-    "view_address_details",
-    "edit_orders",
-    "admin_dashboard",
-    "manage_users",
-    "update_product_status"
-  ],
-  Sales: [
-    "view_financial_data",
-    "dispatch_orders",
-    "verify_orders",
-    "update_order_status",
-    "view_full_timeline",
-    "view_address_details",
-    "edit_orders",
-    "update_product_status"
-  ],
-  Design: [
-    "update_order_status",
-    "update_product_status"
-  ],
-  Production: [
-    "update_order_status",
-    "view_address_details",
-    "update_product_status"
-  ],
-  Prepress: [
-    "update_order_status",
-    "update_product_status"
-  ],
-  Member: [
-    "update_order_status",
-    "update_product_status"
-  ]
-};
-
-// Department-specific permissions
-const departmentPermissions: Record<Department, PermissionKey[]> = {
-  Sales: ["view_financial_data", "dispatch_orders", "verify_orders"],
-  Design: [],
-  Prepress: [],
-  Production: []
-};
-
-// Helper function to check if a user has a specific permission
-export const hasPermission = (user: User | null, permission: PermissionKey): boolean => {
+// Check if a user has a specific permission
+export const hasPermission = (user: User | null | undefined, permission: PermissionKey): boolean => {
   if (!user) return false;
   
-  // Admin has all permissions
+  // Admin always has all permissions
   if (user.role === "Admin") return true;
   
-  // Check role-based permissions
-  const userRolePermissions = rolePermissions[user.role] || [];
-  if (userRolePermissions.includes(permission)) return true;
+  return user.permissions.includes(permission);
+};
+
+// Check if the user can view address details for an order
+export const canViewAddressDetails = (user: User | null | undefined, order: Order): boolean => {
+  if (!user) return false;
   
-  // Check department-based permissions
-  const userDeptPermissions = departmentPermissions[user.department] || [];
-  if (userDeptPermissions.includes(permission)) return true;
+  // Admin always has access
+  if (user.role === "Admin") return true;
   
-  return false;
-};
-
-// Specific permission checkers
-export const canViewFinancialData = (user: User | null): boolean => {
-  return hasPermission(user, "view_financial_data");
-};
-
-export const canDispatchOrders = (user: User | null): boolean => {
-  return hasPermission(user, "dispatch_orders");
-};
-
-export const canVerifyOrders = (user: User | null): boolean => {
-  return hasPermission(user, "verify_orders");
-};
-
-export const canUpdateOrderStatus = (user: User | null): boolean => {
-  return hasPermission(user, "update_order_status");
-};
-
-export const canViewFullTimeline = (user: User | null): boolean => {
-  return hasPermission(user, "view_full_timeline");
-};
-
-// Enhanced to include logic for "Ready to Dispatch" status
-export const canViewAddressDetails = (user: User | null, order: Order): boolean => {
-  if (hasPermission(user, "view_address_details")) return true;
+  // Users with the specific permission have access
+  if (user.permissions.includes("view_address_details")) return true;
   
-  // Production or Prepress can view address details when order is ready to dispatch
-  if ((user?.department === "Production" || user?.department === "Prepress") && 
-      (order.status === "Completed" || order.status === "Ready to Dispatch")) {
+  // Sales department and the final department can see address details
+  if (user.department === "Sales" || order.currentDepartment === "Production") {
     return true;
   }
   
   return false;
 };
 
-export const canUpdateProductStatus = (user: User | null): boolean => {
-  return hasPermission(user, "update_product_status");
-};
-
-export const canEditOrder = (user: User | null): boolean => {
-  return hasPermission(user, "edit_orders");
-};
-
-export const canAccessAdminDashboard = (user: User | null): boolean => {
-  return hasPermission(user, "admin_dashboard");
-};
-
-export const canManageUsers = (user: User | null): boolean => {
-  return hasPermission(user, "manage_users");
-};
-
-// Function to check if user is from current department or admin
-export const isCurrentDepartmentOrAdmin = (user: User | null, order: Order | null): boolean => {
-  if (!user || !order) return false;
-  return user.role === "Admin" || user.department === order.currentDepartment;
-};
-
-// Function to filter order data based on user permissions
-export function filterOrderDataForUser(order: Order, user: User): Partial<Order> {
-  // Admin and Sales can view everything
-  if (user.role === "Admin" || user.role === "Sales") {
-    return order;
+// Get all permissions a role should have
+export const getRolePermissions = (role: string): PermissionKey[] => {
+  switch (role) {
+    case "Admin":
+      return [
+        "view_orders",
+        "create_orders",
+        "update_orders",
+        "delete_orders",
+        "view_users",
+        "manage_users",
+        "manage_departments",
+        "update_order_status",
+        "verify_orders",
+        "dispatch_orders",
+        "view_reports",
+        "export_data",
+        "view_analytics",
+        "manage_settings",
+        "view_address_details"
+      ];
+    case "Manager":
+      return [
+        "view_orders",
+        "create_orders",
+        "update_orders",
+        "update_order_status",
+        "verify_orders",
+        "dispatch_orders",
+        "view_reports",
+        "view_address_details"
+      ];
+    case "User":
+      return [
+        "view_orders",
+        "update_order_status"
+      ];
+    default:
+      return [];
   }
-  
-  // For other departments, filter out financial information
-  const filteredOrder: Partial<Order> = {
-    ...order,
-    orderNumber: order.orderNumber,
-    clientName: order.clientName,
-    items: order.items,
-    status: order.status,
-    currentDepartment: order.currentDepartment,
-    statusHistory: order.statusHistory,
-    productStatus: order.productStatus
-  };
-  
-  // Remove financial data
-  delete filteredOrder.amount;
-  delete filteredOrder.paidAmount;
-  delete filteredOrder.pendingAmount;
-  delete filteredOrder.paymentStatus;
-  delete filteredOrder.paymentHistory;
-  
-  // Only add delivery info if user has permission to view it
-  if (!canViewAddressDetails(user, order)) {
-    delete filteredOrder.dispatchDetails?.address;
-    delete filteredOrder.deliveryAddress;
-    delete filteredOrder.dispatchDetails?.contactNumber;
-    delete filteredOrder.contactNumber;
-  }
-  
-  return filteredOrder;
-}
+};
