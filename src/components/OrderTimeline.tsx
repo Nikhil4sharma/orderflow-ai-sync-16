@@ -6,10 +6,10 @@ import { format } from "date-fns";
 import { CheckCircle } from "lucide-react";
 
 interface OrderTimelineProps {
-  updates: StatusUpdate[];
+  statusHistory: StatusUpdate[];
 }
 
-const OrderTimeline: React.FC<OrderTimelineProps> = ({ updates }) => {
+const OrderTimeline: React.FC<OrderTimelineProps> = ({ statusHistory }) => {
   const formatDate = (dateString: string) => {
     try {
       return format(new Date(dateString), 'MMM dd, yyyy h:mm a');
@@ -19,9 +19,9 @@ const OrderTimeline: React.FC<OrderTimelineProps> = ({ updates }) => {
   };
 
   // Sort updates by timestamp in descending order
-  const sortedUpdates = [...updates].sort((a, b) => 
+  const sortedUpdates = statusHistory ? [...statusHistory].sort((a, b) => 
     new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-  );
+  ) : [];
 
   return (
     <div className="space-y-4 mt-4">

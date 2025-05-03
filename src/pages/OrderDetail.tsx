@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useOrders } from "@/contexts/OrderContext";
@@ -54,8 +55,9 @@ const OrderDetail: React.FC = () => {
     const updatedOrder = { ...order, status, currentDepartment: department };
     updateOrder(updatedOrder);
 
-    // Add status update to context
+    // Add status update to context - adding the orderId field to match the expected type
     addStatusUpdate(order.id, {
+      orderId: order.id,
       department: department,
       status: status,
       remarks: remarks,
