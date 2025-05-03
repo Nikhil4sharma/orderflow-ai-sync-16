@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useOrders } from "@/contexts/OrderContext";
 import { Button } from "@/components/ui/button";
@@ -354,14 +354,15 @@ const OrderDetail: React.FC = () => {
                   </label>
                   <div className="mt-2">
                     <Select
-                      value={selectedProduct || ""}
+                      value={selectedProduct || undefined}
                       onValueChange={setSelectedProduct}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select product (optional)" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Products</SelectItem>
+                        {/* Fix: don't use empty string as value */}
+                        <SelectItem value="none">All Products</SelectItem>
                         {order.productStatus.map((product) => (
                           <SelectItem key={product.id} value={product.id}>
                             {product.name}

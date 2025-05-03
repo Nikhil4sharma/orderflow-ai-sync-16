@@ -79,7 +79,7 @@ const Dashboard: React.FC = () => {
       <OrderFilters
         departmentFilter={departmentFilter}
         statusFilter={statusFilter}
-        onDepartmentChange={userCanSeeAllDepartments ? setDepartmentFilter : () => {}}
+        onDepartmentChange={setDepartmentFilter}
         onStatusChange={setStatusFilter}
         disableDepartmentFilter={!userCanSeeAllDepartments}
       />

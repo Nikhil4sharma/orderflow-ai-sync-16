@@ -16,6 +16,7 @@ interface OrderFiltersProps {
   statusFilter: string | 'All';
   onDepartmentChange: (value: Department | 'All') => void;
   onStatusChange: (value: string | 'All') => void;
+  disableDepartmentFilter?: boolean; // Added this prop
 }
 
 const OrderFilters: React.FC<OrderFiltersProps> = ({
@@ -23,6 +24,7 @@ const OrderFilters: React.FC<OrderFiltersProps> = ({
   statusFilter,
   onDepartmentChange,
   onStatusChange,
+  disableDepartmentFilter = false, // Default to false if not provided
 }) => {
   const departments = ['All', ...getDepartments()];
   const statuses = ['All', 'New', 'In Progress', 'Completed', 'On Hold', 'Issue'];
@@ -34,6 +36,7 @@ const OrderFilters: React.FC<OrderFiltersProps> = ({
         <Select
           value={departmentFilter}
           onValueChange={(value) => onDepartmentChange(value as Department | 'All')}
+          disabled={disableDepartmentFilter}
         >
           <SelectTrigger id="department-filter" className="w-full">
             <SelectValue placeholder="Select Department" />
