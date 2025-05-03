@@ -1,244 +1,275 @@
 
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useOrders } from "@/contexts/OrderContext";
-import { useTheme } from "@/components/theme-provider";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { Slider } from "@/components/ui/slider";
+import { useOrders } from "@/contexts/OrderContext";
 import { toast } from "sonner";
-import { ArrowLeft, Settings, Save, RefreshCw } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { useTheme } from "@/components/theme-provider";
 
 const SystemSettings: React.FC = () => {
-  const navigate = useNavigate();
   const { currentUser } = useOrders();
   const { theme, setTheme } = useTheme();
   
-  // System settings state
-  const [companyName, setCompanyName] = useState("Order Management System");
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [defaultTheme, setDefaultTheme] = useState(theme);
-  const [autoLogout, setAutoLogout] = useState(30);
-  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  // Email notification settings
+  const [emailNotifications, setEmailNotifications] = useState({
+    orderCreated: true,
+    statusUpdated: true,
+    paymentReceived: true,
+    dailySummary: false,
+  });
   
-  // Check if current user is admin
-  if (currentUser?.role !== "Admin") {
-    toast.error("Access denied. Admin privileges required.");
-    navigate("/");
-    return null;
+  // System performance settings
+  const [cacheTimeout, setCacheTimeout] = useState<number[]>([30]);
+  const [autoLogout, setAutoLogout] = useState(true);
+  
+  // Company information
+  const [companyInfo, setCompanyInfo] = useState({
+    name: "PrintFlow Solutions",
+    email: "contact@printflow.com",
+    phone: "+1 (555) 123-4567",
+    address: "123 Print Street, Design City, 12345",
+  });
+  
+  // Handle company info change
+  const handleCompanyInfoChange = (field: keyof typeof companyInfo, value: string) => {
+    setCompanyInfo(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+  
+  // Handle notification toggle
+  const handleNotificationChange = (setting: keyof typeof emailNotifications) => {
+    setEmailNotifications(prev => ({
+      ...prev,
+      [setting]: !prev[setting]
+    }));
+  };
+  
+  // Handle save settings
+  const handleSaveSettings = () => {
+    // In a real app, you would save these to a database or backend
+    toast.success("Settings saved successfully!");
+  };
+
+  // Handle theme change
+  const handleThemeChange = (newTheme: "light" | "dark" | "system") => {
+    setTheme(newTheme);
+  };
+
+  if (!currentUser || currentUser.role !== "Admin") {
+    return (
+      <div className="container mx-auto py-8">
+        <Card>
+          <CardContent className="pt-6">
+            <p>You do not have permission to access system settings.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
-  const handleSaveSettings = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Update theme
-    setTheme(defaultTheme as "light" | "dark" | "system");
-    
-    // In a real app, would save these settings to a database or config
-    toast.success("Settings saved successfully");
-  };
-
-  const handleResetSettings = () => {
-    // Reset form to defaults
-    setCompanyName("Order Management System");
-    setEmailNotifications(true);
-    setDefaultTheme(theme);
-    setAutoLogout(30);
-    setMaintenanceMode(false);
-    
-    toast.success("Settings reset to defaults");
-  };
-
   return (
-    <div className="container mx-auto py-8 px-4">
-      <Button
-        variant="ghost"
-        className="mb-4"
-        onClick={() => navigate("/admin")}
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" /> Back to Admin Dashboard
-      </Button>
+    <div className="container mx-auto py-8">
+      <h1 className="text-2xl font-bold mb-6">System Settings</h1>
       
-      <Card className="glass-card mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Settings className="h-5 w-5 mr-2" />
-            System Settings
-          </CardTitle>
-          <CardDescription>
-            Configure global application settings
-          </CardDescription>
-        </CardHeader>
-      </Card>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="glass-card">
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Theme Settings */}
+        <Card>
           <CardHeader>
-            <CardTitle>General Settings</CardTitle>
+            <CardTitle>Theme Settings</CardTitle>
             <CardDescription>
-              Basic application configuration
+              Customize the appearance of the application
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSaveSettings} className="space-y-6">
+            <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="companyName">Company Name</Label>
-                <Input
-                  id="companyName"
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="defaultTheme">Default Theme</Label>
-                <Select
-                  value={defaultTheme}
-                  onValueChange={setDefaultTheme}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select theme" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="light">Light</SelectItem>
-                    <SelectItem value="dark">Dark</SelectItem>
-                    <SelectItem value="system">System</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="autoLogout">Auto Logout (minutes)</Label>
-                <Input
-                  id="autoLogout"
-                  type="number"
-                  min={5}
-                  max={120}
-                  value={autoLogout}
-                  onChange={(e) => setAutoLogout(parseInt(e.target.value))}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <Label htmlFor="emailNotifications">Email Notifications</Label>
-                <Switch
-                  id="emailNotifications"
-                  checked={emailNotifications}
-                  onCheckedChange={setEmailNotifications}
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label htmlFor="maintenanceMode" className="block">
-                    Maintenance Mode
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Blocks non-admin access
-                  </p>
+                <Label>Theme Mode</Label>
+                <div className="flex space-x-4">
+                  <Button 
+                    variant={theme === "light" ? "default" : "outline"} 
+                    onClick={() => handleThemeChange("light")}
+                  >
+                    Light
+                  </Button>
+                  <Button 
+                    variant={theme === "dark" ? "default" : "outline"} 
+                    onClick={() => handleThemeChange("dark")}
+                  >
+                    Dark
+                  </Button>
+                  <Button 
+                    variant={theme === "system" ? "default" : "outline"} 
+                    onClick={() => handleThemeChange("system")}
+                  >
+                    System
+                  </Button>
                 </div>
-                <Switch
-                  id="maintenanceMode"
-                  checked={maintenanceMode}
-                  onCheckedChange={setMaintenanceMode}
-                />
               </div>
-              
-              <CardFooter className="px-0 pt-6 flex justify-between">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={handleResetSettings}
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Reset
-                </Button>
-                <Button type="submit">
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Settings
-                </Button>
-              </CardFooter>
-            </form>
+            </div>
           </CardContent>
         </Card>
         
-        <div className="space-y-6">
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle>Security Settings</CardTitle>
-              <CardDescription>
-                Configure security options
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="twoFactorAuth">Two-Factor Authentication</Label>
-                  <Switch id="twoFactorAuth" />
+        {/* Email Notification Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Email Notifications</CardTitle>
+            <CardDescription>
+              Configure which email notifications are sent
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Order Created</p>
+                  <p className="text-sm text-muted-foreground">
+                    Notifications when new orders are created
+                  </p>
                 </div>
-                
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="passwordExpiry">Password Expiry</Label>
-                  <Switch id="passwordExpiry" defaultChecked />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="loginAttempts">Login Attempt Limits</Label>
-                  <Switch id="loginAttempts" defaultChecked />
-                </div>
+                <Switch 
+                  checked={emailNotifications.orderCreated}
+                  onCheckedChange={() => handleNotificationChange("orderCreated")}
+                />
               </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle>System Information</CardTitle>
-              <CardDescription>
-                Current system status and information
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Version:</span>
-                  <span>1.0.0</span>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Status Updates</p>
+                  <p className="text-sm text-muted-foreground">
+                    Notifications when an order's status changes
+                  </p>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Last Updated:</span>
-                  <span>{new Date().toLocaleDateString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Status:</span>
-                  <span className="text-green-500">Operational</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Database:</span>
-                  <span className="text-green-500">Connected</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">API:</span>
-                  <span className="text-green-500">Operational</span>
-                </div>
+                <Switch 
+                  checked={emailNotifications.statusUpdated}
+                  onCheckedChange={() => handleNotificationChange("statusUpdated")}
+                />
               </div>
-            </CardContent>
-          </Card>
-        </div>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Payment Received</p>
+                  <p className="text-sm text-muted-foreground">
+                    Notifications when payments are processed
+                  </p>
+                </div>
+                <Switch 
+                  checked={emailNotifications.paymentReceived}
+                  onCheckedChange={() => handleNotificationChange("paymentReceived")}
+                />
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Daily Summary</p>
+                  <p className="text-sm text-muted-foreground">
+                    Daily report of orders and activities
+                  </p>
+                </div>
+                <Switch 
+                  checked={emailNotifications.dailySummary}
+                  onCheckedChange={() => handleNotificationChange("dailySummary")}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* System Performance */}
+        <Card>
+          <CardHeader>
+            <CardTitle>System Performance</CardTitle>
+            <CardDescription>
+              Adjust settings that affect system performance
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Cache Timeout (minutes)</Label>
+                  <span>{cacheTimeout[0]}</span>
+                </div>
+                <Slider 
+                  value={cacheTimeout} 
+                  onValueChange={setCacheTimeout} 
+                  max={60}
+                  step={5}
+                />
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Auto Logout</p>
+                  <p className="text-sm text-muted-foreground">
+                    Automatically log out users after 30 minutes of inactivity
+                  </p>
+                </div>
+                <Switch 
+                  checked={autoLogout}
+                  onCheckedChange={setAutoLogout}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Company Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Company Information</CardTitle>
+            <CardDescription>
+              Update your company details
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="company-name">Company Name</Label>
+                <Input 
+                  id="company-name"
+                  value={companyInfo.name}
+                  onChange={(e) => handleCompanyInfoChange("name", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="company-email">Email Address</Label>
+                <Input 
+                  id="company-email"
+                  type="email"
+                  value={companyInfo.email}
+                  onChange={(e) => handleCompanyInfoChange("email", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="company-phone">Phone Number</Label>
+                <Input 
+                  id="company-phone"
+                  value={companyInfo.phone}
+                  onChange={(e) => handleCompanyInfoChange("phone", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="company-address">Business Address</Label>
+                <Input 
+                  id="company-address"
+                  value={companyInfo.address}
+                  onChange={(e) => handleCompanyInfoChange("address", e.target.value)}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <div className="mt-6 flex justify-end">
+        <Button onClick={handleSaveSettings}>Save Settings</Button>
       </div>
     </div>
   );

@@ -1,8 +1,8 @@
-
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
-import { User, Order } from '@/types';
+import { User, Order, StatusUpdate } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { addHours } from 'date-fns';
+import { demoOrders } from '@/lib/demo-orders';
 
 // Define the context type
 interface OrderContextType {
@@ -13,6 +13,7 @@ interface OrderContextType {
   addOrder: (order: Order) => void;
   updateOrder: (order: Order) => void;
   addStatusUpdate: (orderId: string, statusUpdate: Omit<any, 'id' | 'timestamp' | 'updatedBy'>) => void;
+  updateStatusUpdate: (orderId: string, updateId: string, updates: Partial<StatusUpdate>) => void;
   deleteOrder: (orderId: string) => void;
   loginUser: (user: User) => void;
   logoutUser: () => void;
@@ -27,61 +28,7 @@ interface OrderContextType {
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
 // Sample initial data
-const initialOrders: Order[] = [
-  {
-    id: '1',
-    orderNumber: 'ORD-2023-001',
-    clientName: 'Acme Corp',
-    amount: 5000,
-    paidAmount: 2500,
-    pendingAmount: 2500,
-    paymentStatus: 'Partially Paid',
-    items: ['Business Cards', 'Letterheads'],
-    createdAt: '2023-06-01T10:30:00Z',
-    status: 'In Progress',
-    currentDepartment: 'Design',
-    statusHistory: [
-      {
-        id: 'status-1',
-        orderId: '1',
-        department: 'Sales',
-        status: 'New',
-        remarks: 'Order received',
-        timestamp: '2023-06-01T10:30:00Z',
-        updatedBy: 'Sales Team',
-      },
-      {
-        id: 'status-2',
-        orderId: '1',
-        department: 'Design',
-        status: 'In Progress',
-        remarks: 'Design started',
-        timestamp: '2023-06-02T09:15:00Z',
-        updatedBy: 'Design Team',
-      },
-    ],
-    productStatus: [
-      {
-        id: 'prod-1',
-        name: 'Business Cards',
-        status: 'processing',
-      },
-      {
-        id: 'prod-2',
-        name: 'Letterheads',
-        status: 'processing',
-      }
-    ],
-    paymentHistory: [
-      {
-        id: 'pay-1',
-        amount: 2500,
-        date: '2023-06-01T10:30:00Z',
-        method: 'Bank Transfer',
-      }
-    ]
-  }
-];
+const initialOrders: Order[] = demoOrders;
 
 const initialUsers: User[] = [
   {
@@ -139,15 +86,16 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
     ));
   }, []);
 
-  const addStatusUpdate = useCallback((orderId: string, statusUpdate: Omit<any, 'id' | 'timestamp' | 'updatedBy'>) => {
+  const addStatusUpdate = useCallback((orderId: string, statusUpdate: Omit<StatusUpdate, 'id' | 'timestamp' | 'updatedBy'>) => {
     setOrders(prev => {
       return prev.map(order => {
         if (order.id === orderId) {
           const now = new Date();
           const editableUntil = addHours(now, 1).toISOString();
           
-          const newStatusUpdate = {
+          const newStatusUpdate: StatusUpdate = {
             id: uuidv4(),
+            orderId: orderId,
             timestamp: new Date().toISOString(),
             updatedBy: currentUser?.name || 'Unknown User',
             editableUntil,
@@ -163,6 +111,24 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
       });
     });
   }, [currentUser]);
+
+  const updateStatusUpdate = useCallback((orderId: string, updateId: string, updates: Partial<StatusUpdate>) => {
+    setOrders(prev => {
+      return prev.map(order => {
+        if (order.id === orderId) {
+          const updatedHistory = order.statusHistory.map(update => 
+            update.id === updateId ? { ...update, ...updates } : update
+          );
+          
+          return {
+            ...order,
+            statusHistory: updatedHistory
+          };
+        }
+        return order;
+      });
+    });
+  }, []);
 
   const deleteOrder = useCallback((orderId: string) => {
     setOrders(prev => prev.filter(order => order.id !== orderId));
@@ -204,6 +170,7 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
     addOrder,
     updateOrder,
     addStatusUpdate,
+    updateStatusUpdate,
     deleteOrder,
     loginUser,
     logoutUser,
