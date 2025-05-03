@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useOrders } from "@/contexts/OrderContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Clipboard, ClipboardCheck, IndianRupee, Clock, Tag, FileText } from "lucide-react";
+import { ArrowLeft, Clipboard, ClipboardCheck, IndianRupee, Clock, Tag, FileText, Phone, MapPin } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
 import OrderTimeline from "@/components/OrderTimeline";
 import PaymentHistory from "@/components/PaymentHistory";
@@ -24,6 +23,10 @@ import ForwardOrderForm from "@/components/ForwardOrderForm";
 import DepartmentStatusForm from "@/components/DepartmentStatusForm";
 import ProductionStageForm from "@/components/ProductionStageForm";
 import ExportTimelineButton from "@/components/ExportTimelineButton";
+import ProductStatusUpdateForm from "@/components/ProductStatusUpdateForm";
+import DeliveryInfoCard from "@/components/DeliveryInfoCard";
+import MobileBackButton from "@/components/MobileBackButton";
+import { canViewAddressDetails } from "@/lib/permissions";
 
 const OrderDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -58,6 +61,9 @@ const OrderDetail: React.FC = () => {
   
   // Check if user can update prepress status (only Prepress department or Admin)
   const canUpdatePrepressStatus = currentUser.department === 'Prepress' || currentUser.role === 'Admin';
+  
+  // Check if user can view delivery information
+  const canViewDeliveryInfo = order ? canViewAddressDetails(currentUser, order) : false;
 
   useEffect(() => {
     if (order) {
@@ -221,10 +227,13 @@ const OrderDetail: React.FC = () => {
 
   return (
     <div className="container mx-auto py-8 px-4 min-h-screen dark:bg-slate-900 transition-colors duration-300">
+      <MobileBackButton to="/" label="Back to Dashboard" className="mb-4 block md:hidden" />
+      
       <div className="flex justify-between items-center mb-6">
         <Button
           variant="ghost"
           onClick={() => navigate("/")}
+          className="hidden md:flex"
         >
           <ArrowLeft className="h-4 w-4 mr-2" /> Back to Dashboard
         </Button>
@@ -239,7 +248,7 @@ const OrderDetail: React.FC = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+        <TabsList className="w-full grid grid-cols-2 md:grid-cols-4">
           <TabsTrigger value="details">Order Details</TabsTrigger>
           <TabsTrigger value="workflow">Workflow</TabsTrigger>
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
@@ -257,59 +266,59 @@ const OrderDetail: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 pt-6">
-              <div className="flex justify-between">
+              <div className="flex flex-col md:flex-row md:justify-between md:items-center">
                 <span className="font-medium">Order Number:</span>
-                <span>{order.orderNumber}</span>
+                <span className="md:text-right">{order.orderNumber}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex flex-col md:flex-row md:justify-between md:items-center">
                 <span className="font-medium">Client Name:</span>
-                <span>{order.clientName}</span>
+                <span className="md:text-right">{order.clientName}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex flex-col md:flex-row md:justify-between md:items-center">
                 <span className="font-medium">Order Date:</span>
-                <span>{format(new Date(order.createdAt), 'MMM dd, yyyy')}</span>
+                <span className="md:text-right">{format(new Date(order.createdAt), 'MMM dd, yyyy')}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex flex-col md:flex-row md:justify-between md:items-center">
                 <span className="font-medium">Items:</span>
-                <span className="text-right">{order.items.join(", ")}</span>
+                <span className="md:text-right">{order.items.join(", ")}</span>
               </div>
               {canViewFinancial && (
                 <>
-                  <div className="flex justify-between">
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-center">
                     <span className="font-medium">Total Amount:</span>
-                    <span className="flex items-center">
+                    <span className="flex items-center md:justify-end">
                       <IndianRupee className="h-3.5 w-3.5 mr-1" />
                       {formatCurrency(order.amount || 0)}
                     </span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-center">
                     <span className="font-medium">Paid Amount:</span>
-                    <span className="flex items-center text-green-500">
+                    <span className="flex items-center text-green-500 md:justify-end">
                       <IndianRupee className="h-3.5 w-3.5 mr-1" />
                       {formatCurrency(order.paidAmount || 0)}
                     </span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-center">
                     <span className="font-medium">Pending Amount:</span>
-                    <span className="flex items-center text-amber-500">
+                    <span className="flex items-center text-amber-500 md:justify-end">
                       <IndianRupee className="h-3.5 w-3.5 mr-1" />
                       {formatCurrency(order.pendingAmount || order.amount || 0)}
                     </span>
                   </div>
                 </>
               )}
-              <div className="flex justify-between">
+              <div className="flex flex-col md:flex-row md:justify-between md:items-center">
                 <span className="font-medium">Current Status:</span>
-                <span>
+                <span className="md:text-right">
                   <StatusBadge status={order.status} />
                 </span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex flex-col md:flex-row md:justify-between md:items-center">
                 <span className="font-medium">Current Department:</span>
-                <span>{order.currentDepartment}</span>
+                <span className="md:text-right">{order.currentDepartment}</span>
               </div>
               {canViewFinancial && (
-                <div className="flex justify-between">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center">
                   <span className="font-medium">Payment Status:</span>
                   <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
                     order.paymentStatus === "Paid" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" :
@@ -323,7 +332,27 @@ const OrderDetail: React.FC = () => {
             </CardContent>
           </Card>
           
-          {isCurrentDepartmentOrAdmin && (
+          {/* Delivery Information Card - conditionally shown */}
+          {(order.deliveryAddress || order.contactNumber || order.dispatchDetails?.address) && (
+            <DeliveryInfoCard 
+              order={order}
+              currentUser={currentUser}
+            />
+          )}
+          
+          {/* Product Status List */}
+          {order.productStatus && order.productStatus.length > 0 && (
+            <div className="mt-6">
+              <ProductStatusList
+                orderId={order.id}
+                products={order.productStatus}
+                canEdit={isCurrentDepartmentOrAdmin && ["Design", "Prepress", "Production"].includes(currentUser.department)}
+              />
+            </div>
+          )}
+          
+          {/* Only show status update section for Sales/Admin */}
+          {isCurrentDepartmentOrAdmin && (currentUser.department === "Sales" || currentUser.role === "Admin") && (
             <Card className="glass-card">
               <CardHeader className="border-b border-border/30">
                 <CardTitle className="flex items-center">
@@ -349,9 +378,11 @@ const OrderDetail: React.FC = () => {
                       >
                         <option value="New">New</option>
                         <option value="In Progress">In Progress</option>
+                        <option value="Ready to Dispatch">Ready to Dispatch</option>
                         <option value="Completed">Completed</option>
                         <option value="On Hold">On Hold</option>
                         <option value="Issue">Issue</option>
+                        <option value="Dispatched">Dispatched</option>
                       </select>
                     </div>
                   </div>
@@ -378,70 +409,6 @@ const OrderDetail: React.FC = () => {
                         </select>
                       </div>
                     </div>
-                  )}
-
-                  {order.productStatus && order.productStatus.length > 0 && (
-                    <>
-                      <div>
-                        <label
-                          htmlFor="product"
-                          className="block text-sm font-medium leading-6"
-                        >
-                          Select Product
-                        </label>
-                        <div className="mt-2">
-                          <Select
-                            value={selectedProduct || undefined}
-                            onValueChange={setSelectedProduct}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select product" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">All Products</SelectItem>
-                              {order.productStatus.map((product) => (
-                                <SelectItem key={product.id} value={product.id}>
-                                  {product.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      {selectedProduct && selectedProduct !== "none" && (
-                        <div>
-                          <Label className="block text-sm font-medium leading-6">Product Status</Label>
-                          <RadioGroup 
-                            value={productStatus} 
-                            onValueChange={(value) => setProductStatus(value as StatusType)}
-                            className="flex space-x-4 mt-2"
-                          >
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="processing" id="status-processing" />
-                              <Label htmlFor="status-processing" className="text-amber-500 flex items-center">
-                                <Clock className="h-4 w-4 mr-1" />
-                                Processing
-                              </Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="completed" id="status-completed" />
-                              <Label htmlFor="status-completed" className="text-green-500 flex items-center">
-                                <CheckCircle className="h-4 w-4 mr-1" />
-                                Completed
-                              </Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="issue" id="status-issue" />
-                              <Label htmlFor="status-issue" className="text-red-500 flex items-center">
-                                <AlertCircle className="h-4 w-4 mr-1" />
-                                Issue
-                              </Label>
-                            </div>
-                          </RadioGroup>
-                        </div>
-                      )}
-                    </>
                   )}
 
                   {canViewFinancial && (
@@ -498,6 +465,14 @@ const OrderDetail: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="workflow" className="space-y-6 pt-4">
+          {/* Department-Specific Status Update Forms */}
+          {isCurrentDepartmentOrAdmin && currentUser.department !== 'Sales' && (
+            <ProductStatusUpdateForm 
+              order={order} 
+              department={currentUser.department}
+            />
+          )}
+        
           {isCurrentDepartmentOrAdmin && order.currentDepartment !== 'Production' && (
             <ForwardOrderForm order={order} />
           )}
@@ -525,16 +500,16 @@ const OrderDetail: React.FC = () => {
             <CardContent className="space-y-4 pt-6">
               {order.currentDepartment === 'Design' && (
                 <>
-                  <div className="flex justify-between">
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-center">
                     <span className="font-medium">Design Status:</span>
-                    <span>
+                    <span className="md:text-right">
                       <StatusBadge status={order.designStatus || 'Working on it'} />
                     </span>
                   </div>
                   {order.designTimeline && (
-                    <div className="flex justify-between">
+                    <div className="flex flex-col md:flex-row md:justify-between md:items-center">
                       <span className="font-medium">Design Timeline:</span>
-                      <span>{format(new Date(order.designTimeline), 'MMM dd, yyyy')}</span>
+                      <span className="md:text-right">{format(new Date(order.designTimeline), 'MMM dd, yyyy')}</span>
                     </div>
                   )}
                   {order.designRemarks && (
@@ -548,9 +523,9 @@ const OrderDetail: React.FC = () => {
               
               {order.currentDepartment === 'Prepress' && (
                 <>
-                  <div className="flex justify-between">
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-center">
                     <span className="font-medium">Prepress Status:</span>
-                    <span>
+                    <span className="md:text-right">
                       <StatusBadge status={order.prepressStatus || 'Pending'} />
                     </span>
                   </div>
@@ -566,7 +541,7 @@ const OrderDetail: React.FC = () => {
               {order.currentDepartment === 'Production' && order.productionStages && order.productionStages.length > 0 && (
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium">Production Stages</h3>
-                  <div className="space-y-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {order.productionStages.map((stage, index) => (
                       <div
                         key={index}

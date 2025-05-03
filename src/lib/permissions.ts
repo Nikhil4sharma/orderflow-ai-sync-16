@@ -12,7 +12,8 @@ const rolePermissions: Record<UserRole, PermissionKey[]> = {
     "view_address_details",
     "edit_orders",
     "admin_dashboard",
-    "manage_users"
+    "manage_users",
+    "update_product_status"
   ],
   Sales: [
     "view_financial_data",
@@ -21,20 +22,25 @@ const rolePermissions: Record<UserRole, PermissionKey[]> = {
     "update_order_status",
     "view_full_timeline",
     "view_address_details",
-    "edit_orders"
+    "edit_orders",
+    "update_product_status"
   ],
   Design: [
-    "update_order_status"
+    "update_order_status",
+    "update_product_status"
   ],
   Production: [
     "update_order_status",
-    "view_address_details"
+    "view_address_details",
+    "update_product_status"
   ],
   Prepress: [
-    "update_order_status"
+    "update_order_status",
+    "update_product_status"
   ],
   Member: [
-    "update_order_status"
+    "update_order_status",
+    "update_product_status"
   ]
 };
 
@@ -85,13 +91,21 @@ export const canViewFullTimeline = (user: User | null): boolean => {
   return hasPermission(user, "view_full_timeline");
 };
 
+// Enhanced to include logic for "Ready to Dispatch" status
 export const canViewAddressDetails = (user: User | null, order: Order): boolean => {
   if (hasPermission(user, "view_address_details")) return true;
   
-  // Production can view address details when order is ready to dispatch
-  if (user?.department === "Production" && order.status === "Completed") return true;
+  // Production or Prepress can view address details when order is ready to dispatch
+  if ((user?.department === "Production" || user?.department === "Prepress") && 
+      (order.status === "Completed" || order.status === "Ready to Dispatch")) {
+    return true;
+  }
   
   return false;
+};
+
+export const canUpdateProductStatus = (user: User | null): boolean => {
+  return hasPermission(user, "update_product_status");
 };
 
 export const canEditOrder = (user: User | null): boolean => {
@@ -137,6 +151,14 @@ export function filterOrderDataForUser(order: Order, user: User): Partial<Order>
   delete filteredOrder.pendingAmount;
   delete filteredOrder.paymentStatus;
   delete filteredOrder.paymentHistory;
+  
+  // Only add delivery info if user has permission to view it
+  if (!canViewAddressDetails(user, order)) {
+    delete filteredOrder.dispatchDetails?.address;
+    delete filteredOrder.deliveryAddress;
+    delete filteredOrder.dispatchDetails?.contactNumber;
+    delete filteredOrder.contactNumber;
+  }
   
   return filteredOrder;
 }

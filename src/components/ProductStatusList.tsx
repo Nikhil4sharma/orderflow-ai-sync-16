@@ -23,6 +23,7 @@ const ProductStatusList: React.FC<ProductStatusListProps> = ({ orderId, products
   const [newStatus, setNewStatus] = useState<StatusType>("processing");
   const [remarks, setRemarks] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
+  const [estimatedDate, setEstimatedDate] = useState<Date | undefined>(undefined);
   
   const order = orders.find(o => o.id === orderId);
   
@@ -65,7 +66,12 @@ const ProductStatusList: React.FC<ProductStatusListProps> = ({ orderId, products
     // Update the product status in the order
     const updatedProductStatus = order.productStatus?.map(product => 
       product.id === selectedProduct 
-        ? { ...product, status: newStatus, remarks: remarks || product.remarks }
+        ? { 
+            ...product, 
+            status: newStatus, 
+            remarks: remarks || product.remarks,
+            estimatedCompletion: estimatedDate ? format(estimatedDate, 'yyyy-MM-dd') : undefined
+          }
         : product
     ) || [];
 
@@ -77,6 +83,7 @@ const ProductStatusList: React.FC<ProductStatusListProps> = ({ orderId, products
     updateOrder(updatedOrder);
     toast.success(`Updated status for ${order.productStatus?.find(p => p.id === selectedProduct)?.name}`);
     setRemarks("");
+    setEstimatedDate(undefined);
     setIsUpdating(false);
   };
 
@@ -128,7 +135,7 @@ const ProductStatusList: React.FC<ProductStatusListProps> = ({ orderId, products
                 <RadioGroup 
                   value={newStatus} 
                   onValueChange={(value) => setNewStatus(value as StatusType)}
-                  className="flex space-x-4"
+                  className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4"
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="processing" id="status-processing" />
@@ -152,6 +159,15 @@ const ProductStatusList: React.FC<ProductStatusListProps> = ({ orderId, products
                     </Label>
                   </div>
                 </RadioGroup>
+              </div>
+              
+              <div>
+                <Label htmlFor="estimatedDate">Estimated Completion Date</Label>
+                <DatePicker
+                  date={estimatedDate}
+                  setDate={setEstimatedDate}
+                  className="w-full"
+                />
               </div>
 
               <div>
@@ -180,11 +196,17 @@ const ProductStatusList: React.FC<ProductStatusListProps> = ({ orderId, products
           {products.map((product) => (
             <div 
               key={product.id} 
-              className={`py-4 first:pt-0 last:pb-0 flex items-center justify-between ${selectedProduct === product.id ? 'bg-accent/10 -mx-4 px-4 rounded-md' : ''}`}
+              className={`py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 ${selectedProduct === product.id ? 'bg-accent/10 -mx-4 px-4 rounded-md' : ''}`}
               onClick={() => canEdit && setSelectedProduct(product.id)}
             >
               <div>
                 <h3 className="font-medium">{product.name}</h3>
+                {product.estimatedCompletion && (
+                  <p className="text-xs text-muted-foreground mt-1 flex items-center">
+                    <CalendarClock className="h-3 w-3 mr-1" /> 
+                    Estimated completion: {product.estimatedCompletion}
+                  </p>
+                )}
                 {product.remarks && (
                   <p className="text-sm text-muted-foreground mt-1">
                     {product.remarks}

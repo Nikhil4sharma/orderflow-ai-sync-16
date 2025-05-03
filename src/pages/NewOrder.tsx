@@ -2,119 +2,157 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOrders } from "@/contexts/OrderContext";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Plus } from "lucide-react";
-import { toast } from "sonner";
-import { v4 as uuidv4 } from 'uuid';
-import { Order, PaymentStatus } from "@/types";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
+import { ArrowLeft, Plus, Minus, IndianRupee } from "lucide-react";
+import { v4 as uuidv4 } from "uuid";
+import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const NewOrder: React.FC = () => {
   const navigate = useNavigate();
   const { addOrder, currentUser } = useOrders();
   
   // Form state
-  const [orderNumber, setOrderNumber] = useState("");
   const [clientName, setClientName] = useState("");
   const [amount, setAmount] = useState("");
-  const [items, setItems] = useState("");
-  const [paidAmount, setPaidAmount] = useState("0");
-  const [remarks, setRemarks] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("");
-  const [paymentRemarks, setPaymentRemarks] = useState("");
-  const [targetDepartment, setTargetDepartment] = useState<string>("Design");
+  const [items, setItems] = useState<string[]>([""]);
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [contactNumber, setContactNumber] = useState("");
+  const [products, setProducts] = useState<{ name: string }[]>([{ name: "" }]);
+  const [loading, setLoading] = useState(false);
+  
+  // Validate form
+  const isFormValid = () => {
+    if (!clientName.trim()) {
+      toast.error("Client name is required");
+      return false;
+    }
+    
+    if (!amount || parseFloat(amount) <= 0) {
+      toast.error("Valid amount is required");
+      return false;
+    }
+    
+    if (items.some(item => !item.trim())) {
+      toast.error("All items must have a name");
+      return false;
+    }
+    
+    if (!deliveryAddress.trim()) {
+      toast.error("Delivery address is required");
+      return false;
+    }
+    
+    if (!contactNumber.trim()) {
+      toast.error("Contact number is required");
+      return false;
+    }
+    
+    if (products.some(product => !product.name.trim())) {
+      toast.error("All products must have a name");
+      return false;
+    }
+    
+    return true;
+  };
+  
+  // Add an item
+  const addItem = () => {
+    setItems([...items, ""]);
+  };
+  
+  // Remove an item
+  const removeItem = (indexToRemove: number) => {
+    setItems(items.filter((_, index) => index !== indexToRemove));
+  };
+  
+  // Update an item
+  const updateItem = (index: number, value: string) => {
+    const newItems = [...items];
+    newItems[index] = value;
+    setItems(newItems);
+  };
+  
+  // Add a product
+  const addProduct = () => {
+    setProducts([...products, { name: "" }]);
+  };
+  
+  // Remove a product
+  const removeProduct = (indexToRemove: number) => {
+    setProducts(products.filter((_, index) => index !== indexToRemove));
+  };
+  
+  // Update a product
+  const updateProduct = (index: number, value: string) => {
+    const newProducts = [...products];
+    newProducts[index].name = value;
+    setProducts(newProducts);
+  };
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation
-    if (!orderNumber || !clientName || !amount || !items) {
-      toast.error("Please fill all required fields");
+    if (!isFormValid()) {
       return;
     }
     
-    const parsedAmount = parseFloat(amount);
-    const parsedPaidAmount = parseFloat(paidAmount) || 0;
-    const pendingAmount = Math.max(0, parsedAmount - parsedPaidAmount);
+    setLoading(true);
     
-    // Determine payment status
-    let paymentStatus: PaymentStatus = "Not Paid";
-    if (parsedPaidAmount >= parsedAmount) {
-      paymentStatus = "Paid";
-    } else if (parsedPaidAmount > 0) {
-      paymentStatus = "Partially Paid";
-    }
+    // Generate order number
+    const orderPrefix = "ORD";
+    const timestamp = new Date().getTime().toString().slice(-6);
+    const orderNumber = `${orderPrefix}-${timestamp}`;
     
-    // Create payment record if payment was made
-    const paymentHistory = [];
-    if (parsedPaidAmount > 0) {
-      paymentHistory.push({
-        id: uuidv4(),
-        amount: parsedPaidAmount,
-        date: new Date().toISOString(),
-        method: paymentMethod || 'Not specified',
-        remarks: paymentRemarks
-      });
-    }
-    
-    // Create product status entries for each item
-    const productStatus = items.split(",").map((item, index) => ({
-      id: `prod-${index}-${uuidv4()}`,
-      name: item.trim(),
+    // Create product status entries
+    const productStatus = products.map(product => ({
+      id: uuidv4(),
+      name: product.name,
       status: "processing" as const,
     }));
     
     // Create new order
-    const newOrder: Order = {
+    const newOrder = {
       id: uuidv4(),
-      orderNumber: orderNumber.trim(),
-      clientName: clientName.trim(),
-      amount: parsedAmount,
-      paidAmount: parsedPaidAmount,
-      pendingAmount,
-      paymentStatus,
-      items: items.split(",").map(item => item.trim()),
+      orderNumber,
+      clientName,
+      amount: parseFloat(amount),
+      paidAmount: 0,
+      pendingAmount: parseFloat(amount),
+      items: items.filter(item => item.trim()),
       createdAt: new Date().toISOString(),
-      status: "New",
-      currentDepartment: targetDepartment as any,
-      statusHistory: [
-        {
-          id: uuidv4(),
-          orderId: uuidv4(),
-          department: "Sales",
-          status: "New",
-          remarks: remarks || "Order created",
-          timestamp: new Date().toISOString(),
-          updatedBy: currentUser.name,
-        },
-      ],
-      paymentHistory,
+      status: "New" as const,
+      currentDepartment: "Sales" as const,
+      paymentStatus: "Not Paid" as const,
+      statusHistory: [],
       productStatus,
-      lastPaymentDate: parsedPaidAmount > 0 ? new Date().toISOString() : undefined
+      deliveryAddress, // New field for delivery address
+      contactNumber, // New field for contact number
     };
     
-    // Add the new order
+    // Add order
     addOrder(newOrder);
     
-    // Show success message
-    toast.success("New order created successfully");
+    toast.success("Order created successfully");
     
-    // Navigate to the order detail page
-    navigate(`/orders/${newOrder.id}`);
+    // Navigate to dashboard
+    navigate("/");
+    
+    setLoading(false);
   };
   
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="container mx-auto py-8 px-4 min-h-screen">
       <Button
         variant="ghost"
         className="mb-4"
@@ -123,158 +161,150 @@ const NewOrder: React.FC = () => {
         <ArrowLeft className="h-4 w-4 mr-2" /> Back to Dashboard
       </Button>
       
-      <div className="max-w-2xl mx-auto">
-        <Card>
-          <CardHeader>
-            <CardTitle>Create New Order</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="order-number">Order Number*</Label>
-                  <Input
-                    id="order-number"
-                    placeholder="e.g., ORD-2023-006"
-                    value={orderNumber}
-                    onChange={(e) => setOrderNumber(e.target.value)}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="client-name">Client Name*</Label>
-                  <Input
-                    id="client-name"
-                    placeholder="e.g., Acme Corp"
-                    value={clientName}
-                    onChange={(e) => setClientName(e.target.value)}
-                    required
-                  />
-                </div>
+      <Card className="glass-card">
+        <CardHeader>
+          <CardTitle className="text-2xl">Create New Order</CardTitle>
+          <CardDescription>
+            Enter order details below
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="clientName">Client Name *</Label>
+                <Input
+                  id="clientName"
+                  placeholder="Enter client name"
+                  value={clientName}
+                  onChange={(e) => setClientName(e.target.value)}
+                  required
+                />
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="amount">Order Amount (₹)*</Label>
+              <div>
+                <Label htmlFor="amount">Order Amount (₹) *</Label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                  </div>
                   <Input
                     id="amount"
                     type="number"
-                    placeholder="e.g., 1500.00"
+                    className="pl-10"
+                    placeholder="Enter amount"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     required
                   />
                 </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="paid-amount">Paid Amount (₹)</Label>
+              </div>
+            </div>
+            
+            <div>
+              <Label>Order Items *</Label>
+              {items.map((item, index) => (
+                <div key={index} className="flex gap-2 mt-2">
                   <Input
-                    id="paid-amount"
-                    type="number"
-                    placeholder="e.g., 500.00"
-                    value={paidAmount}
-                    onChange={(e) => setPaidAmount(e.target.value)}
+                    placeholder={`Item ${index + 1}`}
+                    value={item}
+                    onChange={(e) => updateItem(index, e.target.value)}
+                    required
+                  />
+                  {items.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => removeItem(index)}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {index === items.length - 1 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={addItem}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+            
+            <div>
+              <Label>Products *</Label>
+              {products.map((product, index) => (
+                <div key={index} className="flex gap-2 mt-2">
+                  <Input
+                    placeholder={`Product ${index + 1} name`}
+                    value={product.name}
+                    onChange={(e) => updateProduct(index, e.target.value)}
+                    required
+                  />
+                  {products.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => removeProduct(index)}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {index === products.length - 1 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={addProduct}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+            
+            <div className="pt-4 border-t">
+              <h3 className="font-medium mb-3">Delivery Information *</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="contactNumber">Contact Number *</Label>
+                  <Input
+                    id="contactNumber"
+                    placeholder="Enter contact number"
+                    value={contactNumber}
+                    onChange={(e) => setContactNumber(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <div className="md:col-span-2">
+                  <Label htmlFor="deliveryAddress">Delivery Address *</Label>
+                  <Textarea
+                    id="deliveryAddress"
+                    placeholder="Enter delivery address"
+                    value={deliveryAddress}
+                    onChange={(e) => setDeliveryAddress(e.target.value)}
+                    rows={3}
+                    required
                   />
                 </div>
               </div>
-              
-              {paidAmount && parseFloat(paidAmount) > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="payment-method">Payment Method*</Label>
-                    <Select 
-                      value={paymentMethod}
-                      onValueChange={setPaymentMethod}
-                      required={parseFloat(paidAmount) > 0}
-                    >
-                      <SelectTrigger id="payment-method">
-                        <SelectValue placeholder="Select payment method" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Cash">Cash</SelectItem>
-                        <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
-                        <SelectItem value="UPI">UPI</SelectItem>
-                        <SelectItem value="Credit Card">Credit Card</SelectItem>
-                        <SelectItem value="Cheque">Cheque</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="payment-remarks">Payment Remarks</Label>
-                    <Input
-                      id="payment-remarks"
-                      placeholder="e.g., Transaction ID, Cheque number"
-                      value={paymentRemarks}
-                      onChange={(e) => setPaymentRemarks(e.target.value)}
-                    />
-                  </div>
-                </div>
-              )}
-              
-              <div className="space-y-2">
-                <Label htmlFor="items">
-                  Order Items* (comma separated)
-                </Label>
-                <Input
-                  id="items"
-                  placeholder="e.g., Business Cards, Letterheads, Brochures"
-                  value={items}
-                  onChange={(e) => setItems(e.target.value)}
-                  required
-                />
-                <p className="text-xs text-muted-foreground">
-                  Enter multiple items separated by commas
-                </p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="target-department">Forward To Department</Label>
-                <Select 
-                  value={targetDepartment}
-                  onValueChange={setTargetDepartment}
-                >
-                  <SelectTrigger id="target-department">
-                    <SelectValue placeholder="Select department" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Design">Design</SelectItem>
-                    <SelectItem value="Prepress">Prepress</SelectItem>
-                    <SelectItem value="Production">Production</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="remarks">Remarks</Label>
-                <Textarea
-                  id="remarks"
-                  placeholder="Any additional information about this order"
-                  value={remarks}
-                  onChange={(e) => setRemarks(e.target.value)}
-                  rows={3}
-                />
-              </div>
-              
-              <div className="flex justify-end pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="mr-2"
-                  onClick={() => navigate("/")}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Order
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
+            </div>
+            
+            <div className="pt-4 flex justify-end">
+              <Button type="submit" disabled={loading}>
+                Create Order
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 };

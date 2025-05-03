@@ -1,3 +1,4 @@
+
 // User types
 export type UserRole = "Admin" | "Sales" | "Design" | "Production" | "Prepress" | "Member";
 export type Department = "Sales" | "Design" | "Production" | "Prepress";
@@ -8,10 +9,11 @@ export interface User {
   department: Department;
   role: UserRole;
   email?: string;
+  password?: string; // Added password field to fix build errors
 }
 
 // Order status types
-export type OrderStatus = "New" | "In Progress" | "Completed" | "On Hold" | "Issue" | "Verified" | "Dispatched";
+export type OrderStatus = "New" | "In Progress" | "Completed" | "On Hold" | "Issue" | "Verified" | "Dispatched" | "Ready to Dispatch";
 export type PaymentStatus = "Not Paid" | "Partially Paid" | "Paid";
 export type StatusType = "processing" | "completed" | "issue";
 
@@ -39,6 +41,8 @@ export interface ProductStatus {
   name: string;
   status: StatusType;
   remarks?: string;
+  estimatedCompletion?: string; // Added for timeline estimation
+  assignedDepartment?: Department; // Track which department is responsible
 }
 
 // Production stage details
@@ -114,6 +118,9 @@ export interface Order {
   statusHistory: StatusUpdate[];
   sheetSyncId?: string;
   lastPaymentDate?: string;
+  // Added fields for contact and address info
+  contactNumber?: string;
+  deliveryAddress?: string;
 }
 
 // Permission interfaces
@@ -132,4 +139,5 @@ export type PermissionKey =
   | "view_address_details"
   | "edit_orders"
   | "admin_dashboard"
-  | "manage_users";
+  | "manage_users"
+  | "update_product_status"; // New permission for updating product-level status
