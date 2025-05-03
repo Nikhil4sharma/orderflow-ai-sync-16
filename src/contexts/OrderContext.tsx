@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { mockOrders, mockUsers } from "@/lib/mock-data";
+import { demoOrders } from "@/lib/demo-orders";
 import { Department, Order, StatusUpdate, User } from "@/types";
 import { addHours } from "date-fns";
 
@@ -26,7 +27,7 @@ interface OrderContextType {
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
 // Initialize the mock orders with payment fields
-const enhancedMockOrders = mockOrders.map(order => ({
+const enhancedMockOrders = [...mockOrders, ...demoOrders].map(order => ({
   ...order,
   paidAmount: order.paidAmount || 0,
   pendingAmount: order.pendingAmount || order.amount,
@@ -46,9 +47,37 @@ const enhancedMockUsers = mockUsers.map(user => ({
   password: user.password || "password123"
 }));
 
+// Add additional users for different departments
+const additionalUsers: User[] = [
+  {
+    id: 'usr-production',
+    name: 'Production Manager',
+    email: 'production@orderflow.com',
+    password: 'password123',
+    department: 'Production',
+    role: 'Manager'
+  },
+  {
+    id: 'usr-design',
+    name: 'Design Lead',
+    email: 'design@orderflow.com',
+    password: 'password123',
+    department: 'Design',
+    role: 'Member'
+  },
+  {
+    id: 'usr-prepress',
+    name: 'Prepress Specialist',
+    email: 'prepress@orderflow.com',
+    password: 'password123',
+    department: 'Prepress',
+    role: 'Member'
+  }
+];
+
 export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [orders, setOrders] = useState<Order[]>(enhancedMockOrders);
-  const [users, setUsers] = useState<User[]>(enhancedMockUsers);
+  const [users, setUsers] = useState<User[]>([...enhancedMockUsers, ...additionalUsers]);
   const [currentUser, setCurrentUser] = useState<User>(mockUsers[0]);
   const [loading, setLoading] = useState<boolean>(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);

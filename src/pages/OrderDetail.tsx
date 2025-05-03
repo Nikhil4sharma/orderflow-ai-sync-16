@@ -7,13 +7,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Clipboard, ClipboardCheck, IndianRupee, Clock, Tag } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
 import OrderTimeline from "@/components/OrderTimeline";
-import ProductStatusList from "@/components/ProductStatusList";
 import PaymentHistory from "@/components/PaymentHistory";
-import { Department, OrderStatus, PaymentStatus } from "@/types";
+import { Department, OrderStatus, PaymentStatus, StatusType } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { format, isAfter, addHours, parseISO } from "date-fns";
+import DatePickerWithPopover from "@/components/DatePickerWithPopover";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { CheckCircle, AlertCircle } from "lucide-react";
 
 const OrderDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -27,10 +31,11 @@ const OrderDetail: React.FC = () => {
   const [remarks, setRemarks] = useState<string>("");
   const [totalAmount, setTotalAmount] = useState<string>(order?.amount.toString() || "0");
   const [paidAmount, setPaidAmount] = useState<string>(order?.paidAmount?.toString() || "0");
-  const [paymentDate, setPaymentDate] = useState<string>("");
+  const [paymentDate, setPaymentDate] = useState<Date | undefined>(undefined);
   const [paymentMethod, setPaymentMethod] = useState<string>("");
   const [paymentRemarks, setPaymentRemarks] = useState<string>("");
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
+  const [productStatus, setProductStatus] = useState<StatusType>("processing");
 
   // Check if user can edit the amount (only admin and sales team)
   const canEditAmount = currentUser.department === "Sales" || currentUser.role === "Admin";
@@ -72,18 +77,6 @@ const OrderDetail: React.FC = () => {
     );
   }
 
-  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setStatus(e.target.value as OrderStatus);
-  };
-
-  const handleDepartmentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setDepartment(e.target.value as Department);
-  };
-
-  const handleRemarksChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setRemarks(e.target.value);
-  };
-
   // Check if the status update is within the editable time frame (1 hour)
   const canEditStatusUpdate = (update: any) => {
     if (!update.editableUntil) return false;
@@ -106,7 +99,7 @@ const OrderDetail: React.FC = () => {
       paymentStatus = "Partially Paid";
     }
 
-    // Optimistic update
+    // Prepare updated order
     const updatedOrder = { 
       ...order, 
       status, 
@@ -116,6 +109,15 @@ const OrderDetail: React.FC = () => {
       pendingAmount,
       paymentStatus
     };
+
+    // If a product is selected, update its status
+    if (selectedProduct && selectedProduct !== "none") {
+      updatedOrder.productStatus = (order.productStatus || []).map(product => 
+        product.id === selectedProduct 
+          ? { ...product, status: productStatus, remarks: remarks || product.remarks }
+          : product
+      );
+    }
 
     updateOrder(updatedOrder);
 
@@ -129,7 +131,7 @@ const OrderDetail: React.FC = () => {
       status: status,
       remarks: remarks,
       editableUntil,
-      selectedProduct: selectedProduct || undefined
+      selectedProduct: selectedProduct !== "none" ? selectedProduct : undefined
     });
 
     // Reset remarks after submitting
@@ -162,7 +164,7 @@ const OrderDetail: React.FC = () => {
     const newPayment = {
       id: Math.random().toString(36).substring(2, 9),
       amount: newPaymentAmount,
-      date: paymentDate,
+      date: paymentDate.toISOString(),
       method: paymentMethod,
       remarks: paymentRemarks
     };
@@ -181,7 +183,7 @@ const OrderDetail: React.FC = () => {
     
     // Reset form fields
     setPaidAmount("0");
-    setPaymentDate("");
+    setPaymentDate(undefined);
     setPaymentMethod("");
     setPaymentRemarks("");
     
@@ -311,7 +313,7 @@ const OrderDetail: React.FC = () => {
                     id="status"
                     className="block w-full rounded-md border-0 py-1.5 bg-background text-foreground shadow-sm ring-1 ring-inset ring-input focus:ring-2 focus:ring-inset focus:ring-primary sm:max-w-xs sm:text-sm sm:leading-6"
                     value={status}
-                    onChange={handleStatusChange}
+                    onChange={(e) => setStatus(e.target.value as OrderStatus)}
                   >
                     <option value="New">New</option>
                     <option value="In Progress">In Progress</option>
@@ -334,7 +336,7 @@ const OrderDetail: React.FC = () => {
                     id="department"
                     className="block w-full rounded-md border-0 py-1.5 bg-background text-foreground shadow-sm ring-1 ring-inset ring-input focus:ring-2 focus:ring-inset focus:ring-primary sm:max-w-xs sm:text-sm sm:leading-6"
                     value={department}
-                    onChange={handleDepartmentChange}
+                    onChange={(e) => setDepartment(e.target.value as Department)}
                   >
                     <option value="Sales">Sales</option>
                     <option value="Production">Production</option>
@@ -345,33 +347,67 @@ const OrderDetail: React.FC = () => {
               </div>
 
               {order.productStatus && order.productStatus.length > 0 && (
-                <div>
-                  <label
-                    htmlFor="product"
-                    className="block text-sm font-medium leading-6"
-                  >
-                    Select Product (Optional)
-                  </label>
-                  <div className="mt-2">
-                    <Select
-                      value={selectedProduct || undefined}
-                      onValueChange={setSelectedProduct}
+                <>
+                  <div>
+                    <label
+                      htmlFor="product"
+                      className="block text-sm font-medium leading-6"
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select product (optional)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {/* Fix: don't use empty string as value */}
-                        <SelectItem value="none">All Products</SelectItem>
-                        {order.productStatus.map((product) => (
-                          <SelectItem key={product.id} value={product.id}>
-                            {product.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      Select Product
+                    </label>
+                    <div className="mt-2">
+                      <Select
+                        value={selectedProduct || undefined}
+                        onValueChange={setSelectedProduct}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select product" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">All Products</SelectItem>
+                          {order.productStatus.map((product) => (
+                            <SelectItem key={product.id} value={product.id}>
+                              {product.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                </div>
+
+                  {selectedProduct && selectedProduct !== "none" && (
+                    <div>
+                      <Label className="block text-sm font-medium leading-6">Product Status</Label>
+                      <RadioGroup 
+                        value={productStatus} 
+                        onValueChange={(value) => setProductStatus(value as StatusType)}
+                        className="flex space-x-4 mt-2"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="processing" id="status-processing" />
+                          <Label htmlFor="status-processing" className="text-amber-500 flex items-center">
+                            <Clock className="h-4 w-4 mr-1" />
+                            Processing
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="completed" id="status-completed" />
+                          <Label htmlFor="status-completed" className="text-green-500 flex items-center">
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            Completed
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="issue" id="status-issue" />
+                          <Label htmlFor="status-issue" className="text-red-500 flex items-center">
+                            <AlertCircle className="h-4 w-4 mr-1" />
+                            Issue
+                          </Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                  )}
+                </>
               )}
 
               {canEditAmount && (
@@ -410,7 +446,7 @@ const OrderDetail: React.FC = () => {
                     rows={3}
                     className="block w-full rounded-md border-0 py-1.5 bg-background text-foreground shadow-sm ring-1 ring-inset ring-input placeholder:text-muted-foreground focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
                     value={remarks}
-                    onChange={handleRemarksChange}
+                    onChange={(e) => setRemarks(e.target.value)}
                   />
                 </div>
               </div>
@@ -464,19 +500,15 @@ const OrderDetail: React.FC = () => {
                   <div>
                     <label
                       htmlFor="paymentDate"
-                      className="block text-sm font-medium leading-6"
+                      className="block text-sm font-medium leading-6 mb-2"
                     >
                       Payment Date*
                     </label>
-                    <div className="mt-2">
-                      <Input
-                        id="paymentDate"
-                        type="datetime-local"
-                        value={paymentDate}
-                        onChange={(e) => setPaymentDate(e.target.value)}
-                        required
-                      />
-                    </div>
+                    <DatePickerWithPopover
+                      date={paymentDate}
+                      onDateChange={setPaymentDate}
+                      placeholder="Select payment date"
+                    />
                   </div>
                 </div>
 
@@ -535,18 +567,6 @@ const OrderDetail: React.FC = () => {
           </Card>
         </div>
       )}
-
-      {/* Product Status Section */}
-      <div className="mt-8">
-        <h2 className="text-2xl font-semibold mb-4 flex items-center">
-          <Tag className="h-5 w-5 mr-2" /> Product Status
-        </h2>
-        <ProductStatusList 
-          orderId={order.id} 
-          products={order.productStatus || []}
-          canEdit={canUpdateProductStatus}
-        />
-      </div>
 
       {/* Payment History Section (only visible to Sales and Admin) */}
       {canViewAmount && order.paymentHistory && order.paymentHistory.length > 0 && (

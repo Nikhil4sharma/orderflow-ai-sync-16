@@ -3,7 +3,7 @@ import React from "react";
 import { StatusUpdate, User } from "@/types";
 import StatusBadge from "./StatusBadge";
 import { format, formatDistanceToNow } from "date-fns";
-import { ClipboardCheck, Clock, Edit, CheckCircle } from "lucide-react";
+import { ClipboardCheck, Clock, Edit, CheckCircle, Tag } from "lucide-react";
 import { useOrders } from "@/contexts/OrderContext";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -67,6 +67,22 @@ const OrderTimeline: React.FC<OrderTimelineProps> = ({
         return "bg-primary";
     }
   };
+  
+  // Get department-specific icon for visual differentiation
+  const getDepartmentIcon = (department: string) => {
+    switch (department) {
+      case "Design":
+        return <Tag className="h-5 w-5 text-white" />;
+      case "Production":
+        return <CheckCircle className="h-5 w-5 text-white" />;
+      case "Prepress":
+        return <ClipboardCheck className="h-5 w-5 text-white" />;
+      case "Sales":
+        return <ClipboardCheck className="h-5 w-5 text-white" />;
+      default:
+        return <ClipboardCheck className="h-5 w-5 text-white" />;
+    }
+  };
 
   return (
     <div className="space-y-4 mt-4 glass-card p-6 rounded-lg">
@@ -77,13 +93,19 @@ const OrderTimeline: React.FC<OrderTimelineProps> = ({
             <div className="flex items-start mb-1">
               <div className="mr-4 mt-1">
                 <div className={`h-8 w-8 rounded-full ${getDepartmentStyles(update.department)} flex items-center justify-center`}>
-                  <ClipboardCheck className="h-5 w-5 text-white" />
+                  {getDepartmentIcon(update.department)}
                 </div>
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-medium">
                     {update.department} - <StatusBadge status={update.status} />
+                    {update.selectedProduct && (
+                      <span className="ml-2 text-xs inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                        <Tag className="h-3 w-3 mr-1" />
+                        Product Update
+                      </span>
+                    )}
                   </h4>
                   <span className="text-xs text-muted-foreground">
                     {formatDate(update.timestamp)}
