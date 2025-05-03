@@ -40,7 +40,7 @@ const LoginForm: React.FC = () => {
           id: "sales1", 
           name: "Sales User", 
           department: "Sales", 
-          role: "Member" 
+          role: "Sales" 
         });
         toast.success("Login successful!");
         navigate("/");
@@ -49,7 +49,7 @@ const LoginForm: React.FC = () => {
           id: "design1", 
           name: "Design User", 
           department: "Design", 
-          role: "Member" 
+          role: "Design" 
         });
         toast.success("Login successful!");
         navigate("/");
@@ -58,7 +58,7 @@ const LoginForm: React.FC = () => {
           id: "prod1", 
           name: "Production User", 
           department: "Production", 
-          role: "Member" 
+          role: "Production" 
         });
         toast.success("Login successful!");
         navigate("/");

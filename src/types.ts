@@ -1,6 +1,5 @@
-
 // User types
-export type UserRole = "Admin" | "Sales" | "Design" | "Production" | "Prepress";
+export type UserRole = "Admin" | "Sales" | "Design" | "Production" | "Prepress" | "Member";
 export type Department = "Sales" | "Design" | "Production" | "Prepress";
 
 export interface User {

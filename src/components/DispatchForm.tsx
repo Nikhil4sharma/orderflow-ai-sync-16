@@ -19,7 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Package, Send, CheckCircle } from "lucide-react";
-import { Order, CourierPartner, DeliveryType } from "@/types";
+import { Order, CourierPartner, DeliveryType, OrderStatus } from "@/types";
 import { Textarea } from "@/components/ui/textarea";
 import PermissionGated from "./PermissionGated";
 
@@ -55,7 +55,7 @@ const DispatchForm: React.FC<DispatchFormProps> = ({ order }) => {
     // Update order with dispatch details
     const updatedOrder = {
       ...order,
-      status: "Dispatched",
+      status: "Dispatched" as OrderStatus,
       dispatchDetails: {
         address,
         contactNumber,

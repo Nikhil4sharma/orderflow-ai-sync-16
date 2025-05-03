@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useOrders } from '@/contexts/OrderContext';
-import { Order } from '@/types';
+import { Order, OrderStatus } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,7 +17,7 @@ interface DepartmentStatusUpdateFormProps {
 
 const DepartmentStatusUpdateForm: React.FC<DepartmentStatusUpdateFormProps> = ({ order }) => {
   const { currentUser, updateOrder, addStatusUpdate } = useOrders();
-  const [status, setStatus] = useState(order.status);
+  const [status, setStatus] = useState<OrderStatus>(order.status);
   const [remarks, setRemarks] = useState('');
   const [estimatedTime, setEstimatedTime] = useState('');
   
@@ -63,7 +63,7 @@ const DepartmentStatusUpdateForm: React.FC<DepartmentStatusUpdateFormProps> = ({
             <label className="block text-sm font-medium">Status</label>
             <Select
               value={status}
-              onValueChange={setStatus}
+              onValueChange={(value: OrderStatus) => setStatus(value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select status" />

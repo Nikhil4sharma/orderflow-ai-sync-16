@@ -19,7 +19,9 @@ export const OrderStatusPieChart: React.FC<OrderStatusPieChartProps> = ({ data }
     'In Progress': '#82ca9d',
     'Completed': '#4CAF50',
     'On Hold': '#ff9800',
-    'Issue': '#f44336'
+    'Issue': '#f44336',
+    'Verified': '#2196F3',
+    'Dispatched': '#9C27B0'
   };
 
   if (chartData.every(item => item.value === 0)) {

@@ -1,4 +1,3 @@
-
 import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOrders } from "@/contexts/OrderContext";
@@ -49,11 +48,13 @@ const Reports: React.FC = () => {
       "In Progress": 0,
       "Completed": 0,
       "On Hold": 0,
-      "Issue": 0
+      "Issue": 0,
+      "Verified": 0,
+      "Dispatched": 0
     };
     
     orders.forEach(order => {
-      counts[order.status]++;
+      counts[order.status as OrderStatus] = (counts[order.status as OrderStatus] || 0) + 1;
     });
     
     return counts;

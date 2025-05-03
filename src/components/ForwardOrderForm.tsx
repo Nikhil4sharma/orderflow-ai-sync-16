@@ -4,7 +4,7 @@ import { useOrders } from "@/contexts/OrderContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Department, Order } from "@/types";
+import { Department, Order, OrderStatus } from "@/types";
 import { getNextDepartment } from "@/lib/mock-data";
 import { toast } from "sonner";
 import { ArrowRight } from "lucide-react";
@@ -43,7 +43,7 @@ const ForwardOrderForm: React.FC<ForwardOrderFormProps> = ({ order, onForward })
     const updatedOrder = { 
       ...order, 
       currentDepartment: nextDepartment,
-      status: "New" // Reset status when forwarding to a new department
+      status: "New" as OrderStatus // Reset status when forwarding to a new department
     };
     
     updateOrder(updatedOrder);

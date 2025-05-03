@@ -14,6 +14,7 @@ interface OrderContextType {
   filterOptions: FilterOptions;
   currentUser: User | null;
   isAuthenticated: boolean;
+  users: User[];
   setFilterOptions: (options: FilterOptions) => void;
   addOrder: (order: Order) => void;
   updateOrder: (order: Order) => void;
@@ -28,10 +29,12 @@ interface OrderContextType {
   importOrders: (orders: Order[]) => void;
   hasPermission: (permission: PermissionKey) => boolean;
   verifyOrder: (orderId: string) => void;
+  setCurrentUser: (user: User) => void;
+  filterOrdersByDepartment: (department: Department | 'All') => Order[];
+  filterOrdersByStatus: (status: string | 'All') => Order[];
+  addUser: (user: User) => void;
+  removeUser: (userId: string) => void;
 }
-
-// Create the context with a default value
-const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
 // Provider component
 interface OrderProviderProps {
@@ -50,6 +53,16 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
     searchQuery: '',
     dateRange: null,
   });
+
+  // Mock users for demo
+  const [users, setUsers] = useState<User[]>(() => {
+    return [
+      { id: 'admin1', name: 'Admin User', department: 'Sales', role: 'Admin', email: 'admin@orderflow.com' },
+      { id: 'sales1', name: 'Sales User', department: 'Sales', role: 'Sales', email: 'sales@orderflow.com' },
+      { id: 'design1', name: 'Design User', department: 'Design', role: 'Design', email: 'design@orderflow.com' },
+      { id: 'prod1', name: 'Production User', department: 'Production', role: 'Production', email: 'production@orderflow.com' }
+    ];
+  });
   
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const savedUser = localStorage.getItem('currentUser');
@@ -61,6 +74,17 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
   // Apply filters to get filtered orders
   const filteredOrders = filterOrdersByMultipleCriteria(orders, filterOptions);
   
+  // Department and Status filtering functions for Dashboard
+  const filterOrdersByDepartment = useCallback((department: Department | 'All') => {
+    if (department === 'All') return orders;
+    return orders.filter(order => order.currentDepartment === department);
+  }, [orders]);
+  
+  const filterOrdersByStatus = useCallback((status: string | 'All') => {
+    if (status === 'All') return orders;
+    return orders.filter(order => order.status === status);
+  }, [orders]);
+
   // Add a new order
   const addOrder = useCallback((order: Order) => {
     const newOrder: Order = {
@@ -75,6 +99,22 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
       localStorage.setItem('orders', JSON.stringify(updatedOrders));
       return updatedOrders;
     });
+  }, []);
+  
+  // Add a user
+  const addUser = useCallback((user: User) => {
+    setUsers(prevUsers => {
+      const newUser = {
+        ...user,
+        id: user.id || uuidv4()
+      };
+      return [...prevUsers, newUser];
+    });
+  }, []);
+  
+  // Remove a user
+  const removeUser = useCallback((userId: string) => {
+    setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
   }, []);
   
   // Update an existing order
@@ -251,6 +291,7 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
     filterOptions,
     currentUser,
     isAuthenticated,
+    users,
     setFilterOptions,
     addOrder,
     updateOrder,
@@ -265,6 +306,11 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
     importOrders,
     hasPermission: checkPermission,
     verifyOrder,
+    setCurrentUser,
+    filterOrdersByDepartment,
+    filterOrdersByStatus,
+    addUser,
+    removeUser,
   };
   
   return (
