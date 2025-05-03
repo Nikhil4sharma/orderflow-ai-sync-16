@@ -30,12 +30,17 @@ const NewOrder: React.FC = () => {
       return;
     }
     
+    const parsedAmount = parseFloat(amount);
+    
     // Create new order
     const newOrder: Order = {
       id: uuidv4(),
       orderNumber: orderNumber.trim(),
       clientName: clientName.trim(),
-      amount: parseFloat(amount),
+      amount: parsedAmount,
+      paidAmount: 0,
+      pendingAmount: parsedAmount,
+      paymentStatus: "Not Paid",
       items: items.split(",").map(item => item.trim()),
       createdAt: new Date().toISOString(),
       status: "New",
@@ -51,6 +56,12 @@ const NewOrder: React.FC = () => {
           updatedBy: currentUser.name,
         },
       ],
+      paymentHistory: [],
+      productStatus: items.split(",").map((item, index) => ({
+        id: `prod-${index}-${uuidv4()}`,
+        name: item.trim(),
+        status: "processing" as const,
+      }))
     };
     
     // Add the new order
@@ -105,7 +116,7 @@ const NewOrder: React.FC = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="amount">Order Amount ($)*</Label>
+                <Label htmlFor="amount">Order Amount (₹)*</Label>
                 <Input
                   id="amount"
                   type="number"

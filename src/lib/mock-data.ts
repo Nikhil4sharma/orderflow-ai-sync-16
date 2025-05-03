@@ -16,6 +16,9 @@ export const mockOrders: Order[] = [
     orderNumber: "ORD-2023-001",
     clientName: "Acme Corp",
     amount: 1500,
+    paidAmount: 500,
+    pendingAmount: 1000,
+    paymentStatus: "Partially Paid",
     items: ["Business Cards", "Letterheads"],
     createdAt: "2023-04-28T08:30:00Z",
     status: "In Progress",
@@ -94,13 +97,17 @@ export const mockOrders: Order[] = [
         timestamp: "2023-05-01T09:00:00Z",
         updatedBy: "Emma Davis"
       }
-    ]
+    ],
+    paymentHistory: []
   },
   {
     id: "ord2",
     orderNumber: "ORD-2023-002",
     clientName: "TechStart Inc",
     amount: 2800,
+    paidAmount: 0,
+    pendingAmount: 2800,
+    paymentStatus: "Not Paid",
     items: ["Brochures", "Flyers"],
     createdAt: "2023-04-29T14:15:00Z",
     status: "New",
@@ -115,13 +122,17 @@ export const mockOrders: Order[] = [
         timestamp: "2023-04-29T14:15:00Z",
         updatedBy: "John Smith"
       }
-    ]
+    ],
+    paymentHistory: []
   },
   {
     id: "ord3",
     orderNumber: "ORD-2023-003",
     clientName: "Global Media",
     amount: 5000,
+    paidAmount: 2000,
+    pendingAmount: 3000,
+    paymentStatus: "Partially Paid",
     items: ["Product Catalogs", "Magazines"],
     createdAt: "2023-04-27T11:20:00Z",
     status: "In Progress",
@@ -147,13 +158,17 @@ export const mockOrders: Order[] = [
         timestamp: "2023-04-28T09:00:00Z",
         updatedBy: "Michael Chen"
       }
-    ]
+    ],
+    paymentHistory: []
   },
   {
     id: "ord4",
     orderNumber: "ORD-2023-004",
     clientName: "Eco Solutions",
     amount: 3200,
+    paidAmount: 1200,
+    pendingAmount: 2000,
+    paymentStatus: "Partially Paid",
     items: ["Recycled Business Cards", "Eco-friendly Banners"],
     createdAt: "2023-04-26T15:40:00Z",
     status: "Issue",
@@ -213,13 +228,17 @@ export const mockOrders: Order[] = [
         timestamp: "2023-04-29T10:00:00Z",
         updatedBy: "Emma Davis"
       }
-    ]
+    ],
+    paymentHistory: []
   },
   {
     id: "ord5",
     orderNumber: "ORD-2023-005",
     clientName: "Local Cafe",
     amount: 800,
+    paidAmount: 800,
+    pendingAmount: 0,
+    paymentStatus: "Paid",
     items: ["Menu Cards", "Coasters"],
     createdAt: "2023-04-25T09:10:00Z",
     status: "Completed",
@@ -334,7 +353,8 @@ export const mockOrders: Order[] = [
         timestamp: "2023-04-30T10:15:00Z",
         updatedBy: "Sarah Johnson"
       }
-    ]
+    ],
+    paymentHistory: []
   }
 ];
 
