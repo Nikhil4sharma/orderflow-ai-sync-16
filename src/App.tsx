@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -14,7 +14,7 @@ import Login from "./pages/Login";
 import Layout from "./components/Layout";
 import Admin from "./pages/Admin";
 import Profile from "./pages/Profile";
-import { useOrders } from "./contexts/OrderContext";
+import { useOrders, OrderProvider } from "./contexts/OrderContext";
 import { Toaster } from "./components/ui/toaster";
 import NotFound from "./pages/NotFound";
 import "./App.css";
@@ -48,37 +48,37 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 function App() {
-  const [count, setCount] = useState(0);
-
   return (
-    <Router>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route
-          path="/"
-          element={
-            <PrivateRoute>
-              <Layout />
-            </PrivateRoute>
-          }
-        >
-          <Route index element={<Dashboard />} />
-          <Route path="orders/:id" element={<OrderDetail />} />
-          <Route path="new-order" element={<NewOrder />} />
-          <Route path="profile" element={<Profile />} />
+    <OrderProvider>
+      <Router>
+        <Routes>
+          <Route path="/login" element={<Login />} />
           <Route
-            path="admin"
+            path="/"
             element={
-              <AdminRoute>
-                <Admin />
-              </AdminRoute>
+              <PrivateRoute>
+                <Layout />
+              </PrivateRoute>
             }
-          />
-        </Route>
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-      <Toaster />
-    </Router>
+          >
+            <Route index element={<Dashboard />} />
+            <Route path="orders/:id" element={<OrderDetail />} />
+            <Route path="new-order" element={<NewOrder />} />
+            <Route path="profile" element={<Profile />} />
+            <Route
+              path="admin"
+              element={
+                <AdminRoute>
+                  <Admin />
+                </AdminRoute>
+              }
+            />
+          </Route>
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+        <Toaster />
+      </Router>
+    </OrderProvider>
   );
 }
 

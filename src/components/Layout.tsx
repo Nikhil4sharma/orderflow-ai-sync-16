@@ -16,7 +16,7 @@ import {
 import { Link } from "react-router-dom";
 
 const Layout: React.FC = () => {
-  const { currentUser, logout } = useOrders();
+  const { currentUser, logoutUser } = useOrders();
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -41,7 +41,7 @@ const Layout: React.FC = () => {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={currentUser?.avatarUrl} />
+                    <AvatarImage src="/placeholder.svg" />
                     <AvatarFallback>
                       {currentUser?.name?.[0] || currentUser?.email?.[0] || "U"}
                     </AvatarFallback>
@@ -66,7 +66,7 @@ const Layout: React.FC = () => {
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => logout()} className="cursor-pointer">
+                <DropdownMenuItem onClick={() => logoutUser()} className="cursor-pointer">
                   <LogOut className="mr-2 h-4 w-4" />
                   Logout
                 </DropdownMenuItem>
