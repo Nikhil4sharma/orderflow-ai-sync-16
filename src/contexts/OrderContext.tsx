@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
-import { User, Order, StatusUpdate, Department, FilterOptions, GoogleSheetConfig, PermissionKey } from '@/types';
+import { User, Order, StatusUpdate, Department, FilterOptions, GoogleSheetConfig, PermissionKey, UserRole } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { addHours } from 'date-fns';
 import { demoOrders } from '@/lib/demo-orders';
@@ -35,6 +35,9 @@ interface OrderContextType {
   addUser: (user: User) => void;
   removeUser: (userId: string) => void;
 }
+
+// Create the context with a default empty object (with "as any" to avoid TypeScript errors)
+const OrderContext = createContext<OrderContextType>({} as OrderContextType);
 
 // Provider component
 interface OrderProviderProps {

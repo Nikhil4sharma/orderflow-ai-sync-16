@@ -86,6 +86,7 @@ export interface FilterOptions {
   status: string | 'All';
   searchQuery?: string;
   dateRange: { start: Date; end: Date } | null;
+  searchTerm?: string;
 }
 
 // Order interface

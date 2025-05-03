@@ -26,12 +26,15 @@ const rolePermissions: Record<UserRole, PermissionKey[]> = {
   Design: [
     "update_order_status"
   ],
-  Prepress: [
-    "update_order_status"
-  ],
   Production: [
     "update_order_status",
     "view_address_details"
+  ],
+  Prepress: [
+    "update_order_status"
+  ],
+  Member: [
+    "update_order_status"
   ]
 };
 
