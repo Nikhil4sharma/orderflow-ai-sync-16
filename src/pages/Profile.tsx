@@ -1,22 +1,54 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOrders } from "@/contexts/OrderContext";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
+  CardDescription,
 } from "@/components/ui/card";
-import { ArrowLeft, User, Shield, Mail, Building, SlidersHorizontal } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ArrowLeft, User, Save } from "lucide-react";
+import { toast } from "sonner";
 
 const Profile: React.FC = () => {
   const navigate = useNavigate();
-  const { currentUser } = useOrders();
-
+  const { currentUser, setCurrentUser } = useOrders();
+  
+  const [name, setName] = useState(currentUser.name || "");
+  const [email, setEmail] = useState(currentUser.email || "");
+  const [isSaving, setIsSaving] = useState(false);
+  
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    
+    try {
+      // In a real app, this would make an API call to update the user profile
+      // For now, we'll just update the context
+      const updatedUser = {
+        ...currentUser,
+        name,
+        email
+      };
+      
+      // Simulate API call delay
+      setTimeout(() => {
+        setCurrentUser(updatedUser);
+        toast.success("Profile updated successfully");
+        setIsSaving(false);
+      }, 1000);
+      
+    } catch (error) {
+      toast.error("Failed to update profile");
+      setIsSaving(false);
+    }
+  };
+  
   return (
     <div className="container mx-auto py-8 px-4">
       <Button
@@ -26,117 +58,84 @@ const Profile: React.FC = () => {
       >
         <ArrowLeft className="h-4 w-4 mr-2" /> Back to Dashboard
       </Button>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="col-span-1">
-          <Card className="glass-card h-full">
-            <CardHeader className="flex flex-col items-center pb-6">
-              <div className="h-24 w-24 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-4">
-                <User className="h-12 w-12" />
-              </div>
-              <CardTitle>{currentUser.name}</CardTitle>
-              <CardDescription className="text-center">
-                {currentUser.department} • {currentUser.role}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+      
+      <div className="max-w-2xl mx-auto">
+        <Card className="glass-card">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <User className="h-5 w-5 mr-2" />
+              User Profile
+            </CardTitle>
+            <CardDescription>
+              View and update your profile information
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSaveProfile} className="space-y-6">
               <div className="space-y-4">
-                <div className="flex items-center">
-                  <Mail className="h-4 w-4 mr-3 text-muted-foreground" />
-                  <span>{currentUser.email || "No email provided"}</span>
-                </div>
-                <div className="flex items-center">
-                  <Building className="h-4 w-4 mr-3 text-muted-foreground" />
-                  <span>{currentUser.department}</span>
-                </div>
-                <div className="flex items-center">
-                  <Shield className="h-4 w-4 mr-3 text-muted-foreground" />
-                  <span>{currentUser.role}</span>
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Your name"
+                    required
+                  />
                 </div>
                 
-                <Separator className="my-3" />
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="your.email@example.com"
+                    required
+                  />
+                </div>
                 
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => navigate("/settings")}
-                >
-                  <SlidersHorizontal className="h-4 w-4 mr-2" />
-                  Account Settings
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="col-span-1 md:col-span-2">
-          <Card className="glass-card h-full">
-            <CardHeader>
-              <CardTitle>Account Information</CardTitle>
-              <CardDescription>
-                Your account details and access rights
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h3 className="text-lg font-medium mb-2">Access Rights</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="p-3 border rounded-lg bg-accent/10">
-                    <div className="font-medium">Order Management</div>
-                    <div className="text-sm text-muted-foreground">
-                      {currentUser.role === "Admin" 
-                        ? "Full access to all orders" 
-                        : `Access to ${currentUser.department} department orders`}
-                    </div>
-                  </div>
-                  
-                  <div className="p-3 border rounded-lg bg-accent/10">
-                    <div className="font-medium">Department Access</div>
-                    <div className="text-sm text-muted-foreground">
-                      {currentUser.department}
-                    </div>
-                  </div>
-
-                  <div className="p-3 border rounded-lg bg-accent/10">
-                    <div className="font-medium">User Creation</div>
-                    <div className="text-sm text-muted-foreground">
-                      {currentUser.role === "Admin" ? "Can create users" : "Cannot create users"}
-                    </div>
-                  </div>
-                  
-                  <div className="p-3 border rounded-lg bg-accent/10">
-                    <div className="font-medium">Financial Access</div>
-                    <div className="text-sm text-muted-foreground">
-                      {currentUser.department === "Sales" || currentUser.role === "Admin" 
-                        ? "Full access" 
-                        : "Limited access"}
-                    </div>
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="department">Department</Label>
+                  <Input
+                    id="department"
+                    value={currentUser.department || ""}
+                    readOnly
+                    disabled
+                    className="bg-muted"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="role">Role</Label>
+                  <Input
+                    id="role"
+                    value={currentUser.role || ""}
+                    readOnly
+                    disabled
+                    className="bg-muted"
+                  />
                 </div>
               </div>
               
-              <div>
-                <h3 className="text-lg font-medium mb-2">Account Security</h3>
-                <div className="text-sm text-muted-foreground mb-4">
-                  For security reasons, please contact an administrator if you need to change your password or update account details.
-                </div>
-                
-                <div className="flex justify-end">
-                  <Button 
-                    variant="outline" 
-                    className="mr-2"
-                    onClick={() => navigate("/")}
-                  >
-                    Cancel
-                  </Button>
-                  <Button onClick={() => navigate("/change-password")}>
-                    Change Password
-                  </Button>
-                </div>
+              <div className="flex justify-end pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="mr-2"
+                  onClick={() => navigate("/")}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSaving}>
+                  <Save className="h-4 w-4 mr-2" />
+                  {isSaving ? "Saving..." : "Save Changes"}
+                </Button>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
