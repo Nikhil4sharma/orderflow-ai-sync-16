@@ -44,7 +44,7 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (currentUser.role !== "Admin") {
+  if (currentUser?.role !== "Admin") {
     return <Navigate to="/" replace />;
   }
 

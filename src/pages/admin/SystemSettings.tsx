@@ -38,7 +38,7 @@ const SystemSettings: React.FC = () => {
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   
   // Check if current user is admin
-  if (currentUser.role !== "Admin") {
+  if (currentUser?.role !== "Admin") {
     toast.error("Access denied. Admin privileges required.");
     navigate("/");
     return null;
@@ -48,7 +48,7 @@ const SystemSettings: React.FC = () => {
     e.preventDefault();
     
     // Update theme
-    setTheme(defaultTheme);
+    setTheme(defaultTheme as "light" | "dark" | "system");
     
     // In a real app, would save these settings to a database or config
     toast.success("Settings saved successfully");
