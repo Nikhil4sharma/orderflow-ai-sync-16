@@ -81,7 +81,6 @@ export const OrdersTable: React.FC<OrdersTableProps> = ({ orders }) => {
                       ${order.status === 'In Progress' ? 'bg-blue-100 text-blue-800' : ''}
                       ${order.status === 'On Hold' ? 'bg-yellow-100 text-yellow-800' : ''}
                       ${order.status === 'Issue' ? 'bg-red-100 text-red-800' : ''}
-                      ${order.status === 'Ready to Dispatch' ? 'bg-purple-100 text-purple-800' : ''}
                       ${order.status === 'Dispatched' ? 'bg-indigo-100 text-indigo-800' : ''}
                     `}>
                       {order.status}

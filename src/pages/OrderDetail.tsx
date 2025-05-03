@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useOrders } from "@/contexts/OrderContext";
@@ -344,7 +343,7 @@ const OrderDetail: React.FC = () => {
                   <span className="font-medium">Payment Status:</span>
                   <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
                     order.paymentStatus === "Paid" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" :
-                    order.paymentStatus === "Partially Paid" ? "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200" :
+                    order.paymentStatus === "Partial" ? "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200" :
                     "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
                   }`}>
                     {order.paymentStatus || "Not Paid"}
@@ -775,7 +774,7 @@ const OrderDetail: React.FC = () => {
                   <span className="font-medium">Payment Status:</span>
                   <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
                     order.paymentStatus === "Paid" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" :
-                    order.paymentStatus === "Partially Paid" ? "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200" :
+                    order.paymentStatus === "Partial" ? "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200" :
                     "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
                   }`}>
                     {order.paymentStatus || "Not Paid"}

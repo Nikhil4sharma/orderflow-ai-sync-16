@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,39 +26,19 @@ const LoginForm: React.FC = () => {
       // For demo purposes, we'll use a simple check
       // In a real app, this would validate against stored users
       if (email === "admin@orderflow.com" && password === "admin123") {
-        loginUser({ 
-          id: "admin1", 
-          name: "Admin User", 
-          department: "Sales", 
-          role: "Admin" 
-        });
+        loginUser(email, password);
         toast.success("Login successful!");
         navigate("/");
       } else if (email === "sales@orderflow.com" && password === "sales123") {
-        loginUser({ 
-          id: "sales1", 
-          name: "Sales User", 
-          department: "Sales", 
-          role: "Sales" 
-        });
+        loginUser(email, password);
         toast.success("Login successful!");
         navigate("/");
       } else if (email === "design@orderflow.com" && password === "design123") {
-        loginUser({ 
-          id: "design1", 
-          name: "Design User", 
-          department: "Design", 
-          role: "Design" 
-        });
+        loginUser(email, password);
         toast.success("Login successful!");
         navigate("/");
       } else if (email === "production@orderflow.com" && password === "production123") {
-        loginUser({ 
-          id: "prod1", 
-          name: "Production User", 
-          department: "Production", 
-          role: "Production" 
-        });
+        loginUser(email, password);
         toast.success("Login successful!");
         navigate("/");
       } else {

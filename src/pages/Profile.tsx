@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOrders } from "@/contexts/OrderContext";
@@ -19,8 +18,8 @@ const Profile: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser, setCurrentUser } = useOrders();
   
-  const [name, setName] = useState(currentUser.name || "");
-  const [email, setEmail] = useState(currentUser.email || "");
+  const [name, setName] = useState(currentUser?.name || "");
+  const [email, setEmail] = useState(currentUser?.email || "");
   const [isSaving, setIsSaving] = useState(false);
   
   const handleSaveProfile = (e: React.FormEvent) => {
@@ -30,18 +29,20 @@ const Profile: React.FC = () => {
     try {
       // In a real app, this would make an API call to update the user profile
       // For now, we'll just update the context
-      const updatedUser = {
-        ...currentUser,
-        name,
-        email
-      };
-      
-      // Simulate API call delay
-      setTimeout(() => {
-        setCurrentUser(updatedUser);
-        toast.success("Profile updated successfully");
-        setIsSaving(false);
-      }, 1000);
+      if (currentUser) {
+        const updatedUser = {
+          ...currentUser,
+          name,
+          email
+        };
+        
+        // Simulate API call delay
+        setTimeout(() => {
+          setCurrentUser(updatedUser);
+          toast.success("Profile updated successfully");
+          setIsSaving(false);
+        }, 1000);
+      }
       
     } catch (error) {
       toast.error("Failed to update profile");

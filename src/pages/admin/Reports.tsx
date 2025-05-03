@@ -1,4 +1,3 @@
-
 import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOrders } from "@/contexts/OrderContext";
@@ -45,12 +44,10 @@ const Reports: React.FC = () => {
   // Calculate status counts
   const statusCounts = useMemo(() => {
     const counts: Record<OrderStatus, number> = {
-      "New": 0,
       "In Progress": 0,
       "Completed": 0,
       "On Hold": 0,
       "Issue": 0,
-      "Verified": 0,
       "Dispatched": 0,
       "Ready to Dispatch": 0
     };
@@ -66,7 +63,7 @@ const Reports: React.FC = () => {
   const paymentStatusCounts = useMemo(() => {
     const counts: Record<PaymentStatus, number> = {
       "Not Paid": 0,
-      "Partially Paid": 0,
+      "Partial": 0,
       "Paid": 0
     };
     

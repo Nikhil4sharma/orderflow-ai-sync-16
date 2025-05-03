@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOrders } from "@/contexts/OrderContext";
@@ -21,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { User, ArrowLeft, Shield, UserPlus, Settings, FolderPlus, LayoutDashboard, BarChart } from "lucide-react";
-import { Department, User as UserType } from "@/types";
+import { Department, User as UserType, Role } from "@/types";
 
 const Admin: React.FC = () => {
   const navigate = useNavigate();
@@ -32,10 +31,10 @@ const Admin: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [department, setDepartment] = useState<Department>("Sales");
-  const [role, setRole] = useState<"Admin" | "Member">("Member");
+  const [role, setRole] = useState<Role>("User");
   
   // Check if current user is admin
-  if (currentUser.role !== "Admin") {
+  if (currentUser?.role !== "Admin") {
     toast.error("Access denied. Admin privileges required.");
     navigate("/");
     return null;
@@ -64,7 +63,8 @@ const Admin: React.FC = () => {
       email,
       password, // In a real app, this would be hashed
       department,
-      role
+      role,
+      permissions: [] // Add empty permissions array
     };
     
     // Add user
@@ -75,7 +75,7 @@ const Admin: React.FC = () => {
     setEmail("");
     setPassword("");
     setDepartment("Sales");
-    setRole("Member");
+    setRole("User");
     
     toast.success("User created successfully");
   };
@@ -216,7 +216,7 @@ const Admin: React.FC = () => {
                 <Label htmlFor="role">Role</Label>
                 <Select
                   value={role}
-                  onValueChange={(value) => setRole(value as "Admin" | "Member")}
+                  onValueChange={(value) => setRole(value as Role)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select role" />
@@ -224,6 +224,7 @@ const Admin: React.FC = () => {
                   <SelectContent>
                     <SelectItem value="Admin">Admin</SelectItem>
                     <SelectItem value="Member">Member</SelectItem>
+                    <SelectItem value="User">User</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

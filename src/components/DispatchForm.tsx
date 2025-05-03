@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useOrders } from "@/contexts/OrderContext";
 import {
@@ -92,7 +91,7 @@ const DispatchForm: React.FC<DispatchFormProps> = ({ order }) => {
         <CardHeader>
           <CardTitle className="flex items-center">
             <Package className="h-5 w-5 mr-2" />
-            {order.status === "Verified" ? "Dispatch Order" : "Verify and Dispatch Order"}
+            {order.status === "Ready to Dispatch" ? "Dispatch Order" : "Verify and Dispatch Order"}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -111,7 +110,7 @@ const DispatchForm: React.FC<DispatchFormProps> = ({ order }) => {
             </div>
           )}
 
-          {order.status === "Verified" && (
+          {order.status === "Ready to Dispatch" && (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="address">Delivery Address*</Label>

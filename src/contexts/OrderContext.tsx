@@ -23,6 +23,7 @@ import { getDemoOrders } from "@/lib/demo-data";
 
 interface OrderContextType {
   orders: Order[];
+  users: User[]; // Add users property for Admin pages
   isAuthenticated: boolean;
   currentUser: User | null;
   notifications: Notification[];
@@ -38,6 +39,9 @@ interface OrderContextType {
   verifyOrder: (orderId: string) => void;
   hasPermission: (permission: PermissionKey) => boolean;
   markNotificationAsRead: (notificationId: string) => void;
+  addUser: (user: User) => void; // Add methods for Admin pages
+  removeUser: (userId: string) => void;
+  setCurrentUser: (user: User) => void; // Add for Profile page
 }
 
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
@@ -57,6 +61,7 @@ interface OrderProviderProps {
 export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
   // State for orders, authentication, and notifications
   const [orders, setOrders] = useState<Order[]>([]);
+  const [usersList, setUsersList] = useState<User[]>(users);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -74,7 +79,7 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
     }
   }, []);
 
-  // Login function
+  // Login function - now accepts both email and password
   const loginUser = async (email: string, password: string): Promise<boolean> => {
     // In a real app, you would validate against a backend
     // For demo purposes, we'll just check if the user exists in our mock data
@@ -106,6 +111,16 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
     };
     
     setOrders(prevOrders => [...prevOrders, newOrder]);
+  };
+
+  // Add user function
+  const addUser = (user: User) => {
+    setUsersList(prevUsers => [...prevUsers, user]);
+  };
+
+  // Remove user function
+  const removeUser = (userId: string) => {
+    setUsersList(prevUsers => prevUsers.filter(user => user.id !== userId));
   };
 
   // Update an existing order
@@ -282,6 +297,7 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
   // Define the context value
   const contextValue: OrderContextType = {
     orders,
+    users: usersList,
     isAuthenticated,
     currentUser,
     notifications,
@@ -296,7 +312,10 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
     addPayment,
     verifyOrder,
     hasPermission: checkPermission,
-    markNotificationAsRead
+    markNotificationAsRead,
+    addUser,
+    removeUser,
+    setCurrentUser
   };
 
   return (
