@@ -97,3 +97,60 @@ export const formatTimeline = (timeline: string | undefined): string => {
     return timeline;
   }
 };
+
+// Get the appropriate status badge color based on status
+export const getStatusBadgeColor = (status: OrderStatus | string): string => {
+  switch (status) {
+    case 'Completed':
+      return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300';
+    case 'In Progress':
+      return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300';
+    case 'On Hold':
+      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300';
+    case 'Issue':
+      return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300';
+    case 'Ready to Dispatch':
+      return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300';
+    case 'Dispatched':
+      return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-300';
+    default:
+      return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300';
+  }
+};
+
+// Format Indian Rupees
+export const formatIndianRupees = (amount: number): string => {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 2
+  }).format(amount);
+};
+
+// Get orders requiring approval for the Sales team or Admin
+export const getOrdersRequiringApproval = (orders: Order[]): Order[] => {
+  return orders.filter(order => {
+    return (
+      (order.currentDepartment === 'Design' && order.designStatus === 'Pending Feedback from Sales Team') ||
+      (order.currentDepartment === 'Prepress' && order.prepressStatus === 'Waiting for approval')
+    );
+  });
+};
+
+// Get human-readable status for an order's current department
+export const getHumanReadableStatus = (order: Order): string => {
+  if (order.currentDepartment === 'Design') {
+    return order.designStatus || 'In Progress';
+  }
+  
+  if (order.currentDepartment === 'Prepress') {
+    return order.prepressStatus || 'In Progress';
+  }
+  
+  if (order.currentDepartment === 'Production') {
+    const activeStage = order.productionStages?.find(stage => stage.status === 'processing');
+    return activeStage ? `${activeStage.stage} in progress` : order.status;
+  }
+  
+  return order.status;
+};

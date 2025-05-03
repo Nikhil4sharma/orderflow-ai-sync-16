@@ -26,9 +26,9 @@ const NewOrder: React.FC = () => {
   // Form state
   const [clientName, setClientName] = useState("");
   const [amount, setAmount] = useState("");
-  const [items, setItems] = useState<string[]>([""]);
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [contactNumber, setContactNumber] = useState("");
+  const [gstNumber, setGstNumber] = useState("");
   const [products, setProducts] = useState<{ name: string }[]>([{ name: "" }]);
   const [expectedDeliveryDate, setExpectedDeliveryDate] = useState<Date | undefined>(undefined);
   const [loading, setLoading] = useState(false);
@@ -45,8 +45,8 @@ const NewOrder: React.FC = () => {
       return false;
     }
     
-    if (items.some(item => !item.trim())) {
-      toast.error("All items must have a name");
+    if (products.some(product => !product.name.trim())) {
+      toast.error("All products must have a name");
       return false;
     }
     
@@ -60,29 +60,7 @@ const NewOrder: React.FC = () => {
       return false;
     }
     
-    if (products.some(product => !product.name.trim())) {
-      toast.error("All products must have a name");
-      return false;
-    }
-    
     return true;
-  };
-  
-  // Add an item
-  const addItem = () => {
-    setItems([...items, ""]);
-  };
-  
-  // Remove an item
-  const removeItem = (indexToRemove: number) => {
-    setItems(items.filter((_, index) => index !== indexToRemove));
-  };
-  
-  // Update an item
-  const updateItem = (index: number, value: string) => {
-    const newItems = [...items];
-    newItems[index] = value;
-    setItems(newItems);
   };
   
   // Add a product
@@ -131,15 +109,16 @@ const NewOrder: React.FC = () => {
       amount: parseFloat(amount),
       paidAmount: 0,
       pendingAmount: parseFloat(amount),
-      items: items.filter(item => item.trim()),
+      items: products.map(p => p.name), // Keep items for backward compatibility
       createdAt: new Date().toISOString(),
-      status: "New" as const,
+      status: "In Progress" as const,
       currentDepartment: "Sales" as const, // Always start with Sales department
       paymentStatus: "Not Paid" as const,
       statusHistory: [],
       productStatus,
       deliveryAddress,
       contactNumber,
+      gstNumber: gstNumber || undefined,
       expectedDeliveryDate: expectedDeliveryDate?.toISOString(),
     };
     
@@ -204,40 +183,16 @@ const NewOrder: React.FC = () => {
                   />
                 </div>
               </div>
-            </div>
-            
-            <div>
-              <Label>Order Items *</Label>
-              {items.map((item, index) => (
-                <div key={index} className="flex gap-2 mt-2">
-                  <Input
-                    placeholder={`Item ${index + 1}`}
-                    value={item}
-                    onChange={(e) => updateItem(index, e.target.value)}
-                    required
-                  />
-                  {items.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => removeItem(index)}
-                    >
-                      <Minus className="h-4 w-4" />
-                    </Button>
-                  )}
-                  {index === items.length - 1 && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={addItem}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              ))}
+
+              <div>
+                <Label htmlFor="gstNumber">GST Number</Label>
+                <Input
+                  id="gstNumber"
+                  placeholder="Enter GST number if available"
+                  value={gstNumber}
+                  onChange={(e) => setGstNumber(e.target.value)}
+                />
+              </div>
             </div>
             
             <div>

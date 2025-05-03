@@ -7,6 +7,7 @@ import {
   Order, 
   OrderStatus, 
   PaymentRecord, 
+  PaymentStatus,
   PermissionKey, 
   StatusUpdate, 
   User 
@@ -15,7 +16,7 @@ import { users } from "@/lib/mock-data";
 import { generateId, shouldSendNotification } from "@/lib/utils";
 import { hasPermission } from "@/lib/permissions";
 import { toast } from "sonner";
-import { generateNotification } from "@/lib/mock-data";
+import { generateNotification } from "@/lib/demo-data";
 
 // Import demo data
 import { getDemoOrders } from "@/lib/demo-data";
@@ -217,7 +218,7 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
         const newPendingAmount = order.amount - newPaidAmount;
         
         // Determine payment status
-        let paymentStatus = "Not Paid";
+        let paymentStatus: PaymentStatus = "Not Paid";
         if (newPaidAmount >= order.amount) {
           paymentStatus = "Paid";
         } else if (newPaidAmount > 0) {
@@ -235,7 +236,7 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
     });
   };
 
-  // Verify an order (changes status to "Verified" so it can be dispatched)
+  // Verify an order (changes status to "Ready to Dispatch" so it can be dispatched)
   const verifyOrder = (orderId: string) => {
     setOrders(prevOrders => {
       return prevOrders.map(order => {
@@ -247,14 +248,14 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
           orderId,
           timestamp: new Date().toISOString(),
           department: "Sales",
-          status: "Verified",
+          status: "Ready to Dispatch",
           updatedBy: currentUser?.name || "Unknown",
           remarks: "Order verified and ready for dispatch"
         };
         
         return {
           ...order,
-          status: "Verified" as OrderStatus,
+          status: "Ready to Dispatch" as OrderStatus,
           statusHistory: [...(order.statusHistory || []), verificationUpdate]
         };
       });
