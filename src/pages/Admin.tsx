@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { User, ArrowLeft, Shield, UserPlus, Settings, FolderPlus, LayoutDashboard } from "lucide-react";
+import { User, ArrowLeft, Shield, UserPlus, Settings, FolderPlus, LayoutDashboard, BarChart } from "lucide-react";
 import { Department, User as UserType } from "@/types";
 
 const Admin: React.FC = () => {
@@ -126,6 +126,14 @@ const Admin: React.FC = () => {
               >
                 <Settings className="h-4 w-4 mr-2" />
                 System Settings
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => navigate("/admin/reports")}
+              >
+                <BarChart className="h-4 w-4 mr-2" />
+                Analytics & Reports
               </Button>
               <Button 
                 variant="outline" 
