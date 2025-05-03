@@ -1,8 +1,11 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
-import { User, Order, StatusUpdate } from '@/types';
+import { User, Order, StatusUpdate, Department, FilterOptions, GoogleSheetConfig } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { addHours } from 'date-fns';
 import { demoOrders } from '@/lib/demo-orders';
+import { filterOrdersByMultipleCriteria } from '@/lib/utils';
+import { syncOrdersWithGoogleSheet, importOrdersFromSheet } from '@/utils/googleSheetUtils';
+import { toast } from 'sonner';
 
 // Define the context type
 interface OrderContextType {
@@ -22,6 +25,13 @@ interface OrderContextType {
   removeUser: (userId: string) => void;
   filterOrdersByDepartment: (department: string) => Order[];
   filterOrdersByStatus: (status: string) => Order[];
+  filterOrdersByMultipleCriteria: (filters: FilterOptions) => Order[];
+  getUsersByDepartment: (department: Department) => User[];
+  getOrdersForCurrentUser: () => Order[];
+  syncWithGoogleSheet: (config: GoogleSheetConfig) => Promise<boolean>;
+  importFromGoogleSheet: (config: GoogleSheetConfig) => Promise<boolean>;
+  googleSheetConfig: GoogleSheetConfig | null;
+  setGoogleSheetConfig: (config: GoogleSheetConfig) => void;
 }
 
 // Create the context with a default value
@@ -63,6 +73,14 @@ const initialUsers: User[] = [
     department: 'Production',
     role: 'Member',
   },
+  {
+    id: 'prepress1',
+    name: 'Prepress User',
+    email: 'prepress@orderflow.com',
+    password: 'prepress123',
+    department: 'Prepress',
+    role: 'Member',
+  },
 ];
 
 interface OrderProviderProps {
@@ -75,6 +93,7 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [googleSheetConfig, setGoogleSheetConfig] = useState<GoogleSheetConfig | null>(null);
 
   const addOrder = useCallback((order: Order) => {
     setOrders(prev => [...prev, order]);
@@ -162,6 +181,100 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
     return orders.filter(order => order.status === status);
   }, [orders]);
 
+  const filteredOrdersByMultipleCriteria = useCallback((filters: FilterOptions) => {
+    return filterOrdersByMultipleCriteria(orders, filters);
+  }, [orders]);
+
+  const getUsersByDepartment = useCallback((department: Department) => {
+    if (department === 'All') return users;
+    return users.filter(user => user.department === department);
+  }, [users]);
+
+  const getOrdersForCurrentUser = useCallback(() => {
+    if (!currentUser) return [];
+    
+    // Admin can see all orders
+    if (currentUser.role === 'Admin') return orders;
+    
+    // Sales can see all orders
+    if (currentUser.department === 'Sales') return orders;
+    
+    // Other departments only see orders assigned to them
+    return orders.filter(order => order.currentDepartment === currentUser.department);
+  }, [orders, currentUser]);
+
+  const syncWithGoogleSheet = useCallback(async (config: GoogleSheetConfig) => {
+    try {
+      const result = await syncOrdersWithGoogleSheet(orders, config);
+      
+      if (result.success) {
+        setGoogleSheetConfig(config);
+        toast.success(result.message);
+        return true;
+      } else {
+        toast.error(result.message);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error syncing with Google Sheet:", error);
+      toast.error(`Error syncing with Google Sheet: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return false;
+    }
+  }, [orders]);
+
+  const importFromGoogleSheet = useCallback(async (config: GoogleSheetConfig) => {
+    try {
+      const result = await importOrdersFromSheet(config);
+      
+      if (result.success && result.orders) {
+        // Add each imported order
+        result.orders.forEach(orderData => {
+          // Skip if order with this sheet ID already exists
+          if (orderData.sheetSyncId && orders.some(o => o.sheetSyncId === orderData.sheetSyncId)) {
+            return;
+          }
+          
+          // Create order with required fields
+          const order = {
+            id: `import-${uuidv4()}`,
+            orderNumber: orderData.orderNumber || `ORD-${Date.now()}`,
+            clientName: orderData.clientName || "Imported Client",
+            amount: orderData.amount || 0,
+            paidAmount: orderData.paidAmount || 0,
+            pendingAmount: orderData.pendingAmount || 0,
+            items: orderData.items || [],
+            createdAt: orderData.createdAt || new Date().toISOString(),
+            status: orderData.status || 'New',
+            currentDepartment: orderData.currentDepartment || 'Sales',
+            paymentStatus: orderData.paymentStatus || 'Not Paid',
+            statusHistory: [{
+              id: uuidv4(),
+              orderId: uuidv4(),
+              department: 'Sales',
+              status: 'Imported from Google Sheet',
+              timestamp: new Date().toISOString(),
+              updatedBy: currentUser?.name || 'System'
+            }],
+            sheetSyncId: orderData.sheetSyncId
+          } as Order;
+          
+          addOrder(order);
+        });
+        
+        setGoogleSheetConfig(config);
+        toast.success(result.message);
+        return true;
+      } else {
+        toast.error(result.message);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error importing from Google Sheet:", error);
+      toast.error(`Error importing from Google Sheet: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return false;
+    }
+  }, [orders, currentUser, addOrder]);
+
   const value = {
     orders,
     users,
@@ -179,6 +292,13 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
     removeUser,
     filterOrdersByDepartment,
     filterOrdersByStatus,
+    filterOrdersByMultipleCriteria: filteredOrdersByMultipleCriteria,
+    getUsersByDepartment,
+    getOrdersForCurrentUser,
+    syncWithGoogleSheet,
+    importFromGoogleSheet,
+    googleSheetConfig,
+    setGoogleSheetConfig,
   };
 
   return <OrderContext.Provider value={value}>{children}</OrderContext.Provider>;

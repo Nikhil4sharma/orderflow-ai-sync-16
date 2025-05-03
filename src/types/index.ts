@@ -1,7 +1,7 @@
 
 export type Department = 'Sales' | 'Production' | 'Design' | 'Prepress';
 
-export type ProductionStage = 'Printing' | 'Foiling' | 'Electroplating' | 'Cutting' | 'Pasting';
+export type ProductionStage = 'Printing' | 'Cutting' | 'Pasting' | 'Foiling' | 'Electroplating' | 'Letterpress' | 'Embossing' | 'Ready to Dispatch';
 
 export type DesignStatus = 'Working on it' | 'Pending Feedback' | 'Completed';
 
@@ -34,8 +34,8 @@ export interface StatusUpdate {
   remarks?: string;
   timestamp: string;
   updatedBy: string;
-  editableUntil?: string; // Time until which this update can be edited
-  selectedProduct?: string; // ID of the product this update is for
+  editableUntil?: string; 
+  selectedProduct?: string;
 }
 
 export interface Order {
@@ -65,6 +65,9 @@ export interface Order {
   statusHistory: StatusUpdate[];
   paymentStatus: PaymentStatus;
   lastPaymentDate?: string;
+  // Fields for Google Sheet integration
+  sheetSyncId?: string;
+  lastSyncedAt?: string;
 }
 
 export interface User {
@@ -74,4 +77,21 @@ export interface User {
   password?: string;
   department: Department;
   role: string;
+}
+
+export interface GoogleSheetConfig {
+  sheetId: string;
+  tabName: string;
+  apiKey?: string;
+  lastSyncedAt?: string;
+}
+
+export interface FilterOptions {
+  department: Department | 'All';
+  status: OrderStatus | 'All';
+  searchTerm: string;
+  dateRange?: {
+    start: Date | null;
+    end: Date | null;
+  };
 }

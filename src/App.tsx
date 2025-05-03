@@ -18,6 +18,7 @@ import ManageUsers from "./pages/admin/ManageUsers";
 import ManageDepartments from "./pages/admin/ManageDepartments";
 import SystemSettings from "./pages/admin/SystemSettings";
 import Reports from "./pages/admin/Reports";
+import GoogleSheetSettings from "./pages/admin/GoogleSheetSettings";
 import { useOrders, OrderProvider } from "./contexts/OrderContext";
 import { Toaster } from "./components/ui/toaster";
 import NotFound from "./pages/NotFound";
@@ -94,6 +95,11 @@ function App() {
               <Route path="admin/reports" element={
                 <AdminRoute>
                   <Reports />
+                </AdminRoute>
+              } />
+              <Route path="admin/google-sheet" element={
+                <AdminRoute>
+                  <GoogleSheetSettings />
                 </AdminRoute>
               } />
             </Route>

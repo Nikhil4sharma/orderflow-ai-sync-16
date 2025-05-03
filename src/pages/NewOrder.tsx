@@ -6,10 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from 'uuid';
 import { Order } from "@/types";
+import { Textarea } from "@/components/ui/textarea";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 
 const NewOrder: React.FC = () => {
   const navigate = useNavigate();
@@ -20,6 +28,11 @@ const NewOrder: React.FC = () => {
   const [clientName, setClientName] = useState("");
   const [amount, setAmount] = useState("");
   const [items, setItems] = useState("");
+  const [paidAmount, setPaidAmount] = useState("0");
+  const [remarks, setRemarks] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("");
+  const [paymentRemarks, setPaymentRemarks] = useState("");
+  const [targetDepartment, setTargetDepartment] = useState<string>("Design");
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +44,35 @@ const NewOrder: React.FC = () => {
     }
     
     const parsedAmount = parseFloat(amount);
+    const parsedPaidAmount = parseFloat(paidAmount) || 0;
+    const pendingAmount = Math.max(0, parsedAmount - parsedPaidAmount);
+    
+    // Determine payment status
+    let paymentStatus = "Not Paid";
+    if (parsedPaidAmount >= parsedAmount) {
+      paymentStatus = "Paid";
+    } else if (parsedPaidAmount > 0) {
+      paymentStatus = "Partially Paid";
+    }
+    
+    // Create payment record if payment was made
+    const paymentHistory = [];
+    if (parsedPaidAmount > 0) {
+      paymentHistory.push({
+        id: uuidv4(),
+        amount: parsedPaidAmount,
+        date: new Date().toISOString(),
+        method: paymentMethod || 'Not specified',
+        remarks: paymentRemarks
+      });
+    }
+    
+    // Create product status entries for each item
+    const productStatus = items.split(",").map((item, index) => ({
+      id: `prod-${index}-${uuidv4()}`,
+      name: item.trim(),
+      status: "processing" as const,
+    }));
     
     // Create new order
     const newOrder: Order = {
@@ -38,30 +80,27 @@ const NewOrder: React.FC = () => {
       orderNumber: orderNumber.trim(),
       clientName: clientName.trim(),
       amount: parsedAmount,
-      paidAmount: 0,
-      pendingAmount: parsedAmount,
-      paymentStatus: "Not Paid",
+      paidAmount: parsedPaidAmount,
+      pendingAmount,
+      paymentStatus,
       items: items.split(",").map(item => item.trim()),
       createdAt: new Date().toISOString(),
       status: "New",
-      currentDepartment: "Sales",
+      currentDepartment: targetDepartment as any,
       statusHistory: [
         {
           id: uuidv4(),
           orderId: uuidv4(),
           department: "Sales",
           status: "New",
-          remarks: "Order created",
+          remarks: remarks || "Order created",
           timestamp: new Date().toISOString(),
           updatedBy: currentUser.name,
         },
       ],
-      paymentHistory: [],
-      productStatus: items.split(",").map((item, index) => ({
-        id: `prod-${index}-${uuidv4()}`,
-        name: item.trim(),
-        status: "processing" as const,
-      }))
+      paymentHistory,
+      productStatus,
+      lastPaymentDate: parsedPaidAmount > 0 ? new Date().toISOString() : undefined
     };
     
     // Add the new order
@@ -115,17 +154,64 @@ const NewOrder: React.FC = () => {
                 </div>
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="amount">Order Amount (₹)*</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  placeholder="e.g., 1500.00"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  required
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="amount">Order Amount (₹)*</Label>
+                  <Input
+                    id="amount"
+                    type="number"
+                    placeholder="e.g., 1500.00"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="paid-amount">Paid Amount (₹)</Label>
+                  <Input
+                    id="paid-amount"
+                    type="number"
+                    placeholder="e.g., 500.00"
+                    value={paidAmount}
+                    onChange={(e) => setPaidAmount(e.target.value)}
+                  />
+                </div>
               </div>
+              
+              {paidAmount && parseFloat(paidAmount) > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="payment-method">Payment Method*</Label>
+                    <Select 
+                      value={paymentMethod}
+                      onValueChange={setPaymentMethod}
+                      required={parseFloat(paidAmount) > 0}
+                    >
+                      <SelectTrigger id="payment-method">
+                        <SelectValue placeholder="Select payment method" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Cash">Cash</SelectItem>
+                        <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                        <SelectItem value="UPI">UPI</SelectItem>
+                        <SelectItem value="Credit Card">Credit Card</SelectItem>
+                        <SelectItem value="Cheque">Cheque</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="payment-remarks">Payment Remarks</Label>
+                    <Input
+                      id="payment-remarks"
+                      placeholder="e.g., Transaction ID, Cheque number"
+                      value={paymentRemarks}
+                      onChange={(e) => setPaymentRemarks(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
               
               <div className="space-y-2">
                 <Label htmlFor="items">
@@ -143,6 +229,34 @@ const NewOrder: React.FC = () => {
                 </p>
               </div>
               
+              <div className="space-y-2">
+                <Label htmlFor="target-department">Forward To Department</Label>
+                <Select 
+                  value={targetDepartment}
+                  onValueChange={setTargetDepartment}
+                >
+                  <SelectTrigger id="target-department">
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Design">Design</SelectItem>
+                    <SelectItem value="Prepress">Prepress</SelectItem>
+                    <SelectItem value="Production">Production</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="remarks">Remarks</Label>
+                <Textarea
+                  id="remarks"
+                  placeholder="Any additional information about this order"
+                  value={remarks}
+                  onChange={(e) => setRemarks(e.target.value)}
+                  rows={3}
+                />
+              </div>
+              
               <div className="flex justify-end pt-4">
                 <Button
                   type="button"
@@ -152,7 +266,10 @@ const NewOrder: React.FC = () => {
                 >
                   Cancel
                 </Button>
-                <Button type="submit">Create Order</Button>
+                <Button type="submit">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Order
+                </Button>
               </div>
             </form>
           </CardContent>

@@ -1,5 +1,6 @@
 
 import { cn } from "@/lib/utils";
+import { Department, ProductionStage } from "@/types";
 
 // Function to get status color class for badges
 export function getStatusColorClass(status: string): string {
@@ -22,6 +23,14 @@ export function getStatusColorClass(status: string): string {
       return "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 border-amber-200";
     case 'Not Paid':
       return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 border-red-200";
+    case 'Working on it':
+      return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 border-blue-200";
+    case 'Pending Feedback':
+      return "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 border-amber-200";
+    case 'Reviewing':
+      return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 border-purple-200";
+    case 'Ready':
+      return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border-green-200";
     default:
       return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200 border-gray-200";
   }
@@ -62,6 +71,46 @@ export function getOrderStageNumber(status: string): number {
 }
 
 // Function to get all departments
-export function getDepartments(): string[] {
+export function getDepartments(): Department[] {
   return ['Sales', 'Production', 'Design', 'Prepress'];
+}
+
+// Function to get all production stages
+export function getProductionStages(): ProductionStage[] {
+  return [
+    'Printing',
+    'Cutting',
+    'Pasting',
+    'Foiling',
+    'Electroplating',
+    'Letterpress',
+    'Embossing',
+    'Ready to Dispatch'
+  ];
+}
+
+// Function to get next department in workflow
+export function getNextDepartment(currentDepartment: Department): Department | null {
+  switch (currentDepartment) {
+    case 'Sales':
+      return 'Design';
+    case 'Design':
+      return 'Prepress';
+    case 'Prepress':
+      return 'Production';
+    case 'Production':
+      return null; // End of workflow
+    default:
+      return null;
+  }
+}
+
+// Function to check if user can view financial data
+export function canViewFinancialData(department: Department, role: string): boolean {
+  return department === 'Sales' || role === 'Admin';
+}
+
+// Function to check if user can edit order
+export function canEditOrder(department: Department, orderDepartment: Department, role: string): boolean {
+  return department === orderDepartment || role === 'Admin';
 }
