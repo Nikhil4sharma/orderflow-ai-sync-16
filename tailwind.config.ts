@@ -69,11 +69,11 @@ export default {
 					processing: '#f59e0b', // Yellow for processing
 					issue: '#ef4444',     // Red for issues
 				},
-				// Custom brand colors
+				// Custom brand colors - changed from purple to blue
 				brand: {
-					purple: '#9b87f5',
-					lightPurple: '#E5DEFF',
-					darkPurple: '#1A1F2C',
+					blue: '#3b82f6',
+					lightBlue: '#dbeafe',
+					darkBlue: '#1e40af',
 				}
 			},
 			borderRadius: {

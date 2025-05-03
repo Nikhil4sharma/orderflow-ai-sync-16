@@ -9,27 +9,34 @@ import Dashboard from "./pages/Dashboard";
 import OrderDetail from "./pages/OrderDetail";
 import NewOrder from "./pages/NewOrder";
 import NotFound from "./pages/NotFound";
+import { ThemeProvider } from "./components/theme-provider";
+import ThemeToggle from "./components/ThemeToggle";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <OrderProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <div className="min-h-screen bg-gray-50">
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/orders/:id" element={<OrderDetail />} />
-              <Route path="/new-order" element={<NewOrder />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </div>
-        </BrowserRouter>
-      </TooltipProvider>
-    </OrderProvider>
+    <ThemeProvider defaultTheme="system" storageKey="orderflow-theme">
+      <OrderProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <div className="min-h-screen bg-background transition-colors duration-300">
+              <div className="container mx-auto py-4 px-4 flex justify-end">
+                <ThemeToggle />
+              </div>
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/orders/:id" element={<OrderDetail />} />
+                <Route path="/new-order" element={<NewOrder />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </div>
+          </BrowserRouter>
+        </TooltipProvider>
+      </OrderProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

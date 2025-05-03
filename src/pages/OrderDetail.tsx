@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useOrders } from "@/contexts/OrderContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Clipboard, ClipboardCheck } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
 import OrderTimeline from "@/components/OrderTimeline";
 import { Department, OrderStatus } from "@/types";
@@ -29,7 +29,7 @@ const OrderDetail: React.FC = () => {
         >
           <ArrowLeft className="h-4 w-4 mr-2" /> Back to Dashboard
         </Button>
-        <Card>
+        <Card className="glass-card">
           <CardContent>Order not found</CardContent>
         </Card>
       </div>
@@ -68,7 +68,7 @@ const OrderDetail: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="container mx-auto py-8 px-4 min-h-screen dark:bg-slate-900 transition-colors duration-300">
       <Button
         variant="ghost"
         className="mb-4"
@@ -79,62 +79,64 @@ const OrderDetail: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Order Details Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Order Details</CardTitle>
+        <Card className="glass-card">
+          <CardHeader className="border-b border-border/30">
+            <CardTitle className="flex items-center">
+              <Clipboard className="h-5 w-5 mr-2" /> 
+              Order Details
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-6">
             <div className="flex justify-between">
-              <span>Order Number:</span>
+              <span className="font-medium">Order Number:</span>
               <span>{order.orderNumber}</span>
             </div>
             <div className="flex justify-between">
-              <span>Client Name:</span>
+              <span className="font-medium">Client Name:</span>
               <span>{order.clientName}</span>
             </div>
             <div className="flex justify-between">
-              <span>Order Date:</span>
+              <span className="font-medium">Order Date:</span>
               <span>{new Date(order.createdAt).toLocaleDateString()}</span>
             </div>
             <div className="flex justify-between">
-              <span>Amount:</span>
-              <span>${order.amount.toFixed(2)}</span>
+              <span className="font-medium">Items:</span>
+              <span className="text-right">{order.items.join(", ")}</span>
             </div>
             <div className="flex justify-between">
-              <span>Items:</span>
-              <span>{order.items.join(", ")}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Current Status:</span>
+              <span className="font-medium">Current Status:</span>
               <span>
                 <StatusBadge status={order.status} />
               </span>
             </div>
             <div className="flex justify-between">
-              <span>Current Department:</span>
+              <span className="font-medium">Current Department:</span>
               <span>{order.currentDepartment}</span>
             </div>
           </CardContent>
         </Card>
 
         {/* Status Update Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Update Status</CardTitle>
+        <Card className="glass-card">
+          <CardHeader className="border-b border-border/30">
+            <CardTitle className="flex items-center">
+              <ClipboardCheck className="h-5 w-5 mr-2" /> 
+              Update Status
+            </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label
                   htmlFor="status"
-                  className="block text-sm font-medium leading-6 text-gray-900"
+                  className="block text-sm font-medium leading-6"
                 >
                   Status
                 </label>
                 <div className="mt-2">
                   <select
                     id="status"
-                    className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:max-w-xs sm:text-sm sm:leading-6"
+                    className="block w-full rounded-md border-0 py-1.5 bg-background text-foreground shadow-sm ring-1 ring-inset ring-input focus:ring-2 focus:ring-inset focus:ring-primary sm:max-w-xs sm:text-sm sm:leading-6"
                     value={status}
                     onChange={handleStatusChange}
                   >
@@ -150,14 +152,14 @@ const OrderDetail: React.FC = () => {
               <div>
                 <label
                   htmlFor="department"
-                  className="block text-sm font-medium leading-6 text-gray-900"
+                  className="block text-sm font-medium leading-6"
                 >
                   Department
                 </label>
                 <div className="mt-2">
                   <select
                     id="department"
-                    className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:max-w-xs sm:text-sm sm:leading-6"
+                    className="block w-full rounded-md border-0 py-1.5 bg-background text-foreground shadow-sm ring-1 ring-inset ring-input focus:ring-2 focus:ring-inset focus:ring-primary sm:max-w-xs sm:text-sm sm:leading-6"
                     value={department}
                     onChange={handleDepartmentChange}
                   >
@@ -172,7 +174,7 @@ const OrderDetail: React.FC = () => {
               <div>
                 <label
                   htmlFor="remarks"
-                  className="block text-sm font-medium leading-6 text-gray-900"
+                  className="block text-sm font-medium leading-6"
                 >
                   Remarks
                 </label>
@@ -180,14 +182,19 @@ const OrderDetail: React.FC = () => {
                   <textarea
                     id="remarks"
                     rows={3}
-                    className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                    className="block w-full rounded-md border-0 py-1.5 bg-background text-foreground shadow-sm ring-1 ring-inset ring-input placeholder:text-muted-foreground focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
                     value={remarks}
                     onChange={handleRemarksChange}
                   />
                 </div>
               </div>
 
-              <Button type="submit">Update Order</Button>
+              <Button 
+                type="submit"
+                className="w-full mt-4"
+              >
+                Update Order
+              </Button>
             </form>
           </CardContent>
         </Card>

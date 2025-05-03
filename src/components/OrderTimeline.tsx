@@ -3,7 +3,7 @@ import React from "react";
 import { StatusUpdate } from "@/types";
 import StatusBadge from "./StatusBadge";
 import { format } from "date-fns";
-import { CheckCircle } from "lucide-react";
+import { ClipboardCheck } from "lucide-react";
 
 interface OrderTimelineProps {
   statusHistory: StatusUpdate[];
@@ -24,15 +24,15 @@ const OrderTimeline: React.FC<OrderTimelineProps> = ({ statusHistory }) => {
   ) : [];
 
   return (
-    <div className="space-y-4 mt-4">
+    <div className="space-y-4 mt-4 glass-card p-6 rounded-lg">
       <h3 className="text-lg font-medium">Order Timeline</h3>
-      <div className="space-y-4">
+      <div className="space-y-6">
         {sortedUpdates.map((update) => (
           <div key={update.id} className="timeline-item">
             <div className="flex items-start mb-1">
               <div className="mr-4 mt-1">
                 <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
-                  <CheckCircle className="h-5 w-5 text-white" />
+                  <ClipboardCheck className="h-5 w-5 text-white" />
                 </div>
               </div>
               <div className="flex-1">
@@ -54,6 +54,9 @@ const OrderTimeline: React.FC<OrderTimelineProps> = ({ statusHistory }) => {
             </div>
           </div>
         ))}
+        {sortedUpdates.length === 0 && (
+          <p className="text-muted-foreground text-sm">No updates yet</p>
+        )}
       </div>
     </div>
   );
