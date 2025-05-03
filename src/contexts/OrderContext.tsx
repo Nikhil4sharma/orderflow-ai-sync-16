@@ -1,5 +1,6 @@
+
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
-import { User, Order, StatusUpdate, Department, FilterOptions, GoogleSheetConfig } from '@/types';
+import { User, Order, StatusUpdate, Department, FilterOptions, GoogleSheetConfig, OrderStatus } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { addHours } from 'date-fns';
 import { demoOrders } from '@/lib/demo-orders';
@@ -186,7 +187,7 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
   }, [orders]);
 
   const getUsersByDepartment = useCallback((department: Department) => {
-    if (department === 'All') return users;
+    if (department === 'All' as any) return users;
     return users.filter(user => user.department === department);
   }, [users]);
 

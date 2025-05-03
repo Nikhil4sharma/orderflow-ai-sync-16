@@ -5,11 +5,15 @@ export type ProductionStage = 'Printing' | 'Cutting' | 'Pasting' | 'Foiling' | '
 
 export type DesignStatus = 'Working on it' | 'Pending Feedback' | 'Completed';
 
-export type OrderStatus = 'New' | 'In Progress' | 'Completed' | 'On Hold' | 'Issue';
+export type OrderStatus = 'New' | 'In Progress' | 'Completed' | 'On Hold' | 'Issue' | 'Verified' | 'Dispatched';
 
 export type StatusType = 'completed' | 'processing' | 'issue';
 
 export type PaymentStatus = 'Not Paid' | 'Partially Paid' | 'Paid';
+
+export type CourierPartner = 'Shree Maruti' | 'DTDC' | 'FedEx' | 'DHL' | 'BlueDart' | 'Other';
+
+export type DeliveryType = 'Normal' | 'Express';
 
 export interface ProductStatus {
   id: string;
@@ -36,6 +40,17 @@ export interface StatusUpdate {
   updatedBy: string;
   editableUntil?: string; 
   selectedProduct?: string;
+  estimatedTime?: string;
+}
+
+export interface DispatchDetails {
+  address?: string;
+  contactNumber?: string;
+  courierPartner?: CourierPartner;
+  deliveryType?: DeliveryType;
+  trackingNumber?: string;
+  dispatchDate?: string;
+  verifiedBy?: string;
 }
 
 export interface Order {
@@ -65,6 +80,8 @@ export interface Order {
   statusHistory: StatusUpdate[];
   paymentStatus: PaymentStatus;
   lastPaymentDate?: string;
+  // Fields for dispatch
+  dispatchDetails?: DispatchDetails;
   // Fields for Google Sheet integration
   sheetSyncId?: string;
   lastSyncedAt?: string;

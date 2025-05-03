@@ -57,6 +57,10 @@ const ExportTimelineButton: React.FC<ExportTimelineButtonProps> = ({
         text += `Remarks: ${update.remarks}\n`;
       }
       
+      if (update.estimatedTime) {
+        text += `Estimated Time: ${update.estimatedTime}\n`;
+      }
+      
       text += `\n`;
     });
     
