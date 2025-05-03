@@ -64,26 +64,26 @@ const NotFound = () => {
           variants={itemVariants}
         >
           <motion.div 
-            className="absolute inset-0 bg-blue-500/10 rounded-full blur-xl"
+            className="absolute inset-0 bg-primary/10 rounded-full blur-xl"
             variants={pulseVariants}
             animate="pulse"
           />
           <div className="relative flex justify-center">
             <div className="relative">
-              <div className="text-[180px] font-bold text-blue-500/20">404</div>
+              <div className="text-[180px] font-bold text-primary/20">404</div>
               <motion.div 
                 className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 p-4 rounded-full bg-background/80 shadow-lg"
                 animate={{ rotate: [0, 10, -10, 0] }}
                 transition={{ duration: 4, repeat: Infinity }}
               >
-                <AlertTriangle size={80} className="text-blue-500" />
+                <AlertTriangle size={80} className="text-primary" />
               </motion.div>
             </div>
           </div>
         </motion.div>
         
         <motion.h1 
-          className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-blue-500 to-blue-700 bg-clip-text text-transparent"
+          className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent"
           variants={itemVariants}
         >
           Page Not Found

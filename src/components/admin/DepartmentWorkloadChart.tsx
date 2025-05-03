@@ -14,7 +14,7 @@ export const DepartmentWorkloadChart: React.FC<DepartmentWorkloadChartProps> = (
   }));
 
   if (chartData.length === 0 || chartData.every(item => item.orders === 0)) {
-    return <div className="flex items-center justify-center h-60">No data available</div>;
+    return <div className="flex items-center justify-center h-60 text-muted-foreground">No data available</div>;
   }
 
   return (
@@ -28,12 +28,20 @@ export const DepartmentWorkloadChart: React.FC<DepartmentWorkloadChartProps> = (
           bottom: 5,
         }}
       >
-        <CartesianGrid strokeDasharray="3 3" />
+        <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
         <XAxis dataKey="department" />
         <YAxis />
-        <Tooltip formatter={(value) => [value, 'Orders']} />
+        <Tooltip 
+          formatter={(value) => [value, 'Orders']} 
+          contentStyle={{ 
+            backgroundColor: 'hsl(var(--card))',
+            borderColor: 'hsl(var(--border))',
+            borderRadius: '0.5rem',
+          }}
+          labelStyle={{ fontWeight: 'bold' }}
+        />
         <Legend />
-        <Bar dataKey="orders" name="Active Orders" fill="#8884d8" />
+        <Bar dataKey="orders" name="Active Orders" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );
