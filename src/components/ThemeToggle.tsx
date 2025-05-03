@@ -18,7 +18,7 @@ const ThemeToggle = () => {
       className="rounded-full glass"
     >
       {theme === "dark" ? (
-        <Sun className="h-5 w-5" />
+        <Sun className="h-5 w-5 text-amber-400" />
       ) : (
         <Moon className="h-5 w-5" />
       )}

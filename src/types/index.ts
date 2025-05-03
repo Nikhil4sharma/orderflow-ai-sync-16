@@ -9,6 +9,23 @@ export type OrderStatus = 'New' | 'In Progress' | 'Completed' | 'On Hold' | 'Iss
 
 export type StatusType = 'completed' | 'processing' | 'issue';
 
+export type PaymentStatus = 'Not Paid' | 'Partially Paid' | 'Paid';
+
+export interface ProductStatus {
+  id: string;
+  name: string;
+  status: StatusType;
+  remarks?: string;
+}
+
+export interface PaymentRecord {
+  id: string;
+  amount: number;
+  date: string;
+  method: string;
+  remarks?: string;
+}
+
 export interface StatusUpdate {
   id: string;
   orderId: string;
@@ -17,6 +34,7 @@ export interface StatusUpdate {
   remarks?: string;
   timestamp: string;
   updatedBy: string;
+  editableUntil?: string; // Time until which this update can be edited
 }
 
 export interface Order {
@@ -24,7 +42,11 @@ export interface Order {
   orderNumber: string;
   clientName: string;
   amount: number;
+  paidAmount: number;
+  pendingAmount: number;
   items: string[];
+  productStatus?: ProductStatus[];
+  paymentHistory?: PaymentRecord[];
   createdAt: string;
   status: OrderStatus;
   currentDepartment: Department;
@@ -40,6 +62,8 @@ export interface Order {
   prepressStatus?: 'Pending' | 'Reviewing' | 'Ready';
   prepressRemarks?: string;
   statusHistory: StatusUpdate[];
+  paymentStatus: PaymentStatus;
+  lastPaymentDate?: string;
 }
 
 export interface User {
@@ -48,3 +72,4 @@ export interface User {
   department: Department;
   role: string;
 }
+
