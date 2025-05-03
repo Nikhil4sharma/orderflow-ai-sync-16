@@ -64,7 +64,7 @@ const Admin: React.FC = () => {
       password, // In a real app, this would be hashed
       department,
       role,
-      permissions: [] // Add empty permissions array
+      permissions: [] // Add required permissions array
     };
     
     // Add user

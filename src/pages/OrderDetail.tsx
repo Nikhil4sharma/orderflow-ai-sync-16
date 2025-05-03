@@ -780,10 +780,17 @@ const OrderDetail: React.FC = () => {
                     {order.paymentStatus || "Not Paid"}
                   </span>
                 </div>
-                {order.lastPaymentDate && (
+                {order.paymentHistory && order.paymentHistory.length > 0 && (
                   <div className="flex justify-between">
                     <span className="font-medium">Last Payment Date:</span>
-                    <span>{format(new Date(order.lastPaymentDate), 'MMM dd, yyyy')}</span>
+                    <span>
+                      {format(
+                        parseISO(
+                          order.paymentHistory[order.paymentHistory.length - 1].date
+                        ),
+                        'MMM dd, yyyy'
+                      )}
+                    </span>
                   </div>
                 )}
               </CardContent>

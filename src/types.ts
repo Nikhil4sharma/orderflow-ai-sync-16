@@ -1,4 +1,3 @@
-
 export type User = {
   id: string;
   name: string;
@@ -18,7 +17,8 @@ export type OrderStatus =
   | "On Hold"
   | "Completed"
   | "Dispatched"
-  | "Issue";
+  | "Issue"
+  | "Ready to Dispatch";
 
 // Design department specific statuses
 export type DesignStatus = 

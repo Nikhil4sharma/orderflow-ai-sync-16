@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useOrders } from "@/contexts/OrderContext";
 import {
@@ -85,17 +86,21 @@ const DispatchForm: React.FC<DispatchFormProps> = ({ order }) => {
     toast.success("Order has been verified successfully");
   };
 
+  // Check if order is marked as completed or ready to dispatch
+  const isOrderReadyForDispatch = order.status === "Completed" || order.status === "On Hold" || order.status === "In Progress";
+  const canDispatchOrder = order.status === "On Hold" || order.status === "In Progress";
+
   return (
     <PermissionGated requiredPermission="dispatch_orders">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
             <Package className="h-5 w-5 mr-2" />
-            {order.status === "Ready to Dispatch" ? "Dispatch Order" : "Verify and Dispatch Order"}
+            {canDispatchOrder ? "Dispatch Order" : "Verify and Dispatch Order"}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {order.status === "Completed" && (
+          {isOrderReadyForDispatch && (
             <div className="mb-6">
               <p className="mb-4">
                 This order has been marked as completed by the Production team. 
@@ -110,7 +115,7 @@ const DispatchForm: React.FC<DispatchFormProps> = ({ order }) => {
             </div>
           )}
 
-          {order.status === "Ready to Dispatch" && (
+          {canDispatchOrder && (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="address">Delivery Address*</Label>

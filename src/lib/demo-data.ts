@@ -1,4 +1,3 @@
-
 import { 
   Department, 
   DispatchDetails, 
@@ -86,7 +85,7 @@ const generateProductionStages = (completedStages: number = 2): ProductionStageS
     "Embossed",
     "Diecut",
     "Quality Check",
-    "Ready to Dispatch"
+    "In Progress" // Changed from "Ready to Dispatch" to "In Progress"
   ];
   
   // Take a random subset of stages

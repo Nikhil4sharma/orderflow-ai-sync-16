@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOrders } from "@/contexts/OrderContext";
@@ -32,7 +31,7 @@ const ManageUsers: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [department, setDepartment] = useState<Department>("Sales");
-  const [role, setRole] = useState<"Admin" | "Member">("Member");
+  const [role, setRole] = useState<"Admin" | "User">("User");
   
   // Check if current user is admin
   if (currentUser.role !== "Admin") {
@@ -75,7 +74,7 @@ const ManageUsers: React.FC = () => {
     setEmail("");
     setPassword("");
     setDepartment("Sales");
-    setRole("Member");
+    setRole("User");
     
     toast.success("User created successfully");
   };
@@ -182,14 +181,14 @@ const ManageUsers: React.FC = () => {
                   <Label htmlFor="role">Role</Label>
                   <Select
                     value={role}
-                    onValueChange={(value) => setRole(value as "Admin" | "Member")}
+                    onValueChange={(value) => setRole(value as "Admin" | "User")}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Admin">Admin</SelectItem>
-                      <SelectItem value="Member">Member</SelectItem>
+                      <SelectItem value="User">User</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
