@@ -27,6 +27,12 @@ const DepartmentStatusUpdateForm: React.FC<DepartmentStatusUpdateFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate mandatory timeline
+    if (!estimatedTime) {
+      toast.error("Please provide an estimated time for completion");
+      return;
+    }
+    
     // Update order with new status
     const updatedOrder = {
       ...order,
@@ -79,12 +85,11 @@ const DepartmentStatusUpdateForm: React.FC<DepartmentStatusUpdateFormProps> = ({
           </div>
           
           <div className="space-y-2">
-            <label className="block text-sm font-medium">Estimated Time for Completion</label>
             <TimeEstimationInput
               value={estimatedTime}
               onChange={setEstimatedTime}
+              required={true}
             />
-            <p className="text-xs text-muted-foreground">How long will it take to complete this stage?</p>
           </div>
           
           <div className="space-y-2">

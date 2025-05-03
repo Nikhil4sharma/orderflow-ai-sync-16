@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useOrders } from "@/contexts/OrderContext";
@@ -18,7 +19,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CheckCircle, AlertCircle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { canViewFinancialData } from "@/lib/mock-data";
 import ForwardOrderForm from "@/components/ForwardOrderForm";
 import DepartmentStatusForm from "@/components/DepartmentStatusForm";
 import ProductionStageForm from "@/components/ProductionStageForm";
@@ -28,6 +28,8 @@ import DeliveryInfoCard from "@/components/DeliveryInfoCard";
 import MobileBackButton from "@/components/MobileBackButton";
 import { canViewAddressDetails } from "@/lib/permissions";
 import ProductStatusList from "@/components/ProductStatusList";
+import { canViewFinancialData, orderNeedsApproval } from "@/lib/utils";
+import ApprovalForm from "@/components/ApprovalForm";
 
 const OrderDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -36,7 +38,7 @@ const OrderDetail: React.FC = () => {
   const order = orders.find((o) => o.id === id);
   
   // Form state
-  const [status, setStatus] = useState<OrderStatus>(order?.status || "New");
+  const [status, setStatus] = useState<OrderStatus>(order?.status || "In Progress");
   const [department, setDepartment] = useState<Department>(order?.currentDepartment || "Sales");
   const [remarks, setRemarks] = useState<string>("");
   const [totalAmount, setTotalAmount] = useState<string>(order?.amount.toString() || "0");
@@ -47,6 +49,7 @@ const OrderDetail: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const [productStatus, setProductStatus] = useState<StatusType>("processing");
   const [activeTab, setActiveTab] = useState<string>("details");
+  const [needsApproval, setNeedsApproval] = useState<boolean>(false);
 
   // Check if user can view financial data
   const canViewFinancial = canViewFinancialData(currentUser.department, currentUser.role);
@@ -65,6 +68,9 @@ const OrderDetail: React.FC = () => {
   
   // Check if user can view delivery information
   const canViewDeliveryInfo = order ? canViewAddressDetails(currentUser, order) : false;
+  
+  // Check if this order needs approval from Sales
+  const canApproveOrder = (currentUser.department === 'Sales' || currentUser.role === 'Admin');
 
   useEffect(() => {
     if (order) {
@@ -72,6 +78,7 @@ const OrderDetail: React.FC = () => {
       setDepartment(order.currentDepartment);
       setTotalAmount(order.amount.toString());
       setPaidAmount(order.paidAmount?.toString() || "0");
+      setNeedsApproval(orderNeedsApproval(order));
       
       // Select first product by default
       if (order.productStatus && order.productStatus.length > 0) {
@@ -116,7 +123,7 @@ const OrderDetail: React.FC = () => {
     if (newPaidAmount >= newTotalAmount) {
       paymentStatus = "Paid";
     } else if (newPaidAmount > 0) {
-      paymentStatus = "Partially Paid";
+      paymentStatus = "Partial";
     }
 
     // Prepare updated order
@@ -177,7 +184,7 @@ const OrderDetail: React.FC = () => {
     if (newTotalPaid >= order.amount) {
       paymentStatus = "Paid";
     } else if (newTotalPaid > 0) {
-      paymentStatus = "Partially Paid";
+      paymentStatus = "Partial";
     }
 
     // Create new payment record
@@ -195,7 +202,6 @@ const OrderDetail: React.FC = () => {
       paidAmount: newTotalPaid,
       pendingAmount: newPendingAmount,
       paymentStatus,
-      lastPaymentDate: new Date().toISOString(),
       paymentHistory: [...(order.paymentHistory || []), newPayment]
     };
 
@@ -226,6 +232,12 @@ const OrderDetail: React.FC = () => {
     }).format(amount);
   };
 
+  const handleApprovalComplete = () => {
+    // Refresh data
+    setNeedsApproval(false);
+    toast.success("Approval completed successfully");
+  };
+
   return (
     <div className="container mx-auto py-8 px-4 min-h-screen dark:bg-slate-900 transition-colors duration-300">
       <MobileBackButton to="/" label="Back to Dashboard" className="mb-4 block md:hidden" />
@@ -247,6 +259,15 @@ const OrderDetail: React.FC = () => {
           />
         </div>
       </div>
+
+      {/* Show approval form for Sales/Admin if this order needs approval */}
+      {needsApproval && canApproveOrder && (
+        <ApprovalForm 
+          order={order}
+          onApproved={handleApprovalComplete}
+          onRejected={handleApprovalComplete}
+        />
+      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
         <TabsList className="w-full grid grid-cols-2 md:grid-cols-4">

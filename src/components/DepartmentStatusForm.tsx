@@ -16,11 +16,10 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Department, DesignStatus, Order, PrepressStatus } from "@/types";
 import { format } from "date-fns";
-import DatePickerWithPopover from "./DatePickerWithPopover";
+import TimeEstimationInput from "./TimeEstimationInput";
 
 interface DepartmentStatusFormProps {
   order: Order;
@@ -33,7 +32,7 @@ const DepartmentStatusForm: React.FC<DepartmentStatusFormProps> = ({ order, depa
   // Form state based on department
   const [status, setStatus] = useState<string>("");
   const [remarks, setRemarks] = useState<string>("");
-  const [timeline, setTimeline] = useState<Date | undefined>(undefined);
+  const [estimatedTime, setEstimatedTime] = useState<string>("");
   
   const getStatusOptions = () => {
     switch (department) {
@@ -54,6 +53,12 @@ const DepartmentStatusForm: React.FC<DepartmentStatusFormProps> = ({ order, depa
       return;
     }
     
+    // Validate timeline
+    if (!estimatedTime) {
+      toast.error("Please provide an estimated time for completion");
+      return;
+    }
+    
     const updatedOrder = { ...order };
     
     // Update department-specific fields
@@ -61,7 +66,6 @@ const DepartmentStatusForm: React.FC<DepartmentStatusFormProps> = ({ order, depa
       case 'Design':
         updatedOrder.designStatus = status as DesignStatus;
         updatedOrder.designRemarks = remarks;
-        updatedOrder.designTimeline = timeline ? timeline.toISOString() : undefined;
         break;
       case 'Prepress':
         updatedOrder.prepressStatus = status as PrepressStatus;
@@ -69,7 +73,6 @@ const DepartmentStatusForm: React.FC<DepartmentStatusFormProps> = ({ order, depa
         break;
       case 'Production':
         // For production, we'd typically update a specific stage
-        // This would be expanded in a real implementation
         break;
       default:
         // General status update
@@ -90,7 +93,8 @@ const DepartmentStatusForm: React.FC<DepartmentStatusFormProps> = ({ order, depa
       orderId: order.id,
       department: department,
       status: status,
-      remarks: remarks
+      remarks: remarks,
+      estimatedTime: estimatedTime
     });
     
     toast.success("Status updated successfully");
@@ -134,21 +138,13 @@ const DepartmentStatusForm: React.FC<DepartmentStatusFormProps> = ({ order, depa
             </div>
           </div>
           
-          {(department === 'Design' || department === 'Production') && (
-            <div>
-              <label
-                htmlFor="timeline"
-                className="block text-sm font-medium leading-6 mb-2"
-              >
-                Expected Completion Date
-              </label>
-              <DatePickerWithPopover
-                date={timeline}
-                onDateChange={setTimeline}
-                placeholder="Select timeline"
-              />
-            </div>
-          )}
+          <div>
+            <TimeEstimationInput 
+              value={estimatedTime}
+              onChange={setEstimatedTime}
+              required={true}
+            />
+          </div>
           
           <div>
             <label

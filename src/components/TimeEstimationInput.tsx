@@ -1,92 +1,159 @@
 
-import React, { useState } from 'react';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import React, { useState, useEffect } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Clock } from 'lucide-react';
+import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
+import { addDays, format } from "date-fns";
+import { CalendarClock } from "lucide-react";
 
 interface TimeEstimationInputProps {
   value: string;
   onChange: (value: string) => void;
+  required?: boolean;
 }
 
-const TimeEstimationInput: React.FC<TimeEstimationInputProps> = ({ value, onChange }) => {
-  const [timeValue, setTimeValue] = useState<string>('1');
-  const [timeUnit, setTimeUnit] = useState<string>('hours');
-  
-  // Parse initial value if provided
-  React.useEffect(() => {
+const TimeEstimationInput: React.FC<TimeEstimationInputProps> = ({
+  value,
+  onChange,
+  required = false,
+}) => {
+  const [timeValue, setTimeValue] = useState<string>("");
+  const [timeUnit, setTimeUnit] = useState<string>("hours");
+  const [date, setDate] = useState<Date | undefined>(addDays(new Date(), 3));
+  const [useDate, setUseDate] = useState<boolean>(false);
+
+  // Parse initial value on component mount
+  useEffect(() => {
     if (value) {
-      try {
-        const match = value.match(/(\d+)\s+(hour|hours|day|days|week|weeks)/i);
-        if (match) {
-          setTimeValue(match[1]);
-          setTimeUnit(match[2].toLowerCase().endsWith('s') ? match[2].toLowerCase() : `${match[2].toLowerCase()}s`);
+      if (value.includes("date:")) {
+        // Format: "date: 2023-05-10"
+        setUseDate(true);
+        const dateStr = value.replace("date:", "").trim();
+        try {
+          setDate(new Date(dateStr));
+        } catch (e) {
+          console.error("Invalid date format:", value);
         }
-      } catch (e) {
-        console.error('Error parsing time estimation value:', e);
+      } else {
+        // Format: "5 hours"
+        setUseDate(false);
+        const parts = value.split(" ");
+        if (parts.length === 2) {
+          setTimeValue(parts[0]);
+          setTimeUnit(parts[1]);
+        }
       }
     }
   }, []);
-  
-  const handleTimeValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
+
+  const handleTimeValueChange = (newValue: string) => {
     setTimeValue(newValue);
-    updateParentValue(newValue, timeUnit);
-  };
-  
-  const handleTimeUnitChange = (unit: string) => {
-    setTimeUnit(unit);
-    updateParentValue(timeValue, unit);
-  };
-  
-  const updateParentValue = (value: string, unit: string) => {
-    const numericValue = parseInt(value, 10);
-    if (isNaN(numericValue) || numericValue <= 0) {
-      onChange('');
-      return;
-    }
     
-    // Format the time string properly (singular/plural)
-    let formattedUnit = unit;
-    if (numericValue === 1 && unit.endsWith('s')) {
-      formattedUnit = unit.substring(0, unit.length - 1);
-    } else if (numericValue !== 1 && !unit.endsWith('s')) {
-      formattedUnit = `${unit}s`;
-    }
+    if (useDate) return; // Don't update if we're using date mode
     
-    onChange(`${numericValue} ${formattedUnit}`);
+    if (newValue) {
+      onChange(`${newValue} ${timeUnit}`);
+    } else {
+      onChange("");
+    }
   };
-  
+
+  const handleUnitChange = (newUnit: string) => {
+    setTimeUnit(newUnit);
+    
+    if (useDate) return; // Don't update if we're using date mode
+    
+    if (timeValue) {
+      onChange(`${timeValue} ${newUnit}`);
+    }
+  };
+
+  const handleDateChange = (newDate: Date | undefined) => {
+    setDate(newDate);
+    
+    if (!useDate) return; // Don't update if we're not using date mode
+    
+    if (newDate) {
+      onChange(`date: ${format(newDate, 'yyyy-MM-dd')}`);
+    } else {
+      onChange("");
+    }
+  };
+
+  const toggleMode = () => {
+    setUseDate(!useDate);
+    
+    // Update the value based on the new mode
+    if (!useDate) {
+      // Switching to date mode
+      if (date) {
+        onChange(`date: ${format(date, 'yyyy-MM-dd')}`);
+      }
+    } else {
+      // Switching to time mode
+      if (timeValue) {
+        onChange(`${timeValue} ${timeUnit}`);
+      }
+    }
+  };
+
   return (
-    <div className="flex items-center space-x-2">
-      <div className="w-20">
-        <Input
-          type="number"
-          min="1"
-          value={timeValue}
-          onChange={handleTimeValueChange}
-          className="pl-8"
-        />
-        <Clock className="h-4 w-4 text-muted-foreground absolute mt-[-28px] ml-2" />
+    <div className="space-y-2">
+      <div className="flex justify-between items-center">
+        <Label>Estimated Time for Completion {required && <span className="text-red-500">*</span>}</Label>
+        <button 
+          type="button"
+          onClick={toggleMode}
+          className="text-xs text-blue-500 flex items-center"
+        >
+          <CalendarClock className="h-3 w-3 mr-1" />
+          {useDate ? "Switch to duration" : "Switch to specific date"}
+        </button>
       </div>
       
-      <Select value={timeUnit} onValueChange={handleTimeUnitChange}>
-        <SelectTrigger className="w-[120px]">
-          <SelectValue placeholder="Unit" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="hours">Hours</SelectItem>
-          <SelectItem value="days">Days</SelectItem>
-          <SelectItem value="weeks">Weeks</SelectItem>
-        </SelectContent>
-      </Select>
+      {useDate ? (
+        <DatePicker
+          date={date}
+          setDate={handleDateChange}
+          className={required ? "border-red-500" : ""}
+        />
+      ) : (
+        <div className="grid grid-cols-2 gap-2">
+          <Input
+            type="number"
+            placeholder="Enter time"
+            value={timeValue}
+            onChange={(e) => handleTimeValueChange(e.target.value)}
+            min="0"
+            step="0.5"
+            required={required}
+            className={required && !timeValue ? "border-red-500" : ""}
+          />
+          <Select value={timeUnit} onValueChange={handleUnitChange}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="hours">Hours</SelectItem>
+              <SelectItem value="days">Days</SelectItem>
+              <SelectItem value="weeks">Weeks</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      <p className="text-xs text-muted-foreground">
+        {useDate 
+          ? "Select a specific date when this task will be completed" 
+          : "Estimate how long this task will take to complete"
+        }
+      </p>
     </div>
   );
 };

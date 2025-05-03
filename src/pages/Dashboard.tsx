@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useOrders } from "@/contexts/OrderContext";
 import { Button } from "@/components/ui/button";
@@ -36,9 +35,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getStatusColorClass } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+import DashboardApprovalSection from "@/components/DashboardApprovalSection";
 
 const Dashboard: React.FC = () => {
-  const { orders, filterOrdersByDepartment, filterOrdersByStatus, currentUser } = useOrders();
+  const { orders, currentUser } = useOrders();
   const [departmentFilter, setDepartmentFilter] = useState<Department | 'All'>('All');
   const [statusFilter, setStatusFilter] = useState<string | 'All'>('All');
   const [searchTerm, setSearchTerm] = useState("");
@@ -61,7 +61,8 @@ const Dashboard: React.FC = () => {
   const allowedStatuses = ["In Progress", "Completed", "Issue"];
 
   // Filter orders based on filters and search
-  const filteredOrders = filterOrdersByDepartment(departmentFilter)
+  const filteredOrders = orders
+    .filter(order => departmentFilter === 'All' ? true : order.currentDepartment === departmentFilter)
     .filter(order => statusFilter === 'All' ? true : order.status === statusFilter)
     .filter(order => {
       if (!searchTerm) return true;
@@ -137,6 +138,11 @@ const Dashboard: React.FC = () => {
         )}
       </div>
 
+      {/* Approval section for Sales team and Admins */}
+      {(currentUser.department === 'Sales' || currentUser.role === 'Admin') && (
+        <DashboardApprovalSection className="mb-8" />
+      )}
+
       {/* Search and Filter Section */}
       <div className="mb-6 grid gap-4 md:grid-cols-[1fr_auto]">
         <div className="relative">
@@ -152,104 +158,74 @@ const Dashboard: React.FC = () => {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="w-full md:w-auto">
-                <Filter className="w-4 h-4 mr-2" />
-                Department
+                <Filter className="h-4 w-4 mr-2" />
+                Filter
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Filter by department</DropdownMenuLabel>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Department</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => setDepartmentFilter('All')}>
+                {departmentFilter === 'All' && '✓ '}All Departments
+              </DropdownMenuItem>
+              {userCanSeeAllDepartments && (
+                <>
+                  <DropdownMenuItem onClick={() => setDepartmentFilter('Sales')}>
+                    {departmentFilter === 'Sales' && '✓ '}Sales
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setDepartmentFilter('Design')}>
+                    {departmentFilter === 'Design' && '✓ '}Design
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setDepartmentFilter('Prepress')}>
+                    {departmentFilter === 'Prepress' && '✓ '}Prepress
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setDepartmentFilter('Production')}>
+                    {departmentFilter === 'Production' && '✓ '}Production
+                  </DropdownMenuItem>
+                </>
+              )}
+              
               <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                onClick={() => setDepartmentFilter('All')}
-                className={departmentFilter === 'All' ? 'bg-muted' : ''}
-                disabled={!userCanSeeAllDepartments}
-              >
-                All Departments
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => setDepartmentFilter('Sales')}
-                className={departmentFilter === 'Sales' ? 'bg-muted' : ''}
-              >
-                Sales
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => setDepartmentFilter('Design')}
-                className={departmentFilter === 'Design' ? 'bg-muted' : ''}
-                disabled={!userCanSeeAllDepartments && currentUser.department !== 'Design'}
-              >
-                Design
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => setDepartmentFilter('Production')}
-                className={departmentFilter === 'Production' ? 'bg-muted' : ''}
-                disabled={!userCanSeeAllDepartments && currentUser.department !== 'Production'}
-              >
-                Production
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => setDepartmentFilter('Prepress')}
-                className={departmentFilter === 'Prepress' ? 'bg-muted' : ''}
-                disabled={!userCanSeeAllDepartments && currentUser.department !== 'Prepress'}
-              >
-                Prepress
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full md:w-auto">
-                <Filter className="w-4 h-4 mr-2" />
-                Status
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Filter by status</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                onClick={() => setStatusFilter('All')}
-                className={statusFilter === 'All' ? 'bg-muted' : ''}
-              >
-                All Statuses
+              
+              <DropdownMenuLabel>Status</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => setStatusFilter('All')}>
+                {statusFilter === 'All' && '✓ '}All Statuses
               </DropdownMenuItem>
               {allowedStatuses.map(status => (
-                <DropdownMenuItem 
-                  key={status}
-                  onClick={() => setStatusFilter(status)}
-                  className={statusFilter === status ? 'bg-muted' : ''}
-                >
-                  {status}
+                <DropdownMenuItem key={status} onClick={() => setStatusFilter(status)}>
+                  {statusFilter === status && '✓ '}{status}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="w-full md:w-auto">
+                <ArrowUpDown className="h-4 w-4 mr-2" />
+                Sort
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => requestSort('createdAt')}>
+                Date {sortConfig?.key === 'createdAt' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => requestSort('clientName')}>
+                Client Name {sortConfig?.key === 'clientName' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => requestSort('status')}>
+                Status {sortConfig?.key === 'status' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
+              </DropdownMenuItem>
+              {userCanSeeAllDepartments && (
+                <DropdownMenuItem onClick={() => requestSort('currentDepartment')}>
+                  Department {sortConfig?.key === 'currentDepartment' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
-
-      {/* Responsive Tabs for Quick Status Filtering */}
-      <div className="mb-6">
-        <Tabs 
-          defaultValue="all" 
-          className="w-full"
-          onValueChange={(value) => setStatusFilter(value === 'all' ? 'All' : value)}
-        >
-          <TabsList className="grid grid-cols-3 h-auto">
-            <TabsTrigger value="all" className="py-2">
-              All
-            </TabsTrigger>
-            <TabsTrigger value="In Progress" className="py-2 flex items-center">
-              <Clock className="h-3.5 w-3.5 mr-1.5" />
-              In Progress
-            </TabsTrigger>
-            <TabsTrigger value="Completed" className="py-2 flex items-center">
-              <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
-              Completed
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
-
-      {/* Orders Table - Now with responsive design */}
+      
+      {/* Orders Table */}
       <div className="overflow-x-auto rounded-lg border border-border">
         <Table>
           <TableHeader>

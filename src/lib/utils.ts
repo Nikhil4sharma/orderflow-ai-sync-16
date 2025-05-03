@@ -1,6 +1,7 @@
 
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { Department, Order, OrderStatus, StatusType } from "@/types"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -41,4 +42,58 @@ export const shouldSendNotification = (department: string, status: string) => {
   }
   
   return false;
+};
+
+// Check if an order needs approval from Sales or Admin
+export const orderNeedsApproval = (order: Order): boolean => {
+  // Design department waiting for approval
+  if (
+    order.currentDepartment === 'Design' && 
+    order.designStatus === 'Pending Feedback from Sales Team'
+  ) {
+    return true;
+  }
+  
+  // Prepress department waiting for approval
+  if (
+    order.currentDepartment === 'Prepress' && 
+    order.prepressStatus === 'Waiting for approval'
+  ) {
+    return true;
+  }
+  
+  return false;
+};
+
+// Get department that needs to approve the order
+export const getApprovingDepartment = (order: Order): Department | null => {
+  if (orderNeedsApproval(order)) {
+    return 'Sales'; // Sales team is always the approving department
+  }
+  return null;
+};
+
+// Check if user can view financial data based on role and department
+export const canViewFinancialData = (department: Department, role: string): boolean => {
+  if (role === 'Admin') return true;
+  return department === 'Sales';
+};
+
+// Format timeline for display
+export const formatTimeline = (timeline: string | undefined): string => {
+  if (!timeline) return 'Not specified';
+  
+  if (timeline.startsWith('date:')) {
+    // Format date-based timeline
+    try {
+      const dateStr = timeline.replace('date:', '').trim();
+      const date = new Date(dateStr);
+      return date.toLocaleDateString();
+    } catch (e) {
+      return timeline;
+    }
+  } else {
+    // It's a duration (e.g. "5 hours")
+    return timeline;
+  }
 };
