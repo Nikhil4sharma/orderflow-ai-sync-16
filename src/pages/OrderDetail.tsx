@@ -27,6 +27,7 @@ import ProductStatusUpdateForm from "@/components/ProductStatusUpdateForm";
 import DeliveryInfoCard from "@/components/DeliveryInfoCard";
 import MobileBackButton from "@/components/MobileBackButton";
 import { canViewAddressDetails } from "@/lib/permissions";
+import ProductStatusList from "@/components/ProductStatusList";
 
 const OrderDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();

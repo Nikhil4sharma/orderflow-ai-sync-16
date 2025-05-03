@@ -16,7 +16,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Plus, Minus, IndianRupee } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
+import MobileBackButton from "@/components/MobileBackButton";
 
 const NewOrder: React.FC = () => {
   const navigate = useNavigate();
@@ -29,6 +30,7 @@ const NewOrder: React.FC = () => {
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [contactNumber, setContactNumber] = useState("");
   const [products, setProducts] = useState<{ name: string }[]>([{ name: "" }]);
+  const [expectedDeliveryDate, setExpectedDeliveryDate] = useState<Date | undefined>(undefined);
   const [loading, setLoading] = useState(false);
   
   // Validate form
@@ -121,7 +123,7 @@ const NewOrder: React.FC = () => {
       status: "processing" as const,
     }));
     
-    // Create new order
+    // Create new order - Always assigned to Sales department first
     const newOrder = {
       id: uuidv4(),
       orderNumber,
@@ -132,12 +134,13 @@ const NewOrder: React.FC = () => {
       items: items.filter(item => item.trim()),
       createdAt: new Date().toISOString(),
       status: "New" as const,
-      currentDepartment: "Sales" as const,
+      currentDepartment: "Sales" as const, // Always start with Sales department
       paymentStatus: "Not Paid" as const,
       statusHistory: [],
       productStatus,
-      deliveryAddress, // New field for delivery address
-      contactNumber, // New field for contact number
+      deliveryAddress,
+      contactNumber,
+      expectedDeliveryDate: expectedDeliveryDate?.toISOString(),
     };
     
     // Add order
@@ -153,9 +156,11 @@ const NewOrder: React.FC = () => {
   
   return (
     <div className="container mx-auto py-8 px-4 min-h-screen">
+      <MobileBackButton to="/" className="mb-4 md:hidden" />
+      
       <Button
         variant="ghost"
-        className="mb-4"
+        className="mb-4 hidden md:flex"
         onClick={() => navigate("/")}
       >
         <ArrowLeft className="h-4 w-4 mr-2" /> Back to Dashboard
@@ -280,6 +285,15 @@ const NewOrder: React.FC = () => {
                     value={contactNumber}
                     onChange={(e) => setContactNumber(e.target.value)}
                     required
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="expectedDeliveryDate">Expected Delivery Date</Label>
+                  <DatePicker 
+                    date={expectedDeliveryDate} 
+                    setDate={setExpectedDeliveryDate} 
+                    className="w-full"
                   />
                 </div>
                 

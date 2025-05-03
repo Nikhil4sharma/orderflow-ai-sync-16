@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProductStatus, StatusType } from "@/types";
-import { CheckCircle, AlertCircle, Clock, Tag } from "lucide-react";
+import { CheckCircle, AlertCircle, Clock, Tag, CalendarClock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useOrders } from "@/contexts/OrderContext";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { DatePicker } from "@/components/ui/date-picker";
 
 interface ProductStatusListProps {
   orderId: string;

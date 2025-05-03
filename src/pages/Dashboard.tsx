@@ -57,6 +57,9 @@ const Dashboard: React.FC = () => {
     }
   }, [currentUser]);
 
+  // Define the limited set of status filters
+  const allowedStatuses = ["New", "In Progress", "Completed", "Issue"];
+
   // Filter orders based on filters and search
   const filteredOrders = filterOrdersByDepartment(departmentFilter)
     .filter(order => statusFilter === 'All' ? true : order.status === statusFilter)
@@ -145,7 +148,7 @@ const Dashboard: React.FC = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="w-full md:w-auto">
@@ -170,20 +173,23 @@ const Dashboard: React.FC = () => {
                 Sales
               </DropdownMenuItem>
               <DropdownMenuItem 
-                onClick={() => setDepartmentFilter('Production')}
-                className={departmentFilter === 'Production' ? 'bg-muted' : ''}
-              >
-                Production
-              </DropdownMenuItem>
-              <DropdownMenuItem 
                 onClick={() => setDepartmentFilter('Design')}
                 className={departmentFilter === 'Design' ? 'bg-muted' : ''}
+                disabled={!userCanSeeAllDepartments && currentUser.department !== 'Design'}
               >
                 Design
               </DropdownMenuItem>
               <DropdownMenuItem 
+                onClick={() => setDepartmentFilter('Production')}
+                className={departmentFilter === 'Production' ? 'bg-muted' : ''}
+                disabled={!userCanSeeAllDepartments && currentUser.department !== 'Production'}
+              >
+                Production
+              </DropdownMenuItem>
+              <DropdownMenuItem 
                 onClick={() => setDepartmentFilter('Prepress')}
                 className={departmentFilter === 'Prepress' ? 'bg-muted' : ''}
+                disabled={!userCanSeeAllDepartments && currentUser.department !== 'Prepress'}
               >
                 Prepress
               </DropdownMenuItem>
@@ -206,120 +212,123 @@ const Dashboard: React.FC = () => {
               >
                 All Statuses
               </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => setStatusFilter('New')}
-                className={statusFilter === 'New' ? 'bg-muted' : ''}
-              >
-                New
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => setStatusFilter('In Progress')}
-                className={statusFilter === 'In Progress' ? 'bg-muted' : ''}
-              >
-                In Progress
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => setStatusFilter('Completed')}
-                className={statusFilter === 'Completed' ? 'bg-muted' : ''}
-              >
-                Completed
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => setStatusFilter('On Hold')}
-                className={statusFilter === 'On Hold' ? 'bg-muted' : ''}
-              >
-                On Hold
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => setStatusFilter('Issue')}
-                className={statusFilter === 'Issue' ? 'bg-muted' : ''}
-              >
-                Issue
-              </DropdownMenuItem>
+              {allowedStatuses.map(status => (
+                <DropdownMenuItem 
+                  key={status}
+                  onClick={() => setStatusFilter(status)}
+                  className={statusFilter === status ? 'bg-muted' : ''}
+                >
+                  {status}
+                </DropdownMenuItem>
+              ))}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
 
-      {/* Status Tabs */}
-      <Tabs defaultValue="all" className="mb-6">
-        <TabsList className="w-full grid grid-cols-5">
-          <TabsTrigger value="all" onClick={() => setStatusFilter('All')}>All</TabsTrigger>
-          <TabsTrigger value="new" onClick={() => setStatusFilter('New')}>New</TabsTrigger>
-          <TabsTrigger value="progress" onClick={() => setStatusFilter('In Progress')}>In Progress</TabsTrigger>
-          <TabsTrigger value="completed" onClick={() => setStatusFilter('Completed')}>Completed</TabsTrigger>
-          <TabsTrigger value="issue" onClick={() => setStatusFilter('Issue')}>Issues</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      {/* Responsive Tabs for Quick Status Filtering */}
+      <div className="mb-6">
+        <Tabs 
+          defaultValue="all" 
+          className="w-full"
+          onValueChange={(value) => setStatusFilter(value === 'all' ? 'All' : value)}
+        >
+          <TabsList className="grid grid-cols-4 h-auto">
+            <TabsTrigger value="all" className="py-2">All</TabsTrigger>
+            <TabsTrigger value="New" className="py-2">New</TabsTrigger>
+            <TabsTrigger value="In Progress" className="py-2">In Progress</TabsTrigger>
+            <TabsTrigger value="Completed" className="py-2">Completed</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
-      {/* Orders Table */}
-      <div className="border rounded-lg overflow-hidden">
+      {/* Orders Table - Now with responsive design */}
+      <div className="overflow-x-auto rounded-lg border border-border">
         <Table>
           <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead className="w-[100px] cursor-pointer" onClick={() => requestSort('orderNumber')}>
+            <TableRow>
+              <TableHead className="w-[120px] cursor-pointer" onClick={() => requestSort('orderNumber')}>
                 <div className="flex items-center">
                   Order #
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                  {sortConfig?.key === 'orderNumber' && (
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                  )}
                 </div>
               </TableHead>
               <TableHead className="cursor-pointer" onClick={() => requestSort('clientName')}>
                 <div className="flex items-center">
                   Client
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                  {sortConfig?.key === 'clientName' && (
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                  )}
                 </div>
               </TableHead>
-              <TableHead className="cursor-pointer hidden md:table-cell" onClick={() => requestSort('createdAt')}>
+              <TableHead className="hidden md:table-cell cursor-pointer" onClick={() => requestSort('createdAt')}>
                 <div className="flex items-center">
                   Date
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                  {sortConfig?.key === 'createdAt' && (
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                  )}
                 </div>
               </TableHead>
               <TableHead className="cursor-pointer" onClick={() => requestSort('status')}>
                 <div className="flex items-center">
                   Status
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                  {sortConfig?.key === 'status' && (
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                  )}
                 </div>
               </TableHead>
-              <TableHead className="cursor-pointer hidden lg:table-cell" onClick={() => requestSort('currentDepartment')}>
-                <div className="flex items-center">
-                  Department
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
-                </div>
-              </TableHead>
-              <TableHead className="hidden lg:table-cell">Items</TableHead>
+              <TableHead className="hidden md:table-cell">Department</TableHead>
+              <TableHead className="hidden md:table-cell text-right">Amount</TableHead>
+              <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {currentOrders.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                  No orders found matching your filters
+                <TableCell colSpan={7} className="h-24 text-center">
+                  No orders found
                 </TableCell>
               </TableRow>
             ) : (
               currentOrders.map((order) => (
                 <TableRow 
                   key={order.id}
-                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  className="cursor-pointer hover:bg-muted/50"
                   onClick={() => navigate(`/orders/${order.id}`)}
                 >
                   <TableCell className="font-medium">{order.orderNumber}</TableCell>
-                  <TableCell>{order.clientName}</TableCell>
-                  <TableCell className="hidden md:table-cell">{format(parseISO(order.createdAt), 'MMM d, yyyy')}</TableCell>
+                  <TableCell className="max-w-[150px] truncate" title={order.clientName}>
+                    {order.clientName}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {format(parseISO(order.createdAt), 'MMM d, yyyy')}
+                  </TableCell>
                   <TableCell>
                     <Badge variant="outline" className={cn(
-                      getStatusColorClass(order.status), 
-                      "whitespace-nowrap"
+                      "whitespace-nowrap",
+                      getStatusColorClass(order.status)
                     )}>
                       {order.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="hidden lg:table-cell">{order.currentDepartment}</TableCell>
-                  <TableCell className="hidden lg:table-cell">
-                    {order.items.length > 2 
-                      ? `${order.items.slice(0, 2).join(', ')} +${order.items.length - 2}` 
-                      : order.items.join(', ')}
+                  <TableCell className="hidden md:table-cell">{order.currentDepartment}</TableCell>
+                  <TableCell className="hidden md:table-cell text-right">
+                    ₹{order.amount.toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/orders/${order.id}`);
+                      }}
+                    >
+                      <ArrowUpDown className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
@@ -328,57 +337,61 @@ const Dashboard: React.FC = () => {
         </Table>
       </div>
 
-      {/* Pagination */}
-      {sortedOrders.length > itemsPerPage && (
-        <div className="mt-6">
+      {/* Pagination - Mobile Optimized */}
+      {totalPages > 1 && (
+        <div className="mt-4">
           <Pagination>
             <PaginationContent>
               <PaginationItem>
                 <PaginationPrevious 
-                  onClick={() => prevPage()}
-                  className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'} 
+                  onClick={prevPage}
+                  className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
                 />
               </PaginationItem>
               
-              {/* Dynamic pagination items */}
-              {Array.from({ length: Math.min(totalPages, 5) }).map((_, index) => {
-                let pageNumber: number;
-                
-                // Logic to show pages around the current page
-                if (totalPages <= 5 || currentPage <= 3) {
-                  pageNumber = index + 1;
-                } else if (currentPage >= totalPages - 2) {
-                  pageNumber = totalPages - 4 + index;
-                } else {
-                  pageNumber = currentPage - 2 + index;
-                }
-                
-                // If we would show more than total pages, skip
-                if (pageNumber > totalPages) return null;
-                
-                return (
-                  <PaginationItem key={pageNumber}>
-                    <PaginationLink 
-                      isActive={currentPage === pageNumber}
-                      onClick={() => paginate(pageNumber)}
-                    >
-                      {pageNumber}
-                    </PaginationLink>
-                  </PaginationItem>
-                );
-              })}
+              {/* Responsive pagination - show fewer items on mobile */}
+              <div className="hidden sm:flex">
+                {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
+                  // Complex logic to show appropriate page numbers
+                  let pageNumber;
+                  if (totalPages <= 5) {
+                    pageNumber = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNumber = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNumber = totalPages - 4 + i;
+                  } else {
+                    pageNumber = currentPage - 2 + i;
+                  }
+                  
+                  // Only show if the calculated page number is valid
+                  if (pageNumber > 0 && pageNumber <= totalPages) {
+                    return (
+                      <PaginationItem key={pageNumber}>
+                        <PaginationLink
+                          isActive={pageNumber === currentPage}
+                          onClick={() => paginate(pageNumber)}
+                        >
+                          {pageNumber}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  }
+                  return null;
+                })}
+              </div>
               
-              {/* Show ellipsis if there are more pages */}
-              {totalPages > 5 && currentPage < totalPages - 2 && (
-                <PaginationItem>
-                  <PaginationEllipsis />
-                </PaginationItem>
-              )}
+              {/* Mobile simplified pagination */}
+              <PaginationItem className="sm:hidden">
+                <PaginationLink isActive>
+                  {currentPage} / {totalPages}
+                </PaginationLink>
+              </PaginationItem>
               
               <PaginationItem>
                 <PaginationNext 
-                  onClick={() => nextPage()}
-                  className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'} 
+                  onClick={nextPage}
+                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
                 />
               </PaginationItem>
             </PaginationContent>

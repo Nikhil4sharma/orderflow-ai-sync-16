@@ -1,3 +1,4 @@
+
 import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOrders } from "@/contexts/OrderContext";
@@ -50,7 +51,8 @@ const Reports: React.FC = () => {
       "On Hold": 0,
       "Issue": 0,
       "Verified": 0,
-      "Dispatched": 0
+      "Dispatched": 0,
+      "Ready to Dispatch": 0
     };
     
     orders.forEach(order => {
