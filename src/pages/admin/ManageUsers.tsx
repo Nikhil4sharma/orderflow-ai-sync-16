@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { ArrowLeft, User, UserPlus, PenLine, Trash } from "lucide-react";
-import { Department, User as UserType } from "@/types";
+import { Department, User as UserType, Role } from "@/types";
 
 const ManageUsers: React.FC = () => {
   const navigate = useNavigate();
@@ -31,7 +31,7 @@ const ManageUsers: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [department, setDepartment] = useState<Department>("Sales");
-  const [role, setRole] = useState<"Admin" | "User">("User");
+  const [role, setRole] = useState<Role>("User");
   
   // Check if current user is admin
   if (currentUser.role !== "Admin") {
@@ -61,9 +61,10 @@ const ManageUsers: React.FC = () => {
       id: `user-${Date.now()}`,
       name,
       email,
-      password, // In a real app, this would be hashed
+      password, // This is now valid with our updated User type
       department,
-      role
+      role,
+      permissions: [] // Add the required permissions array
     };
     
     // Add user
@@ -181,13 +182,14 @@ const ManageUsers: React.FC = () => {
                   <Label htmlFor="role">Role</Label>
                   <Select
                     value={role}
-                    onValueChange={(value) => setRole(value as "Admin" | "User")}
+                    onValueChange={(value) => setRole(value as Role)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Admin">Admin</SelectItem>
+                      <SelectItem value="Manager">Manager</SelectItem>
                       <SelectItem value="User">User</SelectItem>
                     </SelectContent>
                   </Select>

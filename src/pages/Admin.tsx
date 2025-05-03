@@ -61,10 +61,10 @@ const Admin: React.FC = () => {
       id: `user-${Date.now()}`,
       name,
       email,
-      password, // In a real app, this would be hashed
+      password, // Now valid with our updated User type
       department,
       role,
-      permissions: [] // Add required permissions array
+      permissions: [] // Add the required permissions array
     };
     
     // Add user
@@ -223,7 +223,7 @@ const Admin: React.FC = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Admin">Admin</SelectItem>
-                    <SelectItem value="Member">Member</SelectItem>
+                    <SelectItem value="Manager">Manager</SelectItem>
                     <SelectItem value="User">User</SelectItem>
                   </SelectContent>
                 </Select>
