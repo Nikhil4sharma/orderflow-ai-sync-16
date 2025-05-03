@@ -2,11 +2,12 @@
 import React from "react";
 import { StatusUpdate, User } from "@/types";
 import StatusBadge from "./StatusBadge";
-import { format, formatDistanceToNow } from "date-fns";
-import { ClipboardCheck, Clock, Edit, CheckCircle, Tag } from "lucide-react";
+import { format, formatDistanceToNow, parseISO } from "date-fns";
+import { ClipboardCheck, Clock, Edit, CheckCircle, Tag, CalendarClock } from "lucide-react";
 import { useOrders } from "@/contexts/OrderContext";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import PermissionGated from "./PermissionGated";
 
 interface OrderTimelineProps {
   statusHistory: StatusUpdate[];
@@ -19,7 +20,7 @@ const OrderTimeline: React.FC<OrderTimelineProps> = ({
   currentUser,
   canEditStatusUpdate 
 }) => {
-  const { updateStatusUpdate } = useOrders();
+  const { updateStatusUpdate, hasPermission } = useOrders();
   
   const formatDate = (dateString: string) => {
     try {
@@ -114,28 +115,36 @@ const OrderTimeline: React.FC<OrderTimelineProps> = ({
                 {update.remarks && (
                   <p className="text-sm mt-1">{update.remarks}</p>
                 )}
+                {update.estimatedTime && (
+                  <div className="mt-1 flex items-center text-xs text-amber-600 dark:text-amber-400">
+                    <CalendarClock className="h-3 w-3 mr-1" />
+                    <span>Estimated completion time: {update.estimatedTime}</span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center mt-1">
                   <p className="text-xs text-muted-foreground">
                     Updated by {update.updatedBy}
                   </p>
                   
-                  {canEditStatusUpdate(update) && update.updatedBy === currentUser.name && (
-                    <div className="flex items-center">
-                      <Clock className="h-3 w-3 text-amber-500 mr-1" />
-                      <span className="text-xs text-amber-500 mr-2">
-                        Editable {formatTimeRemaining(update.editableUntil || '')}
-                      </span>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-6 px-2 text-xs"
-                        onClick={() => handleEditStatus(update)}
-                      >
-                        <Edit className="h-3 w-3 mr-1" />
-                        Edit
-                      </Button>
-                    </div>
-                  )}
+                  <PermissionGated requiredPermission="update_order_status">
+                    {canEditStatusUpdate(update) && update.updatedBy === currentUser.name && (
+                      <div className="flex items-center">
+                        <Clock className="h-3 w-3 text-amber-500 mr-1" />
+                        <span className="text-xs text-amber-500 mr-2">
+                          Editable {formatTimeRemaining(update.editableUntil || '')}
+                        </span>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-6 px-2 text-xs"
+                          onClick={() => handleEditStatus(update)}
+                        >
+                          <Edit className="h-3 w-3 mr-1" />
+                          Edit
+                        </Button>
+                      </div>
+                    )}
+                  </PermissionGated>
                 </div>
               </div>
             </div>

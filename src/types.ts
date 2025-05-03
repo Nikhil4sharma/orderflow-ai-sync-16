@@ -1,6 +1,6 @@
 
 // User types
-export type UserRole = "Admin" | "Member";
+export type UserRole = "Admin" | "Sales" | "Design" | "Production" | "Prepress";
 export type Department = "Sales" | "Design" | "Production" | "Prepress";
 
 export interface User {
@@ -113,4 +113,23 @@ export interface Order {
   dispatchDetails?: DispatchDetails;
   statusHistory: StatusUpdate[];
   sheetSyncId?: string;
+  lastPaymentDate?: string;
 }
+
+// Permission interfaces
+export interface Permission {
+  name: string;
+  description: string;
+  key: PermissionKey;
+}
+
+export type PermissionKey = 
+  | "view_financial_data" 
+  | "dispatch_orders" 
+  | "verify_orders"
+  | "update_order_status"
+  | "view_full_timeline"
+  | "view_address_details"
+  | "edit_orders"
+  | "admin_dashboard"
+  | "manage_users";

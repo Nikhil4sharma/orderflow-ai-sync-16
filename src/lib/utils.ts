@@ -60,3 +60,31 @@ export function filterOrdersByMultipleCriteria(orders: Order[], filterOptions: F
     return true;
   });
 }
+
+// Format currency
+export function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 2
+  }).format(amount);
+}
+
+// Get workflow stage number (for progress indicators)
+export function getWorkflowStageNumber(status: string): number {
+  const workflowStages = ["New", "In Progress", "Completed", "Verified", "Dispatched"];
+  const stageIndex = workflowStages.findIndex(stage => stage === status);
+  return stageIndex !== -1 ? stageIndex + 1 : 1;
+}
+
+// Get total workflow stages
+export function getTotalWorkflowStages(): number {
+  return 5; // New, In Progress, Completed, Verified, Dispatched
+}
+
+// Calculate workflow progress percentage
+export function calculateWorkflowProgress(status: string): number {
+  const current = getWorkflowStageNumber(status);
+  const total = getTotalWorkflowStages();
+  return Math.floor((current / total) * 100);
+}

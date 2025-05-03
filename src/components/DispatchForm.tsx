@@ -18,16 +18,17 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Package, Send } from "lucide-react";
+import { Package, Send, CheckCircle } from "lucide-react";
 import { Order, CourierPartner, DeliveryType } from "@/types";
 import { Textarea } from "@/components/ui/textarea";
+import PermissionGated from "./PermissionGated";
 
 interface DispatchFormProps {
   order: Order;
 }
 
 const DispatchForm: React.FC<DispatchFormProps> = ({ order }) => {
-  const { updateOrder, addStatusUpdate } = useOrders();
+  const { updateOrder, addStatusUpdate, verifyOrder, currentUser } = useOrders();
   
   const [address, setAddress] = useState(order.dispatchDetails?.address || "");
   const [contactNumber, setContactNumber] = useState(order.dispatchDetails?.contactNumber || "");
@@ -62,7 +63,7 @@ const DispatchForm: React.FC<DispatchFormProps> = ({ order }) => {
         deliveryType,
         trackingNumber,
         dispatchDate: new Date().toISOString(),
-        verifiedBy: localStorage.getItem("username") || "Unknown"
+        verifiedBy: currentUser?.name || "Unknown"
       }
     };
 
@@ -80,140 +81,131 @@ const DispatchForm: React.FC<DispatchFormProps> = ({ order }) => {
   };
 
   const handleVerify = () => {
-    // Update order status to verified
-    const updatedOrder = {
-      ...order,
-      status: "Verified",
-    };
-
-    // Update the order
-    updateOrder(updatedOrder);
-
-    // Add status update
-    addStatusUpdate(order.id, {
-      department: "Sales",
-      status: "Verified",
-      remarks: "Order verified and ready for dispatch",
-    });
-
+    // Verify the order (changes status to "Verified")
+    verifyOrder(order.id);
     toast.success("Order has been verified successfully");
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center">
-          <Package className="h-5 w-5 mr-2" />
-          {order.status === "Verified" ? "Dispatch Order" : "Verify and Dispatch Order"}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {order.status !== "Verified" && (
-          <div className="mb-6">
-            <p className="mb-4">
-              This order has been marked as completed by the Production team. 
-              Please verify the order before dispatch.
-            </p>
-            <Button onClick={handleVerify} className="w-full">
-              Verify Order
-            </Button>
-          </div>
-        )}
-
-        {order.status === "Verified" && (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="address">Delivery Address*</Label>
-              <Textarea
-                id="address"
-                placeholder="Enter full delivery address"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                required
-                rows={3}
-              />
+    <PermissionGated requiredPermission="dispatch_orders">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Package className="h-5 w-5 mr-2" />
+            {order.status === "Verified" ? "Dispatch Order" : "Verify and Dispatch Order"}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {order.status === "Completed" && (
+            <div className="mb-6">
+              <p className="mb-4">
+                This order has been marked as completed by the Production team. 
+                Please verify the order before dispatch.
+              </p>
+              <PermissionGated requiredPermission="verify_orders">
+                <Button onClick={handleVerify} className="w-full">
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Verify Order
+                </Button>
+              </PermissionGated>
             </div>
+          )}
 
-            <div className="space-y-2">
-              <Label htmlFor="contact">Contact Number*</Label>
-              <Input
-                id="contact"
-                placeholder="e.g., +91 9876543210"
-                value={contactNumber}
-                onChange={(e) => setContactNumber(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {order.status === "Verified" && (
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="courier">Courier Partner*</Label>
-                <Select
-                  value={courierPartner}
-                  onValueChange={(value) => setCourierPartner(value as CourierPartner)}
+                <Label htmlFor="address">Delivery Address*</Label>
+                <Textarea
+                  id="address"
+                  placeholder="Enter full delivery address"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
                   required
-                >
-                  <SelectTrigger id="courier">
-                    <SelectValue placeholder="Select courier" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Shree Maruti">Shree Maruti</SelectItem>
-                    <SelectItem value="DTDC">DTDC</SelectItem>
-                    <SelectItem value="FedEx">FedEx</SelectItem>
-                    <SelectItem value="DHL">DHL</SelectItem>
-                    <SelectItem value="BlueDart">BlueDart</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
+                  rows={3}
+                />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="delivery-type">Delivery Type*</Label>
-                <Select
-                  value={deliveryType}
-                  onValueChange={(value) => setDeliveryType(value as DeliveryType)}
+                <Label htmlFor="contact">Contact Number*</Label>
+                <Input
+                  id="contact"
+                  placeholder="e.g., +91 9876543210"
+                  value={contactNumber}
+                  onChange={(e) => setContactNumber(e.target.value)}
                   required
-                >
-                  <SelectTrigger id="delivery-type">
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Normal">Normal</SelectItem>
-                    <SelectItem value="Express">Express</SelectItem>
-                  </SelectContent>
-                </Select>
+                />
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="tracking">Tracking Number</Label>
-              <Input
-                id="tracking"
-                placeholder="e.g., TN123456789"
-                value={trackingNumber}
-                onChange={(e) => setTrackingNumber(e.target.value)}
-              />
-            </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="courier">Courier Partner*</Label>
+                  <Select
+                    value={courierPartner}
+                    onValueChange={(value) => setCourierPartner(value as CourierPartner)}
+                    required
+                  >
+                    <SelectTrigger id="courier">
+                      <SelectValue placeholder="Select courier" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Shree Maruti">Shree Maruti</SelectItem>
+                      <SelectItem value="DTDC">DTDC</SelectItem>
+                      <SelectItem value="FedEx">FedEx</SelectItem>
+                      <SelectItem value="DHL">DHL</SelectItem>
+                      <SelectItem value="BlueDart">BlueDart</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="dispatch-remarks">Remarks</Label>
-              <Textarea
-                id="dispatch-remarks"
-                placeholder="Any additional information about dispatch"
-                value={remarks}
-                onChange={(e) => setRemarks(e.target.value)}
-                rows={2}
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="delivery-type">Delivery Type*</Label>
+                  <Select
+                    value={deliveryType}
+                    onValueChange={(value) => setDeliveryType(value as DeliveryType)}
+                    required
+                  >
+                    <SelectTrigger id="delivery-type">
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Normal">Normal</SelectItem>
+                      <SelectItem value="Express">Express</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-            <Button type="submit" className="w-full">
-              <Send className="h-4 w-4 mr-2" />
-              Dispatch Order
-            </Button>
-          </form>
-        )}
-      </CardContent>
-    </Card>
+              <div className="space-y-2">
+                <Label htmlFor="tracking">Tracking Number</Label>
+                <Input
+                  id="tracking"
+                  placeholder="e.g., TN123456789"
+                  value={trackingNumber}
+                  onChange={(e) => setTrackingNumber(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="dispatch-remarks">Remarks</Label>
+                <Textarea
+                  id="dispatch-remarks"
+                  placeholder="Any additional information about dispatch"
+                  value={remarks}
+                  onChange={(e) => setRemarks(e.target.value)}
+                  rows={2}
+                />
+              </div>
+
+              <Button type="submit" className="w-full">
+                <Send className="h-4 w-4 mr-2" />
+                Dispatch Order
+              </Button>
+            </form>
+          )}
+        </CardContent>
+      </Card>
+    </PermissionGated>
   );
 };
 

@@ -1,5 +1,5 @@
 
-import { Department, Order, ProductionStage } from "@/types";
+import { Department, Order, ProductionStage, User } from "@/types";
 
 // Get all departments
 export const getDepartments = (): Department[] => {
@@ -49,5 +49,93 @@ export const getStatusColorClass = (status: string): string => {
       return "px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200";
     default:
       return "px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200";
+  }
+};
+
+// Check if user can view financial data
+export const canViewFinancialData = (department: Department | undefined, role: string | undefined): boolean => {
+  if (role === 'Admin') return true;
+  return department === 'Sales';
+};
+
+// Mock users for demo/testing
+export const demoUsers: User[] = [
+  {
+    id: "admin-1",
+    name: "Admin User",
+    email: "admin@example.com",
+    department: "Sales",
+    role: "Admin"
+  },
+  {
+    id: "sales-1",
+    name: "Sales User",
+    email: "sales@example.com",
+    department: "Sales",
+    role: "Sales"
+  },
+  {
+    id: "design-1",
+    name: "Design User",
+    email: "design@example.com",
+    department: "Design",
+    role: "Design"
+  },
+  {
+    id: "prepress-1",
+    name: "Prepress User",
+    email: "prepress@example.com",
+    department: "Prepress",
+    role: "Prepress"
+  },
+  {
+    id: "production-1",
+    name: "Production User",
+    email: "production@example.com",
+    department: "Production",
+    role: "Production"
+  }
+];
+
+// Get workflow stages
+export const getWorkflowStages = (): string[] => {
+  return ["New", "In Progress", "Completed", "Verified", "Dispatched"];
+};
+
+// Get allowed statuses for a department
+export const getAllowedStatusesForDepartment = (department: Department): string[] => {
+  switch (department) {
+    case "Sales":
+      return ["New", "In Progress", "On Hold", "Issue", "Verified", "Dispatched"];
+    case "Design":
+      return ["In Progress", "Completed", "On Hold", "Issue"];
+    case "Prepress":
+      return ["In Progress", "Completed", "On Hold", "Issue"];
+    case "Production":
+      return ["In Progress", "Completed", "On Hold", "Issue"];
+    default:
+      return ["New", "In Progress", "Completed", "On Hold", "Issue"];
+  }
+};
+
+// Get workflow stage description
+export const getWorkflowStageDescription = (status: string): string => {
+  switch (status) {
+    case "New":
+      return "Order has been created but processing hasn't started.";
+    case "In Progress":
+      return "Order is currently being processed.";
+    case "Completed":
+      return "Order production is complete.";
+    case "Verified":
+      return "Order has been verified by Sales and is ready for dispatch.";
+    case "Dispatched":
+      return "Order has been sent to the customer.";
+    case "On Hold":
+      return "Order processing has been paused.";
+    case "Issue":
+      return "There's a problem with this order that needs attention.";
+    default:
+      return "Status information not available.";
   }
 };

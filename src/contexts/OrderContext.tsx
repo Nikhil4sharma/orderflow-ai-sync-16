@@ -1,10 +1,11 @@
 
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
-import { User, Order, StatusUpdate, Department, FilterOptions, GoogleSheetConfig } from '@/types';
+import { User, Order, StatusUpdate, Department, FilterOptions, GoogleSheetConfig, PermissionKey } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { addHours } from 'date-fns';
 import { demoOrders } from '@/lib/demo-orders';
 import { filterOrdersByMultipleCriteria } from '@/lib/utils';
+import { hasPermission, filterOrderDataForUser } from '@/lib/permissions';
 
 // Define the context interface
 interface OrderContextType {
@@ -25,6 +26,8 @@ interface OrderContextType {
   canEditStatusUpdate: (update: StatusUpdate) => boolean;
   exportOrders: () => void;
   importOrders: (orders: Order[]) => void;
+  hasPermission: (permission: PermissionKey) => boolean;
+  verifyOrder: (orderId: string) => void;
 }
 
 // Create the context with a default value
@@ -96,8 +99,16 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
   
   // Get an order by ID
   const getOrderById = useCallback((orderId: string) => {
-    return orders.find(order => order.id === orderId);
-  }, [orders]);
+    const order = orders.find(order => order.id === orderId);
+    if (!order) return undefined;
+    
+    // If the user doesn't have permission to view financial data, filter it out
+    if (currentUser && !hasPermission(currentUser, "view_financial_data")) {
+      return filterOrderDataForUser(order, currentUser) as Order;
+    }
+    
+    return order;
+  }, [orders, currentUser]);
   
   // Add a status update to an order
   const addStatusUpdate = useCallback((orderId: string, update: Partial<StatusUpdate>) => {
@@ -201,6 +212,39 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
     });
   }, []);
   
+  // Check if current user has a specific permission
+  const checkPermission = useCallback((permission: PermissionKey): boolean => {
+    return hasPermission(currentUser, permission);
+  }, [currentUser]);
+  
+  // Verify an order (move from Completed to Verified status)
+  const verifyOrder = useCallback((orderId: string) => {
+    setOrders(prevOrders => {
+      const newOrders = prevOrders.map(order => {
+        if (order.id === orderId && order.status === "Completed") {
+          const verifiedOrder = {
+            ...order,
+            status: "Verified" as const
+          };
+          
+          return verifiedOrder;
+        }
+        return order;
+      });
+      
+      localStorage.setItem('orders', JSON.stringify(newOrders));
+      return newOrders;
+    });
+    
+    // Add status update
+    addStatusUpdate(orderId, {
+      status: "Verified",
+      department: "Sales",
+      remarks: "Order verified and ready for dispatch",
+    });
+    
+  }, [addStatusUpdate]);
+  
   const contextValue: OrderContextType = {
     orders,
     filteredOrders,
@@ -219,6 +263,8 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
     canEditStatusUpdate,
     exportOrders,
     importOrders,
+    hasPermission: checkPermission,
+    verifyOrder,
   };
   
   return (
