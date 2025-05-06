@@ -20,14 +20,14 @@ const generateOrderNumber = () => {
 // Generate mock orders
 export const getMockOrders = (): Order[] => {
   const departments: Department[] = ["Sales", "Design", "Production", "Prepress"];
-  const statuses: OrderStatus[] = ["In Progress", "Completed", "On Hold", "Issue", "Verified"];
-  const paymentStatuses: PaymentStatus[] = ["Not Paid", "Partially Paid", "Paid"];
+  const statuses: OrderStatus[] = ["In Progress", "Completed", "On Hold", "Issue"];
+  const paymentStatuses: PaymentStatus[] = ["Not Paid", "Partial", "Paid"];
   
   return Array.from({ length: 15 }, (_, i) => {
     const amount = Math.floor(1000 + Math.random() * 10000);
     const paidAmount = Math.random() > 0.5 ? amount : Math.floor(Math.random() * amount);
     const pendingAmount = amount - paidAmount;
-    const paymentStatus = paidAmount === 0 ? "Not Paid" : paidAmount === amount ? "Paid" : "Partially Paid";
+    const paymentStatus = paidAmount === 0 ? "Not Paid" : paidAmount === amount ? "Paid" : "Partial";
     const createdAt = getRandomDate();
     const orderNumber = generateOrderNumber();
     
@@ -46,7 +46,7 @@ export const getMockOrders = (): Order[] => {
         {
           id: uuidv4(),
           orderId: uuidv4(),
-          department: "Sales",
+          department: "Sales" as Department,
           status: "Created",
           remarks: "Order created",
           timestamp: createdAt,
@@ -60,7 +60,7 @@ export const getMockOrders = (): Order[] => {
 
 // Generate mock users
 export const getMockUsers = (): User[] => {
-  const departments: Department[] = ["Sales", "Design", "Production", "Prepress", "Admin"];
+  const departments: Department[] = ["Sales", "Design", "Production", "Prepress"];
   const roles = ["Admin", "Manager", "Staff"];
   
   // Always include an admin user
@@ -69,22 +69,21 @@ export const getMockUsers = (): User[] => {
     name: "Admin User",
     email: "admin@example.com",
     password: "password",
-    department: "Admin",
+    department: "Sales" as Department, // Admin is not a valid department type, using Sales
     role: "Admin",
     permissions: [
       "manage_users", 
       "manage_departments", 
       "update_orders", 
       "delete_orders", 
-      "view_finances", 
       "manage_settings", 
       "export_data"
-    ]
+    ] as PermissionKey[]
   };
   
   // Generate other random users
   const otherUsers = Array.from({ length: 5 }, (_, i) => {
-    const department = departments[Math.floor(Math.random() * (departments.length - 1))]; // Exclude Admin
+    const department = departments[Math.floor(Math.random() * departments.length)];
     const role = roles[Math.floor(Math.random() * roles.length)];
     
     return {
@@ -103,17 +102,17 @@ export const getMockUsers = (): User[] => {
 
 // Export other utility functions as needed
 export const getRandomOrderStatus = (): OrderStatus => {
-  const statuses: OrderStatus[] = ["In Progress", "Completed", "On Hold", "Issue", "Verified"];
+  const statuses: OrderStatus[] = ["In Progress", "Completed", "On Hold", "Issue"];
   return statuses[Math.floor(Math.random() * statuses.length)];
 };
 
 export const getRandomDepartment = (): Department => {
-  const departments: Department[] = ["Sales", "Design", "Production", "Prepress", "Admin"];
+  const departments: Department[] = ["Sales", "Design", "Production", "Prepress"];
   return departments[Math.floor(Math.random() * departments.length)];
 };
 
 export const getRandomPaymentStatus = (): PaymentStatus => {
-  const statuses: PaymentStatus[] = ["Not Paid", "Partially Paid", "Paid"];
+  const statuses: PaymentStatus[] = ["Not Paid", "Partial", "Paid"];
   return statuses[Math.floor(Math.random() * statuses.length)];
 };
 
@@ -132,8 +131,6 @@ export const getAllowedStatusesForDepartment = (department: Department): OrderSt
       return ["In Progress", "Completed", "On Hold", "Issue", "Ready to Dispatch"];
     case "Prepress":
       return ["In Progress", "Completed", "On Hold", "Issue"];
-    case "Admin":
-      return ["In Progress", "Completed", "On Hold", "Issue", "Verified", "Dispatched", "Ready to Dispatch"];
     default:
       return ["In Progress", "Completed", "On Hold", "Issue"];
   }

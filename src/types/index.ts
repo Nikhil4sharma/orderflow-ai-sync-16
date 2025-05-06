@@ -17,6 +17,8 @@ export type CourierPartner = 'Shree Maruti' | 'DTDC' | 'FedEx' | 'DHL' | 'BlueDa
 
 export type DeliveryType = 'Normal' | 'Express';
 
+export type Role = 'Admin' | 'Manager' | 'Staff' | string;
+
 export interface ProductStatus {
   id: string;
   name: string;
@@ -95,7 +97,7 @@ export interface User {
   email?: string;
   password?: string;
   department: Department;
-  role: string;
+  role: Role;
   permissions?: PermissionKey[];
 }
 

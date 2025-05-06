@@ -3,6 +3,7 @@ import React, { useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useOrders } from "@/contexts/OrderContext";
 import LoginForm from "@/components/auth/LoginForm";
+import { motion } from "framer-motion";
 
 const Login: React.FC = () => {
   const { isAuthenticated, currentUser } = useOrders();
@@ -47,16 +48,18 @@ const Login: React.FC = () => {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-muted/40 p-4">
-      <div className="w-full max-w-md">
-        <div className="mb-6 text-center">
-          <h1 className="text-3xl font-bold text-primary">OrderFlow</h1>
-          <p className="text-muted-foreground">Sign in to manage orders</p>
-        </div>
-        <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
-          <LoginForm />
-        </div>
-      </div>
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-background to-muted/30">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md space-y-8"
+      >
+        <LoginForm />
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+          &copy; {new Date().getFullYear()} OrderFlow Management System
+        </p>
+      </motion.div>
     </div>
   );
 };
