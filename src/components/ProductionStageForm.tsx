@@ -10,8 +10,8 @@ import { Order, ProductionStage, StatusType } from "@/types";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { AlertCircle, AlertTriangle, CheckCircle, Clock, Settings } from "lucide-react";
-import DatePickerWithPopover from "./DatePickerWithPopover";
 import { Progress } from "./ui/progress";
+import ManualDateInput from "./ui/manual-date-input";
 
 interface ProductionStageFormProps {
   order: Order;
@@ -24,7 +24,7 @@ const ProductionStageForm: React.FC<ProductionStageFormProps> = ({ order }) => {
   const [selectedStage, setSelectedStage] = useState<ProductionStage | "">("");
   const [stageStatus, setStageStatus] = useState<StatusType>("processing");
   const [remarks, setRemarks] = useState("");
-  const [timeline, setTimeline] = useState<Date | undefined>(undefined);
+  const [timelineDate, setTimelineDate] = useState("");
   
   // Production stages
   const productionStages: ProductionStage[] = [
@@ -41,6 +41,15 @@ const ProductionStageForm: React.FC<ProductionStageFormProps> = ({ order }) => {
   
   // Check if payment is complete
   const isPaymentComplete = order.paymentStatus === "Paid";
+  
+  // Predefined durations for production
+  const predefinedDurations = [
+    { label: "1 day", value: "1 day" },
+    { label: "2 days", value: "2 days" },
+    { label: "3 days", value: "3 days" },
+    { label: "1 week", value: "1 week" },
+    { label: "1 month", value: "1 month" },
+  ];
   
   // Calculate completion percentage of production stages
   const getProductionCompletion = () => {
@@ -66,7 +75,7 @@ const ProductionStageForm: React.FC<ProductionStageFormProps> = ({ order }) => {
     }
     
     // Check if timeline is provided for Ready to Dispatch
-    if (selectedStage === "Ready to Dispatch" && !timeline) {
+    if (selectedStage === "Ready to Dispatch" && !timelineDate) {
       toast.error("Expected completion date is required for Ready to Dispatch status");
       return;
     }
@@ -84,7 +93,7 @@ const ProductionStageForm: React.FC<ProductionStageFormProps> = ({ order }) => {
         ...updatedStages[stageIndex],
         status: stageStatus,
         remarks: remarks || updatedStages[stageIndex].remarks,
-        timeline: timeline ? timeline.toISOString() : updatedStages[stageIndex].timeline
+        timeline: timelineDate || updatedStages[stageIndex].timeline
       };
     } else {
       // Add new stage
@@ -94,7 +103,7 @@ const ProductionStageForm: React.FC<ProductionStageFormProps> = ({ order }) => {
           stage: selectedStage,
           status: stageStatus,
           remarks: remarks,
-          timeline: timeline ? timeline.toISOString() : undefined
+          timeline: timelineDate
         }
       ];
     }
@@ -104,8 +113,8 @@ const ProductionStageForm: React.FC<ProductionStageFormProps> = ({ order }) => {
       ...order,
       productionStages: updatedStages,
       // Set expected completion date if Ready to Dispatch
-      expectedCompletionDate: selectedStage === "Ready to Dispatch" && timeline ? 
-        timeline.toISOString() : order.expectedCompletionDate,
+      expectedCompletionDate: selectedStage === "Ready to Dispatch" && timelineDate ? 
+        new Date(timelineDate).toISOString() : order.expectedCompletionDate,
       // If Ready to Dispatch is completed and payment is received, update status
       status: selectedStage === "Ready to Dispatch" && stageStatus === "completed" && isPaymentComplete ? 
         "Ready to Dispatch" : order.status
@@ -118,7 +127,7 @@ const ProductionStageForm: React.FC<ProductionStageFormProps> = ({ order }) => {
     setSelectedStage("");
     setStageStatus("processing");
     setRemarks("");
-    setTimeline(undefined);
+    setTimelineDate("");
   };
   
   return (
@@ -162,7 +171,7 @@ const ProductionStageForm: React.FC<ProductionStageFormProps> = ({ order }) => {
                     <span className="text-sm font-medium">{stage.stage}</span>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {stage.timeline && new Date(stage.timeline).toLocaleDateString()}
+                    {stage.timeline && stage.timeline}
                   </div>
                 </div>
               ))}
@@ -245,11 +254,39 @@ const ProductionStageForm: React.FC<ProductionStageFormProps> = ({ order }) => {
             >
               Expected Completion Date {selectedStage === "Ready to Dispatch" && <span className="text-red-500">*</span>}
             </label>
-            <DatePickerWithPopover
-              date={timeline}
-              onDateChange={setTimeline}
-              placeholder="Select expected completion date"
+            <ManualDateInput
+              value={timelineDate}
+              onChange={setTimelineDate}
+              required={selectedStage === "Ready to Dispatch"}
             />
+            
+            <div className="mt-3 flex flex-wrap gap-2">
+              {predefinedDurations.map((duration) => (
+                <button
+                  key={duration.value}
+                  type="button"
+                  onClick={() => {
+                    // Calculate date based on duration
+                    const today = new Date();
+                    let futureDate = new Date();
+                    
+                    if (duration.value.includes("day")) {
+                      const days = parseInt(duration.value);
+                      futureDate.setDate(today.getDate() + days);
+                    } else if (duration.value.includes("week")) {
+                      futureDate.setDate(today.getDate() + 7);
+                    } else if (duration.value.includes("month")) {
+                      futureDate.setMonth(today.getMonth() + 1);
+                    }
+                    
+                    setTimelineDate(futureDate.toISOString().split('T')[0]);
+                  }}
+                  className="px-3 py-1 bg-muted/50 hover:bg-muted text-xs rounded-full"
+                >
+                  {duration.label}
+                </button>
+              ))}
+            </div>
           </div>
           
           <div>

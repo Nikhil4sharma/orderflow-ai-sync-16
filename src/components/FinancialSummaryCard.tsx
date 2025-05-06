@@ -84,7 +84,7 @@ const FinancialSummaryCard: React.FC<FinancialSummaryCardProps> = ({
           <div className="rounded-md bg-muted/50 p-4 col-span-2">
             <div className="text-xs text-muted-foreground">Pending</div>
             <div className="flex items-baseline mt-1">
-              <IndianRupee className="h-3 w-3 mr-1" className={order.pendingAmount > 0 ? "text-amber-500" : "text-muted-foreground"} />
+              <IndianRupee className={`h-3 w-3 mr-1 ${order.pendingAmount > 0 ? "text-amber-500" : "text-muted-foreground"}`} />
               <div className={`text-lg font-semibold ${order.pendingAmount > 0 ? "text-amber-500" : "text-muted-foreground"}`}>
                 {formatIndianRupees(order.pendingAmount)}
               </div>

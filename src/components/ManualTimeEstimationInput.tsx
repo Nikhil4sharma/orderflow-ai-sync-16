@@ -10,15 +10,15 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { CalendarClock } from "lucide-react";
-import ManualDateInput from "./ui/manual-date-input";
+import ManualDateInput from "@/components/ui/manual-date-input";
 
-interface TimeEstimationInputProps {
+interface ManualTimeEstimationInputProps {
   value: string;
   onChange: (value: string) => void;
   required?: boolean;
 }
 
-const TimeEstimationInput: React.FC<TimeEstimationInputProps> = ({
+const ManualTimeEstimationInput: React.FC<ManualTimeEstimationInputProps> = ({
   value,
   onChange,
   required = false,
@@ -99,7 +99,7 @@ const TimeEstimationInput: React.FC<TimeEstimationInputProps> = ({
     }
   };
 
-  const predefinedOptions = [
+  const predefinedDurations = [
     { label: "1 day", value: "1 days" },
     { label: "2 days", value: "2 days" },
     { label: "3 days", value: "3 days" },
@@ -126,6 +126,7 @@ const TimeEstimationInput: React.FC<TimeEstimationInputProps> = ({
           value={dateValue}
           onChange={handleDateChange}
           required={required}
+          placeholder="YYYY-MM-DD"
         />
       ) : (
         <div className="space-y-3">
@@ -153,19 +154,19 @@ const TimeEstimationInput: React.FC<TimeEstimationInputProps> = ({
           </div>
           
           <div className="flex flex-wrap gap-2">
-            {predefinedOptions.map((option) => (
+            {predefinedDurations.map((duration) => (
               <button
-                key={option.value}
+                key={duration.value}
                 type="button"
                 onClick={() => {
-                  const [value, unit] = option.value.split(" ");
+                  const [value, unit] = duration.value.split(" ");
                   setTimeValue(value);
                   setTimeUnit(unit);
-                  onChange(option.value);
+                  onChange(duration.value);
                 }}
                 className="px-3 py-1 bg-muted/50 hover:bg-muted text-xs rounded-full"
               >
-                {option.label}
+                {duration.label}
               </button>
             ))}
           </div>
@@ -182,4 +183,4 @@ const TimeEstimationInput: React.FC<TimeEstimationInputProps> = ({
   );
 };
 
-export default TimeEstimationInput;
+export default ManualTimeEstimationInput;

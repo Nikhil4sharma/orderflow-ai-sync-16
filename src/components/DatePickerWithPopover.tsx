@@ -1,15 +1,11 @@
 
-import * as React from "react";
+import React from "react";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
+import ManualDateInput from "./ui/manual-date-input";
 
 interface DatePickerWithPopoverProps {
   date: Date | undefined;
@@ -21,34 +17,41 @@ interface DatePickerWithPopoverProps {
 const DatePickerWithPopover: React.FC<DatePickerWithPopoverProps> = ({
   date,
   onDateChange,
-  placeholder = "Pick a date",
+  placeholder = "Select a date",
   className,
 }) => {
+  // Convert Date to string in the format YYYY-MM-DD
+  const dateToString = (date: Date | undefined): string => {
+    if (!date) return "";
+    return format(date, "yyyy-MM-dd");
+  };
+
+  // Convert string to Date
+  const stringToDate = (dateStr: string): Date | undefined => {
+    if (!dateStr || dateStr.trim() === "") return undefined;
+    
+    // Try to parse the date
+    const parsedDate = new Date(dateStr);
+    
+    // Check if the date is valid
+    if (isNaN(parsedDate.getTime())) return undefined;
+    
+    return parsedDate;
+  };
+
+  const handleDateChange = (dateString: string) => {
+    onDateChange(stringToDate(dateString));
+  };
+
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          className={cn(
-            "w-full justify-start text-left font-normal",
-            !date && "text-muted-foreground",
-            className
-          )}
-        >
-          <CalendarIcon className="mr-2 h-4 w-4" />
-          {date ? format(date, "PPP") : <span>{placeholder}</span>}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
-        <Calendar
-          mode="single"
-          selected={date}
-          onSelect={onDateChange}
-          initialFocus
-          className={cn("p-3 pointer-events-auto")}
-        />
-      </PopoverContent>
-    </Popover>
+    <div className="w-full">
+      <ManualDateInput
+        value={dateToString(date)}
+        onChange={handleDateChange}
+        placeholder="YYYY-MM-DD"
+        className={className}
+      />
+    </div>
   );
 };
 

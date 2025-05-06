@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from "react";
 import { useOrders } from "@/contexts/OrderContext";
 import { Button } from "@/components/ui/button";
-import { Department } from "@/types";
-import { Search, PlusIcon, Filter, ArrowUpDown, Clock, CheckCircle, AlertTriangle } from "lucide-react";
+import { Department, Order } from "@/types";
+import { Search, PlusIcon, Filter, ArrowUpDown, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import {
@@ -32,10 +33,10 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getStatusColorClass } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import DashboardApprovalSection from "@/components/DashboardApprovalSection";
+import OrderStatusTabs from "@/components/OrderStatusTabs";
 
 const Dashboard: React.FC = () => {
   const { orders, currentUser } = useOrders();
@@ -56,9 +57,6 @@ const Dashboard: React.FC = () => {
       setDepartmentFilter(currentUser.department);
     }
   }, [currentUser]);
-
-  // Define the limited set of status filters
-  const allowedStatuses = ["In Progress", "Completed", "Issue"];
 
   // Filter orders based on filters and search
   const filteredOrders = orders
@@ -98,6 +96,17 @@ const Dashboard: React.FC = () => {
     return sortableOrders;
   }, [visibleOrders, sortConfig]);
 
+  // Count orders by status
+  const countByStatus = orders.reduce<Record<string, number>>(
+    (acc, order) => {
+      const status = order.status;
+      acc[status] = (acc[status] || 0) + 1;
+      acc["All"] = (acc["All"] || 0) + 1;
+      return acc;
+    },
+    { All: 0 }
+  );
+
   // Handle sorting
   const requestSort = (key: string) => {
     let direction: 'ascending' | 'descending' = 'ascending';
@@ -117,11 +126,22 @@ const Dashboard: React.FC = () => {
   const nextPage = () => setCurrentPage(prev => Math.min(prev + 1, totalPages));
   const prevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1));
 
+  // Get department-specific title
+  const getDepartmentTitle = () => {
+    switch (currentUser.department) {
+      case 'Sales': return 'Sales Dashboard';
+      case 'Design': return 'Design Dashboard';
+      case 'Prepress': return 'Prepress Dashboard';
+      case 'Production': return 'Production Dashboard';
+      default: return 'OrderFlow Dashboard';
+    }
+  };
+
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold mb-1">OrderFlow Dashboard</h1>
+          <h1 className="text-2xl font-bold mb-1">{getDepartmentTitle()}</h1>
           <p className="text-muted-foreground">
             {sortedOrders.length} {sortedOrders.length === 1 ? 'order' : 'orders'} found
           </p>
@@ -142,6 +162,15 @@ const Dashboard: React.FC = () => {
       {(currentUser.department === 'Sales' || currentUser.role === 'Admin') && (
         <DashboardApprovalSection className="mb-8" />
       )}
+
+      {/* Order Status Tabs */}
+      <div className="mb-6">
+        <OrderStatusTabs 
+          activeStatus={statusFilter} 
+          onChange={setStatusFilter} 
+          countByStatus={countByStatus}
+        />
+      </div>
 
       {/* Search and Filter Section */}
       <div className="mb-6 grid gap-4 md:grid-cols-[1fr_auto]">
@@ -183,18 +212,6 @@ const Dashboard: React.FC = () => {
                   </DropdownMenuItem>
                 </>
               )}
-              
-              <DropdownMenuSeparator />
-              
-              <DropdownMenuLabel>Status</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => setStatusFilter('All')}>
-                {statusFilter === 'All' && '✓ '}All Statuses
-              </DropdownMenuItem>
-              {allowedStatuses.map(status => (
-                <DropdownMenuItem key={status} onClick={() => setStatusFilter(status)}>
-                  {statusFilter === status && '✓ '}{status}
-                </DropdownMenuItem>
-              ))}
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -230,41 +247,13 @@ const Dashboard: React.FC = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[120px] cursor-pointer" onClick={() => requestSort('orderNumber')}>
-                <div className="flex items-center">
-                  Order #
-                  {sortConfig?.key === 'orderNumber' && (
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                  )}
-                </div>
-              </TableHead>
-              <TableHead className="cursor-pointer" onClick={() => requestSort('clientName')}>
-                <div className="flex items-center">
-                  Client
-                  {sortConfig?.key === 'clientName' && (
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                  )}
-                </div>
-              </TableHead>
-              <TableHead className="hidden md:table-cell cursor-pointer" onClick={() => requestSort('createdAt')}>
-                <div className="flex items-center">
-                  Date
-                  {sortConfig?.key === 'createdAt' && (
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                  )}
-                </div>
-              </TableHead>
-              <TableHead className="cursor-pointer" onClick={() => requestSort('status')}>
-                <div className="flex items-center">
-                  Status
-                  {sortConfig?.key === 'status' && (
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                  )}
-                </div>
-              </TableHead>
+              <TableHead className="w-[120px]">Order #</TableHead>
+              <TableHead>Client</TableHead>
+              <TableHead className="hidden md:table-cell">Date</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead className="hidden md:table-cell">Department</TableHead>
               <TableHead className="hidden md:table-cell text-right">Amount</TableHead>
-              <TableHead className="w-[50px]"></TableHead>
+              <TableHead className="text-right">Payment</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -286,7 +275,7 @@ const Dashboard: React.FC = () => {
                     {order.clientName}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
-                    {format(parseISO(order.createdAt), 'MMM d, yyyy')}
+                    {format(parseISO(order.createdAt), 'yyyy-MM-dd')}
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className={cn(
@@ -305,17 +294,14 @@ const Dashboard: React.FC = () => {
                     ₹{order.amount.toLocaleString()}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/orders/${order.id}`);
-                      }}
-                    >
-                      <ArrowUpDown className="h-4 w-4" />
-                    </Button>
+                    <Badge variant={order.paymentStatus === "Paid" ? "success" : "outline"} className={cn(
+                      "whitespace-nowrap",
+                      order.paymentStatus === "Paid" ? "bg-green-500/20 text-green-600 border-green-500" :
+                      order.paymentStatus === "Partial" ? "bg-amber-500/20 text-amber-600 border-amber-500" :
+                      "bg-red-500/20 text-red-600 border-red-500"
+                    )}>
+                      {order.paymentStatus}
+                    </Badge>
                   </TableCell>
                 </TableRow>
               ))
@@ -324,7 +310,7 @@ const Dashboard: React.FC = () => {
         </Table>
       </div>
 
-      {/* Pagination - Mobile Optimized */}
+      {/* Pagination */}
       {totalPages > 1 && (
         <div className="mt-4">
           <Pagination>
