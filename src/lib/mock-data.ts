@@ -64,7 +64,7 @@ export const getMockUsers = (): User[] => {
   const adminUser: User = {
     id: "admin-1",
     name: "Admin User",
-    email: "admin@orderflow.com",
+    email: "admin@chhapai.com",
     password: "admin123",
     department: "Sales" as Department,
     role: "Admin" as Role,
@@ -82,7 +82,7 @@ export const getMockUsers = (): User[] => {
   const salesUser: User = {
     id: "sales-1",
     name: "Sales User",
-    email: "sales@orderflow.com",
+    email: "sales@chhapai.com",
     password: "sales123",
     department: "Sales" as Department,
     role: "Manager" as Role,
@@ -98,7 +98,7 @@ export const getMockUsers = (): User[] => {
   const designUser: User = {
     id: "design-1",
     name: "Design User",
-    email: "design@orderflow.com",
+    email: "design@chhapai.com",
     password: "design123",
     department: "Design" as Department,
     role: "Staff" as Role,
@@ -113,7 +113,7 @@ export const getMockUsers = (): User[] => {
   const productionUser: User = {
     id: "production-1",
     name: "Production User",
-    email: "production@orderflow.com",
+    email: "production@chhapai.com",
     password: "production123",
     department: "Production" as Department,
     role: "Manager" as Role,

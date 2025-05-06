@@ -27,16 +27,16 @@ const LoginForm: React.FC = () => {
     const demoAccount = params.get('demo');
     
     if (demoAccount === 'admin') {
-      setEmail('admin@orderflow.com');
+      setEmail('admin@chhapai.com');
       setPassword('admin123');
     } else if (demoAccount === 'sales') {
-      setEmail('sales@orderflow.com');
+      setEmail('sales@chhapai.com');
       setPassword('sales123');
     } else if (demoAccount === 'design') {
-      setEmail('design@orderflow.com');
+      setEmail('design@chhapai.com');
       setPassword('design123');
     } else if (demoAccount === 'production') {
-      setEmail('production@orderflow.com');
+      setEmail('production@chhapai.com');
       setPassword('production123');
     }
   }, []);
@@ -53,24 +53,28 @@ const LoginForm: React.FC = () => {
         return;
       }
       
+      // Normalize email to lowercase for case-insensitive comparison
+      const normalizedEmail = email.toLowerCase();
+      
       // Simulate login process
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      // For demo purposes, we'll use a simple check
-      if (email === "admin@orderflow.com" && password === "admin123") {
-        loginUser(email, password);
+      // For demo purposes, we'll use a simple check with normalized emails
+      // Modified to work with both chhapai.com and orderflow.com domains
+      if ((normalizedEmail === "admin@chhapai.com" || normalizedEmail === "admin@orderflow.com") && password === "admin123") {
+        loginUser(normalizedEmail, password);
         toast.success("Welcome back, Administrator!");
         navigate("/dashboard");
-      } else if (email === "sales@orderflow.com" && password === "sales123") {
-        loginUser(email, password);
+      } else if ((normalizedEmail === "sales@chhapai.com" || normalizedEmail === "sales@orderflow.com") && password === "sales123") {
+        loginUser(normalizedEmail, password);
         toast.success("Welcome back, Sales Representative!");
         navigate("/dashboard");
-      } else if (email === "design@orderflow.com" && password === "design123") {
-        loginUser(email, password);
+      } else if ((normalizedEmail === "design@chhapai.com" || normalizedEmail === "design@orderflow.com") && password === "design123") {
+        loginUser(normalizedEmail, password);
         toast.success("Welcome back, Designer!");
         navigate("/dashboard");
-      } else if (email === "production@orderflow.com" && password === "production123") {
-        loginUser(email, password);
+      } else if ((normalizedEmail === "production@chhapai.com" || normalizedEmail === "production@orderflow.com") && password === "production123") {
+        loginUser(normalizedEmail, password);
         toast.success("Welcome back, Production Manager!");
         navigate("/dashboard");
       } else {
@@ -113,7 +117,7 @@ const LoginForm: React.FC = () => {
                 <Input 
                   id="email" 
                   type="email" 
-                  placeholder="email@example.com"
+                  placeholder="email@chhapai.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10"
@@ -181,10 +185,10 @@ const LoginForm: React.FC = () => {
                   <p className="font-medium text-foreground mb-2">Demo Accounts</p>
                   <div className="grid grid-cols-1 gap-y-2">
                     {[
-                      { role: "Admin", email: "admin@orderflow.com", password: "admin123" },
-                      { role: "Sales", email: "sales@orderflow.com", password: "sales123" },
-                      { role: "Design", email: "design@orderflow.com", password: "design123" },
-                      { role: "Production", email: "production@orderflow.com", password: "production123" }
+                      { role: "Admin", email: "admin@chhapai.com", password: "admin123" },
+                      { role: "Sales", email: "sales@chhapai.com", password: "sales123" },
+                      { role: "Design", email: "design@chhapai.com", password: "design123" },
+                      { role: "Production", email: "production@chhapai.com", password: "production123" }
                     ].map((account) => (
                       <div key={account.role} className="p-2 border border-border/30 rounded-md hover:bg-muted transition-colors">
                         <div className="font-medium text-sm mb-1">{account.role}</div>
@@ -206,7 +210,7 @@ const LoginForm: React.FC = () => {
                     size="sm"
                     type="button"
                     onClick={() => {
-                      setEmail(`${role.toLowerCase()}@orderflow.com`);
+                      setEmail(`${role.toLowerCase()}@chhapai.com`);
                       setPassword(`${role.toLowerCase()}123`);
                     }}
                     className="text-xs h-8"

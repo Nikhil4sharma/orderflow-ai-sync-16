@@ -6,11 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Department, Order, ProductStatus, StatusType } from "@/types";
-import { Clock, CheckCircle, AlertCircle } from "lucide-react";
+import { Clock, CheckCircle, AlertCircle, Save, Calendar } from "lucide-react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, addDays } from "date-fns";
 
@@ -27,24 +26,30 @@ const ProductStatusUpdateForm: React.FC<ProductStatusUpdateFormProps> = ({
 }) => {
   const { updateOrder, addStatusUpdate, currentUser } = useOrders();
   
-  // Form state
+  // Enhanced Form state
   const [selectedProduct, setSelectedProduct] = useState<string | undefined>(
     order.productStatus?.length ? order.productStatus[0].id : undefined
   );
   const [status, setStatus] = useState<StatusType>("processing");
   const [remarks, setRemarks] = useState("");
   const [estimatedDate, setEstimatedDate] = useState<Date | undefined>(addDays(new Date(), 2));
+  const [isUpdating, setIsUpdating] = useState(false);
   
   // Filter products for current department only
   const departmentProducts = order.productStatus?.filter(
     product => !product.assignedDepartment || product.assignedDepartment === department
   );
   
+  // Product details for the selected product
+  const selectedProductDetails = order.productStatus?.find(p => p.id === selectedProduct);
+  
   const handleSubmit = () => {
     if (!selectedProduct) {
       toast.error("Please select a product");
       return;
     }
+
+    setIsUpdating(true);
     
     // Update the product status
     const updatedProductStatus = order.productStatus?.map(product => 
@@ -82,10 +87,20 @@ const ProductStatusUpdateForm: React.FC<ProductStatusUpdateFormProps> = ({
     
     // Reset form
     setRemarks("");
+    setIsUpdating(false);
     
     // Call onUpdate callback if provided
     if (onUpdate) {
       onUpdate();
+    }
+  };
+  
+  const getStatusColor = (statusType: StatusType) => {
+    switch(statusType) {
+      case "processing": return "text-amber-500";
+      case "completed": return "text-green-500";
+      case "issue": return "text-red-500";
+      default: return "";
     }
   };
   
@@ -108,12 +123,12 @@ const ProductStatusUpdateForm: React.FC<ProductStatusUpdateFormProps> = ({
   
   return (
     <Card className="glass-card mb-6">
-      <CardHeader>
+      <CardHeader className="border-b border-border/30 pb-3">
         <CardTitle className="flex items-center">
           Update Product Status
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-4">
         <form className="space-y-4">
           <div>
             <Label htmlFor="product">Select Product</Label>
@@ -128,36 +143,55 @@ const ProductStatusUpdateForm: React.FC<ProductStatusUpdateFormProps> = ({
                 {departmentProducts.map((product) => (
                   <SelectItem key={product.id} value={product.id}>
                     {product.name}
+                    {product.status && (
+                      <span className={`ml-2 text-xs ${getStatusColor(product.status)}`}>
+                        ({product.status})
+                      </span>
+                    )}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           
+          {selectedProductDetails && (
+            <div className="bg-muted/50 rounded-lg p-3 text-sm">
+              <h4 className="font-medium mb-1">Current Status</h4>
+              <div className="flex gap-2">
+                <div className={`px-2 py-0.5 rounded text-xs font-medium ${getStatusColor(selectedProductDetails.status)}`}>
+                  {selectedProductDetails.status}
+                </div>
+                {selectedProductDetails.remarks && (
+                  <p className="text-muted-foreground">{selectedProductDetails.remarks}</p>
+                )}
+              </div>
+            </div>
+          )}
+          
           <div>
-            <Label className="mb-2 block">Status</Label>
+            <Label className="mb-2 block">Update Status</Label>
             <RadioGroup 
               value={status} 
               onValueChange={(value) => setStatus(value as StatusType)}
               className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4"
             >
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 border border-border rounded-md px-3 py-2">
                 <RadioGroupItem value="processing" id="status-processing" />
-                <Label htmlFor="status-processing" className="text-amber-500 flex items-center">
+                <Label htmlFor="status-processing" className="text-amber-500 flex items-center cursor-pointer">
                   <Clock className="h-4 w-4 mr-1" />
                   Processing
                 </Label>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 border border-border rounded-md px-3 py-2">
                 <RadioGroupItem value="completed" id="status-completed" />
-                <Label htmlFor="status-completed" className="text-green-500 flex items-center">
+                <Label htmlFor="status-completed" className="text-green-500 flex items-center cursor-pointer">
                   <CheckCircle className="h-4 w-4 mr-1" />
                   Completed
                 </Label>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 border border-border rounded-md px-3 py-2">
                 <RadioGroupItem value="issue" id="status-issue" />
-                <Label htmlFor="status-issue" className="text-red-500 flex items-center">
+                <Label htmlFor="status-issue" className="text-red-500 flex items-center cursor-pointer">
                   <AlertCircle className="h-4 w-4 mr-1" />
                   Issue
                 </Label>
@@ -166,7 +200,10 @@ const ProductStatusUpdateForm: React.FC<ProductStatusUpdateFormProps> = ({
           </div>
           
           <div>
-            <Label htmlFor="estimatedDate">Estimated Completion Date</Label>
+            <Label htmlFor="estimatedDate" className="flex items-center">
+              <Calendar className="h-4 w-4 mr-1" />
+              Estimated Completion Date
+            </Label>
             <DatePicker
               date={estimatedDate}
               setDate={setEstimatedDate}
@@ -189,8 +226,10 @@ const ProductStatusUpdateForm: React.FC<ProductStatusUpdateFormProps> = ({
             className="w-full" 
             onClick={handleSubmit}
             type="button"
+            disabled={isUpdating}
           >
-            Update Status
+            <Save className="h-4 w-4 mr-2" />
+            {isUpdating ? "Updating..." : "Update Status"}
           </Button>
         </form>
       </CardContent>
