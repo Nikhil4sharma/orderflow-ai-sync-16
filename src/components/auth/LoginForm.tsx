@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +11,20 @@ import { LogIn, UserRound, Mail, Lock, Info } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import ChhapaiLogo from "@/components/ChhapaiLogo";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+interface DemoAccount {
+  role: string;
+  email: string;
+  password: string;
+}
+
+const demoAccounts: DemoAccount[] = [
+  { role: "Admin", email: "admin@chhapai.com", password: "admin123" },
+  { role: "Sales", email: "sales@chhapai.com", password: "sales123" },
+  { role: "Design", email: "design@chhapai.com", password: "design123" },
+  { role: "Production", email: "production@chhapai.com", password: "production123" },
+];
 
 const LoginForm: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -89,142 +104,135 @@ const LoginForm: React.FC = () => {
     }
   };
 
-  return (
-    <>
-      <div className="text-center mb-6">
-        <ChhapaiLogo size="lg" className="mx-auto" />
-        <p className="text-muted-foreground mt-2">Order Management System</p>
-      </div>
-      
-      <Card className="border-border/40 shadow-lg">
-        <CardHeader className="space-y-1 text-center pb-4">
-          <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
-            <UserRound className="h-6 w-6 text-primary" />
-            Sign In
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Enter your credentials to access your account
-          </p>
-        </CardHeader>
-        
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4 pt-0">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium">
-                Email
-              </Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  id="email" 
-                  type="email" 
-                  placeholder="email@chhapai.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10"
-                  required
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-sm font-medium">
-                  Password
-                </Label>
-                <Button 
-                  type="button" 
-                  variant="link" 
-                  className="px-0 font-normal h-auto text-xs"
-                  onClick={() => toast.info("Demo accounts are listed below", {
-                    description: "Choose one of the demo accounts to log in"
-                  })}
-                >
-                  Forgot password?
-                </Button>
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  id="password" 
-                  type="password" 
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10"
-                  required
-                />
-              </div>
-            </div>
+  const useDemoAccount = (account: DemoAccount) => {
+    setEmail(account.email);
+    setPassword(account.password);
+  };
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="remember"
-                checked={rememberMe}
-                onCheckedChange={() => setRememberMe(!rememberMe)}
+  return (
+    <Card className="border-border/40 shadow-lg animate-fade-in hover:shadow-xl transition-all">
+      <CardHeader className="space-y-1 text-center pb-6">
+        <CardTitle className="text-2xl md:text-3xl font-bold flex items-center justify-center gap-2">
+          <UserRound className="h-6 w-6 text-primary" />
+          Sign In
+        </CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Enter your credentials to access your account
+        </p>
+      </CardHeader>
+      
+      <form onSubmit={handleSubmit}>
+        <CardContent className="space-y-4 pt-0">
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-sm font-medium">
+              Email
+            </Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="email@chhapai.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="pl-10 transition-all border-input focus:border-primary"
+                required
               />
-              <label htmlFor="remember" className="text-sm text-muted-foreground cursor-pointer">
-                Remember me for 30 days
-              </label>
             </div>
-          </CardContent>
+          </div>
           
-          <CardFooter className="flex flex-col gap-4">
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={isLoading}
-            >
-              <LogIn className="h-4 w-4 mr-2" />
-              {isLoading ? "Signing In..." : "Sign In"}
-            </Button>
-            
-            <div className="bg-muted/50 rounded-lg p-4 text-sm">
-              <div className="flex items-start gap-2">
-                <Info className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="font-medium text-foreground mb-2">Demo Accounts</p>
-                  <div className="grid grid-cols-1 gap-y-2">
-                    {[
-                      { role: "Admin", email: "admin@chhapai.com", password: "admin123" },
-                      { role: "Sales", email: "sales@chhapai.com", password: "sales123" },
-                      { role: "Design", email: "design@chhapai.com", password: "design123" },
-                      { role: "Production", email: "production@chhapai.com", password: "production123" }
-                    ].map((account) => (
-                      <div key={account.role} className="p-2 border border-border/30 rounded-md hover:bg-muted transition-colors">
-                        <div className="font-medium text-sm mb-1">{account.role}</div>
-                        <div className="flex flex-col gap-1 text-xs">
-                          <code className="font-mono bg-background/80 px-1 py-0.5 rounded">{account.email}</code>
-                          <code className="font-mono bg-background/80 px-1 py-0.5 rounded">{account.password}</code>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mt-3 flex justify-center gap-2 flex-wrap">
-                {["Admin", "Sales", "Design", "Production"].map((role) => (
-                  <Button
-                    key={role}
-                    variant="outline"
-                    size="sm"
-                    type="button"
-                    onClick={() => {
-                      setEmail(`${role.toLowerCase()}@chhapai.com`);
-                      setPassword(`${role.toLowerCase()}123`);
-                    }}
-                    className="text-xs h-8"
-                  >
-                    {role}
-                  </Button>
-                ))}
-              </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password" className="text-sm font-medium">
+                Password
+              </Label>
+              <Button 
+                type="button" 
+                variant="link" 
+                className="px-0 font-normal h-auto text-xs"
+                onClick={() => toast.info("Demo accounts are listed below", {
+                  description: "Choose one of the demo accounts to log in"
+                })}
+              >
+                Forgot password?
+              </Button>
             </div>
-          </CardFooter>
-        </form>
-      </Card>
-    </>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input 
+                id="password" 
+                type="password" 
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="pl-10 transition-all border-input focus:border-primary"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="remember"
+              checked={rememberMe}
+              onCheckedChange={() => setRememberMe(!rememberMe)}
+            />
+            <label htmlFor="remember" className="text-sm text-muted-foreground cursor-pointer">
+              Remember me for 30 days
+            </label>
+          </div>
+        </CardContent>
+        
+        <CardFooter className="flex flex-col gap-4">
+          <Button 
+            type="submit" 
+            className="w-full h-11 text-base font-medium transition-all hover:scale-[1.02] hover:shadow-md active:scale-[0.98]" 
+            disabled={isLoading}
+          >
+            <LogIn className="h-4 w-4 mr-2" />
+            {isLoading ? "Signing In..." : "Sign In"}
+          </Button>
+          
+          <div className="w-full">
+            <Tabs defaultValue="accounts" className="w-full">
+              <TabsList className="grid grid-cols-2 mb-4">
+                <TabsTrigger value="accounts">Demo Accounts</TabsTrigger>
+                <TabsTrigger value="info">About</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="accounts" className="space-y-4">
+                <div className="grid grid-cols-2 gap-2">
+                  {demoAccounts.map((account) => (
+                    <Button
+                      key={account.role}
+                      variant="outline"
+                      size="sm"
+                      type="button"
+                      onClick={() => useDemoAccount(account)}
+                      className="hover:bg-primary/10 hover:text-primary transition-all h-auto py-2 flex flex-col items-start"
+                    >
+                      <span className="font-semibold">{account.role}</span>
+                      <span className="text-xs text-muted-foreground font-mono truncate max-w-full">
+                        {account.email}
+                      </span>
+                    </Button>
+                  ))}
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="info">
+                <div className="bg-muted/30 rounded-lg p-3 text-sm">
+                  <p className="text-muted-foreground">
+                    This is a demo order management system for printing businesses. 
+                    Select any demo account to explore different department views.
+                  </p>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </CardFooter>
+      </form>
+    </Card>
   );
 };
 

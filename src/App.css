@@ -64,14 +64,19 @@
 
 /* Login page specific styles */
 .login-page {
-  background: linear-gradient(to bottom, #f8f9fa, #e9ecef);
+  background: linear-gradient(to bottom right, #f8fafc, #e2e8f0);
 }
 
 .dark .login-page {
-  background: linear-gradient(to bottom, #0f172a, #020617);
+  background: linear-gradient(to bottom right, #0f172a, #020617);
 }
 
-/* Card hover effects */
+/* Enhanced form controls */
+input:focus, textarea:focus, select:focus {
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.2);
+}
+
+/* Card styles with hover effects */
 .card {
   transition: all 0.3s ease;
 }
@@ -112,12 +117,6 @@ button {
     flex-direction: column;
     gap: 0.5rem;
   }
-  
-  /* Make tables more compact on mobile */
-  .table-compact-mobile th,
-  .table-compact-mobile td {
-    padding: 0.5rem !important;
-  }
 }
 
 /* Glass card effect */
@@ -147,77 +146,76 @@ button {
   color: hsl(30, 90%, 50%);
 }
 
-/* Improved contrast for tab badges */
-.tab-badge {
-  @apply bg-muted-foreground/10 text-foreground px-2 py-0.5 text-xs rounded-full;
+/* Login specific animations */
+.login-form-enter {
+  opacity: 0;
+  transform: translateY(10px);
 }
 
-/* Fix form padding on mobile */
-.form-container {
-  @apply p-4 sm:p-6;
+.login-form-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms ease, transform 300ms ease;
 }
 
-/* Fix mobile scrollable tables */
-.responsive-table-container {
-  @apply w-full overflow-x-auto;
+/* Login page background patterns */
+.login-bg-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
 
-/* New animation class for title text */
-.text-animate-gradient {
-  background: linear-gradient(90deg, 
-    var(--primary) 0%, 
-    hsl(var(--brand-blue)) 50%, 
-    var(--primary) 100%);
-  background-size: 200% auto;
-  color: transparent;
-  -webkit-background-clip: text;
-  background-clip: text;
-  animation: gradient 8s linear infinite;
+/* Enhanced form focus styles */
+.form-focus-ring:focus-within {
+  @apply ring-2 ring-primary/20 ring-offset-2 ring-offset-background;
 }
 
-@keyframes gradient {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-/* Add subtle animations to notifications */
-.notification-item {
-  animation: slideDown 0.3s ease-out;
-}
-
-@keyframes slideDown {
+/* Subtle card animations */
+@keyframes cardEntrance {
   from {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(20px);
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
   }
   to {
     opacity: 1;
     transform: translateY(0);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   }
 }
 
-/* Add hover effect to sidebar links */
-.sidebar-link {
-  transition: all 0.2s ease;
+.card-entrance {
+  animation: cardEntrance 0.5s ease-out forwards;
 }
 
-.sidebar-link:hover {
-  transform: translateX(5px);
+/* Login page column divider */
+.login-divider {
+  position: relative;
 }
 
-/* Add hover effect to cards */
-.hover-lift {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+.login-divider::after {
+  content: "";
+  position: absolute;
+  top: 10%;
+  right: 0;
+  height: 80%;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, var(--border), transparent);
 }
 
-.hover-lift:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+/* Improved login page container for different devices */
+@media (min-width: 768px) {
+  .login-container {
+    height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
 }
+
+@media (max-width: 767px) {
+  .login-container {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+/* ... keep existing code */

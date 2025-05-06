@@ -273,6 +273,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   // Login function
   const login = async (email: string, password: string): Promise<boolean> => {
     // In a real app, this would be an API call
+    console.log("Login attempt:", { email, password });
     
     // Mock users for testing
     const loginUsers = [
@@ -283,6 +284,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         name: "Admin User",
         role: "Admin" as Role,
         department: "Admin" as Department,
+        permissions: ["manage_users", "manage_departments", "update_order_status"],
       },
       {
         id: "user2",
@@ -291,6 +293,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         name: "Sales User",
         role: "Manager" as Role,
         department: "Sales" as Department,
+        permissions: ["update_order_status", "verify_payment"],
       },
       {
         id: "user3",
@@ -299,6 +302,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         name: "Design User",
         role: "Staff" as Role,
         department: "Design" as Department,
+        permissions: ["update_order_status"],
       },
       {
         id: "user4",
@@ -307,6 +311,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         name: "Prepress User",
         role: "Staff" as Role,
         department: "Prepress" as Department,
+        permissions: ["update_order_status"],
       },
       {
         id: "user5",
@@ -315,14 +320,19 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         name: "Production User",
         role: "Staff" as Role,
         department: "Production" as Department,
+        permissions: ["update_order_status"],
       },
-      // Add more users as needed
     ];
 
+    // Normalize email for case-insensitive comparison
+    const normalizedEmail = email.toLowerCase().trim();
+    
     // Find user with matching email and password
     const user = loginUsers.find(
-      (u) => u.email === email && u.password === password
+      (u) => u.email.toLowerCase() === normalizedEmail && u.password === password
     );
+
+    console.log("Found user:", user);
 
     if (user) {
       setIsAuthenticated(true);
@@ -333,7 +343,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         name: user.name,
         role: user.role,
         department: user.department,
-        permissions: [], // Add the required permissions field
+        permissions: user.permissions,
       };
       setCurrentUser(userObj);
       return true;
