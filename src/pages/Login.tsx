@@ -19,12 +19,10 @@ const Login: React.FC = () => {
         return "/dashboard?department=production";
       case "Design":
         return "/dashboard?department=design";
-      case "Shipping":
-        return "/dashboard?department=shipping";
-      case "Finance":
-        return "/dashboard?department=finance";
-      case "Admin":
-        return "/admin";
+      case "Prepress":
+        return "/dashboard?department=prepress";
+      case "Sales":
+        return "/dashboard?department=sales";
       default:
         return "/dashboard";
     }

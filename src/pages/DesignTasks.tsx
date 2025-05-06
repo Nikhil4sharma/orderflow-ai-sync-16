@@ -51,7 +51,7 @@ const DesignTasks: React.FC = () => {
               </CardHeader>
               <CardContent className="pt-2">
                 <div className="text-sm mb-4">
-                  <p className="line-clamp-2">{task.requirements || "No specific design requirements provided."}</p>
+                  <p className="line-clamp-2">{task.designRemarks || "No specific design requirements provided."}</p>
                 </div>
                 <Button 
                   variant="outline" 

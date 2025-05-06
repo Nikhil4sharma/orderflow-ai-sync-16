@@ -7,14 +7,14 @@ import StatusBadge from "@/components/StatusBadge";
 import { useNavigate } from "react-router-dom";
 import { FileText, Search, PlusCircle, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { OrderStatus, Department, Order } from "@/types";
+import { OrderStatus } from "@/types";
 
 const Orders: React.FC = () => {
   const { orders, currentUser } = useOrders();
   const navigate = useNavigate();
   
   const [searchText, setSearchText] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<OrderStatus | null>(null);
   
   // Filter orders based on department access and search text
   const filteredOrders = orders.filter(order => {
@@ -44,12 +44,15 @@ const Orders: React.FC = () => {
   });
   
   // Get counts for each status
-  const getStatusCount = (status: string): number => {
+  const getStatusCount = (status: OrderStatus | "All"): number => {
+    if (status === "All") {
+      return orders.length;
+    }
     return orders.filter(order => order.status === status).length;
   };
   
-  // Create filter tabs
-  const statuses: OrderStatus[] = ["All", "In Progress", "Pending Approval", "Issue", "Ready to Dispatch", "Completed"];
+  // Create filter tabs - defined statuses plus "All" special case for filtering
+  const statuses: (OrderStatus | "All")[] = ["All", "In Progress", "Pending Approval", "Issue", "Ready to Dispatch", "Completed"];
   
   return (
     <div className="container mx-auto px-4 py-6">
@@ -91,14 +94,14 @@ const Orders: React.FC = () => {
           {statuses.map((status) => (
             <Button
               key={status}
-              variant={selectedStatus === status || (status === "All" && !selectedStatus) ? "default" : "outline"}
+              variant={(selectedStatus === status) || (status === "All" && selectedStatus === null) ? "default" : "outline"}
               className="whitespace-nowrap"
               onClick={() => setSelectedStatus(status === "All" ? null : status)}
             >
               {status}
               {status === "All" ? (
                 <span className="ml-2 bg-primary-foreground text-primary rounded-full h-6 min-w-6 flex items-center justify-center px-1.5 text-xs">
-                  {orders.length}
+                  {getStatusCount("All")}
                 </span>
               ) : (
                 <span className="ml-2 bg-primary-foreground text-primary rounded-full h-6 min-w-6 flex items-center justify-center px-1.5 text-xs">
