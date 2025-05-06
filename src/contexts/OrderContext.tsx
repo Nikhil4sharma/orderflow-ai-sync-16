@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Order, User, OrderStatus, StatusUpdate, Department, Role, PaymentRecord } from "@/types";
 import { getMockOrders } from "@/lib/mock-data";
@@ -284,7 +283,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         name: "Admin User",
         role: "Admin" as Role,
         department: "Admin" as Department,
-        permissions: ["manage_users", "manage_departments", "update_order_status"],
+        permissions: ["manage_users", "manage_departments", "update_order_status"] as const,
       },
       {
         id: "user2",
@@ -293,7 +292,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         name: "Sales User",
         role: "Manager" as Role,
         department: "Sales" as Department,
-        permissions: ["update_order_status", "verify_payment"],
+        permissions: ["update_order_status", "verify_payment"] as const,
       },
       {
         id: "user3",
@@ -302,7 +301,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         name: "Design User",
         role: "Staff" as Role,
         department: "Design" as Department,
-        permissions: ["update_order_status"],
+        permissions: ["update_order_status"] as const,
       },
       {
         id: "user4",
@@ -311,7 +310,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         name: "Prepress User",
         role: "Staff" as Role,
         department: "Prepress" as Department,
-        permissions: ["update_order_status"],
+        permissions: ["update_order_status"] as const,
       },
       {
         id: "user5",
@@ -320,7 +319,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         name: "Production User",
         role: "Staff" as Role,
         department: "Production" as Department,
-        permissions: ["update_order_status"],
+        permissions: ["update_order_status"] as const,
       },
     ];
 
