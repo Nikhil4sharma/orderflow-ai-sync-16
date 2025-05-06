@@ -1,7 +1,8 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { Order, User, OrderStatus, StatusUpdate } from "@/types";
+import { Order, User, OrderStatus, StatusUpdate, Department, Role, PaymentRecord } from "@/types";
 import { getMockOrders } from "@/lib/mock-data";
+import { DashboardConfiguration } from "@/types/dashboardConfig";
 
 // Define the context type
 interface OrderContextType {
@@ -10,12 +11,22 @@ interface OrderContextType {
   updateOrder: (updatedOrder: Order) => void;
   deleteOrder: (orderId: string) => void;
   addStatusUpdate: (orderId: string, statusUpdate: Partial<StatusUpdate>) => void;
+  updateStatusUpdate: (update: StatusUpdate) => void;
+  addPayment: (orderId: string, payment: Partial<PaymentRecord>) => void;
   verifyOrder: (orderId: string) => void;
   isAuthenticated: boolean;
   currentUser: User | null;
   login: (email: string, password: string) => Promise<boolean>;
+  loginUser: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  setCurrentUser: (user: User) => void;
   canUserSeeElement: (department: string, element: string) => boolean;
+  hasPermission: (permission: string) => boolean;
+  users: User[];
+  addUser: (user: User) => void;
+  removeUser: (userId: string) => void;
+  dashboardConfig: DashboardConfiguration;
+  updateDashboardConfig: (config: DashboardConfiguration) => void;
 }
 
 // Create a context with an empty default value
@@ -35,6 +46,92 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const savedUser = localStorage.getItem("currentUser");
     return savedUser ? JSON.parse(savedUser) : null;
+  });
+
+  // Mock users for the admin panel
+  const [users, setUsers] = useState<User[]>([
+    {
+      id: "user1",
+      email: "admin@chhapai.com",
+      name: "Admin User",
+      role: "Admin" as Role,
+      department: "Admin" as Department,
+      permissions: ["manage_users", "manage_departments", "update_order_status"]
+    },
+    {
+      id: "user2",
+      email: "sales@chhapai.com",
+      name: "Sales User",
+      role: "Manager" as Role,
+      department: "Sales" as Department,
+      permissions: ["update_order_status", "verify_payment"]
+    },
+    {
+      id: "user3",
+      email: "design@chhapai.com",
+      name: "Design User",
+      role: "Staff" as Role,
+      department: "Design" as Department,
+      permissions: ["update_order_status"]
+    }
+  ]);
+
+  // Default dashboard configuration
+  const [dashboardConfig, setDashboardConfig] = useState<DashboardConfiguration>({
+    departmentConfigs: {
+      Sales: {
+        department: 'Sales' as Department,
+        visibleElements: [
+          'financialSummary',
+          'orderApprovals',
+          'recentOrders',
+          'statusSummary',
+          'salesMetrics',
+          'deliverySchedule'
+        ]
+      },
+      Design: {
+        department: 'Design' as Department,
+        visibleElements: [
+          'orderApprovals',
+          'recentOrders',
+          'statusSummary',
+          'taskList'
+        ]
+      },
+      Prepress: {
+        department: 'Prepress' as Department,
+        visibleElements: [
+          'orderApprovals',
+          'recentOrders',
+          'statusSummary',
+          'taskList'
+        ]
+      },
+      Production: {
+        department: 'Production' as Department,
+        visibleElements: [
+          'orderApprovals',
+          'recentOrders',
+          'statusSummary',
+          'productionTimeline',
+          'taskList'
+        ]
+      },
+      Admin: {
+        department: 'Admin' as Department,
+        visibleElements: [
+          'financialSummary',
+          'orderApprovals',
+          'recentOrders',
+          'statusSummary',
+          'taskList',
+          'salesMetrics',
+          'productionTimeline',
+          'deliverySchedule'
+        ]
+      }
+    }
   });
 
   // Save orders to local storage whenever they change
@@ -95,6 +192,63 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       })
     );
   };
+
+  // Update a status update
+  const updateStatusUpdate = (update: StatusUpdate) => {
+    setOrders(prevOrders => 
+      prevOrders.map(order => {
+        if (order.id !== update.orderId) return order;
+        
+        // Update the status history
+        return {
+          ...order,
+          statusHistory: order.statusHistory.map(statusUpdate => 
+            statusUpdate.id === update.id ? update : statusUpdate
+          )
+        };
+      })
+    );
+  };
+
+  // Add payment record to an order
+  const addPayment = (orderId: string, payment: Partial<PaymentRecord>) => {
+    setOrders(prevOrders => 
+      prevOrders.map(order => {
+        if (order.id !== orderId) return order;
+        
+        // Create new payment record
+        const newPayment: PaymentRecord = {
+          id: `payment-${Date.now()}`,
+          amount: payment.amount || 0,
+          date: payment.date || new Date().toISOString(),
+          method: payment.method || "Not specified",
+          remarks: payment.remarks || ""
+        };
+        
+        // Calculate new paid and pending amounts
+        const newPaidAmount = order.paidAmount + (payment.amount || 0);
+        const newPendingAmount = Math.max(0, order.amount - newPaidAmount);
+        
+        // Determine new payment status
+        let newPaymentStatus = order.paymentStatus;
+        if (newPendingAmount <= 0) {
+          newPaymentStatus = "Paid";
+        } else if (newPaidAmount > 0) {
+          newPaymentStatus = "Partial";
+        }
+        
+        // Add payment to history
+        return {
+          ...order,
+          paidAmount: newPaidAmount,
+          pendingAmount: newPendingAmount,
+          paymentStatus: newPaymentStatus,
+          paymentHistory: [...(order.paymentHistory || []), newPayment],
+          lastPaymentDate: new Date().toISOString()
+        };
+      })
+    );
+  };
   
   // Verify an order
   const verifyOrder = (orderId: string) => {
@@ -121,58 +275,58 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     // In a real app, this would be an API call
     
     // Mock users for testing
-    const users = [
+    const loginUsers = [
       {
         id: "user1",
         email: "admin@chhapai.com",
         password: "admin123",
         name: "Admin User",
-        role: "Admin",
-        department: "Admin",
+        role: "Admin" as Role,
+        department: "Admin" as Department,
       },
       {
         id: "user2",
         email: "sales@chhapai.com",
         password: "sales123",
         name: "Sales User",
-        role: "Manager",
-        department: "Sales",
+        role: "Manager" as Role,
+        department: "Sales" as Department,
       },
       {
         id: "user3",
         email: "design@chhapai.com",
         password: "design123",
         name: "Design User",
-        role: "Worker",
-        department: "Design",
+        role: "Staff" as Role,
+        department: "Design" as Department,
       },
       {
         id: "user4",
         email: "prepress@chhapai.com",
         password: "prepress123",
         name: "Prepress User",
-        role: "Worker",
-        department: "Prepress",
+        role: "Staff" as Role,
+        department: "Prepress" as Department,
       },
       {
         id: "user5",
         email: "production@chhapai.com",
         password: "production123",
         name: "Production User",
-        role: "Worker",
-        department: "Production",
+        role: "Staff" as Role,
+        department: "Production" as Department,
       },
       // Add more users as needed
     ];
 
     // Find user with matching email and password
-    const user = users.find(
+    const user = loginUsers.find(
       (u) => u.email === email && u.password === password
     );
 
     if (user) {
       setIsAuthenticated(true);
-      // Fix the type issue - create a valid User object
+      // Create a valid User object
       const userObj: User = {
         id: user.id,
         email: user.email,
@@ -188,6 +342,14 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return false;
   };
 
+  // Alternative login function for LoginForm component
+  const loginUser = async (email: string, password: string): Promise<void> => {
+    const success = await login(email, password);
+    if (!success) {
+      throw new Error("Invalid credentials");
+    }
+  };
+
   // Logout function
   const logout = () => {
     setIsAuthenticated(false);
@@ -198,8 +360,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   
   // Check if a user's department can see a specific dashboard element
   const canUserSeeElement = (department: string, element: string): boolean => {
-    // Simplified implementation since getDashboardConfig doesn't exist
-    // Default permissions - can be expanded later
+    // Simplified implementation
     const defaultPermissions = {
       "Admin": ["orders", "sales", "production", "design", "prepress", "finance"],
       "Sales": ["orders", "sales", "finance"],
@@ -212,6 +373,32 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return defaultPermissions[department]?.includes(element) || false;
   };
 
+  // Check if current user has specific permission
+  const hasPermission = (permission: string): boolean => {
+    if (!currentUser) return false;
+    
+    // Admin has all permissions
+    if (currentUser.role === "Admin") return true;
+    
+    // Check if the user has the specific permission
+    return currentUser.permissions?.includes(permission as any) || false;
+  };
+
+  // Add a user
+  const addUser = (user: User) => {
+    setUsers(prevUsers => [...prevUsers, user]);
+  };
+
+  // Remove a user
+  const removeUser = (userId: string) => {
+    setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
+  };
+
+  // Update dashboard config
+  const updateDashboardConfig = (config: DashboardConfiguration) => {
+    setDashboardConfig(config);
+  };
+
   // Provide the context value
   const contextValue: OrderContextType = {
     orders,
@@ -219,12 +406,22 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     updateOrder,
     deleteOrder,
     addStatusUpdate,
+    updateStatusUpdate,
+    addPayment,
     verifyOrder,
     isAuthenticated,
     currentUser,
     login,
+    loginUser,
     logout,
+    setCurrentUser,
     canUserSeeElement,
+    hasPermission,
+    users,
+    addUser,
+    removeUser,
+    dashboardConfig,
+    updateDashboardConfig
   };
 
   return (

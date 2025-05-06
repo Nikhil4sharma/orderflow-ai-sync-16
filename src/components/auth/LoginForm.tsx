@@ -17,7 +17,7 @@ const LoginForm: React.FC = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { loginUser } = useOrders();
+  const { login } = useOrders();
   const isMobile = useIsMobile();
 
   // Check if we should pre-fill with a demo account
@@ -55,24 +55,28 @@ const LoginForm: React.FC = () => {
       // Normalize email to lowercase for case-insensitive comparison
       const normalizedEmail = email.toLowerCase().trim();
       
-      // Try to login directly with the normalized email
+      // Try to login
       try {
-        await loginUser(normalizedEmail, password);
+        const success = await login(normalizedEmail, password);
         
-        // Determine the user role from email for a personalized welcome message
-        let userRole = "User";
-        if (normalizedEmail.includes("admin")) {
-          userRole = "Administrator";
-        } else if (normalizedEmail.includes("sales")) {
-          userRole = "Sales Representative";
-        } else if (normalizedEmail.includes("design")) {
-          userRole = "Designer";
-        } else if (normalizedEmail.includes("production")) {
-          userRole = "Production Manager";
+        if (success) {
+          // Determine the user role from email for a personalized welcome message
+          let userRole = "User";
+          if (normalizedEmail.includes("admin")) {
+            userRole = "Administrator";
+          } else if (normalizedEmail.includes("sales")) {
+            userRole = "Sales Representative";
+          } else if (normalizedEmail.includes("design")) {
+            userRole = "Designer";
+          } else if (normalizedEmail.includes("production")) {
+            userRole = "Production Manager";
+          }
+          
+          toast.success(`Welcome back, ${userRole}!`);
+          navigate("/dashboard");
+        } else {
+          toast.error("Invalid credentials. Please try again.");
         }
-        
-        toast.success(`Welcome back, ${userRole}!`);
-        navigate("/dashboard");
       } catch (error) {
         console.error("Login error:", error);
         toast.error("Invalid credentials. Please try again.");
@@ -85,7 +89,6 @@ const LoginForm: React.FC = () => {
     }
   };
 
-  
   return (
     <>
       <div className="text-center mb-6">
