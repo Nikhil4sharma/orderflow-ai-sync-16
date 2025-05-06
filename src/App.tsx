@@ -47,16 +47,26 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (currentUser?.role !== "Admin") {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
 };
 
-// Root route redirect to dashboard if authenticated, login if not
-const RootRedirect = () => {
-  const { isAuthenticated } = useOrders();
-  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />;
+// Department route component
+const DepartmentRoute = ({ department, children }: { department: string, children: React.ReactNode }) => {
+  const { isAuthenticated, currentUser } = useOrders();
+  const location = useLocation();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (currentUser?.department !== department && currentUser?.role !== "Admin") {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
 };
 
 function App() {
@@ -65,8 +75,8 @@ function App() {
       <OrderProvider>
         <Router>
           <Routes>
-            {/* Make root path redirect to login or dashboard based on auth status */}
-            <Route path="/" element={<RootRedirect />} />
+            {/* Root path goes directly to login */}
+            <Route path="/" element={<Navigate to="/login" replace />} />
             
             <Route path="/login" element={<Login />} />
             

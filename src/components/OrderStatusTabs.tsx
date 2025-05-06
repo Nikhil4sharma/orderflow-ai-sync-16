@@ -32,13 +32,17 @@ const OrderStatusTabs: React.FC<OrderStatusTabsProps> = ({
           <TabsTrigger
             key={status}
             value={status}
-            className={`data-[state=active]:bg-primary data-[state=active]:text-primary-foreground relative px-4 py-2 h-auto
-              text-foreground transition-all
-              ${isMobile ? "text-xs py-1.5 px-2.5" : ""}`}
+            className={`
+              data-[state=active]:bg-primary data-[state=active]:text-primary-foreground 
+              relative px-4 py-2 h-auto transition-all 
+              border border-border rounded-md
+              hover:bg-muted
+              ${isMobile ? "text-xs py-1.5 px-2.5 flex-1 min-w-fit" : ""}
+            `}
           >
-            {status}
+            <span className="mr-1">{status}</span>
             {countByStatus[status] > 0 && (
-              <span className="ml-1.5 rounded-full bg-muted text-foreground px-1.5 py-0.5 text-xs font-medium">
+              <span className="inline-flex items-center justify-center w-5 h-5 ml-1 text-xs font-medium rounded-full bg-muted-foreground/20 text-foreground">
                 {countByStatus[status]}
               </span>
             )}
