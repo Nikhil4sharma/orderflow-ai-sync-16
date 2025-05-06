@@ -3,7 +3,7 @@ export type User = {
   id: string;
   name: string;
   email: string;
-  password?: string; // Add password as optional property
+  password?: string;
   department: Department;
   role: Role;
   permissions: PermissionKey[];
@@ -20,7 +20,9 @@ export type OrderStatus =
   | "Completed"
   | "Dispatched"
   | "Issue"
-  | "Ready to Dispatch";
+  | "Ready to Dispatch"
+  | "Pending Approval"
+  | "Pending Payment";
 
 // Design department specific statuses
 export type DesignStatus = 
@@ -99,6 +101,13 @@ export type Order = {
   
   // Dispatch details
   dispatchDetails?: DispatchDetails;
+  
+  // Approval tracking
+  pendingApprovalFrom?: Department;
+  approvalReason?: string;
+  
+  // Timeline tracking
+  expectedCompletionDate?: string;
 };
 
 export type ProductionStageStatus = {
@@ -170,7 +179,13 @@ export type PermissionKey =
   | "export_data"
   | "view_analytics"
   | "manage_settings"
-  | "view_address_details";
+  | "view_address_details"
+  | "request_approval"
+  | "provide_approval"
+  | "forward_to_department"
+  | "mark_ready_dispatch"
+  | "verify_payment"
+  | "view_delivery_details";
 
 // Notification type
 export type Notification = {
@@ -192,4 +207,5 @@ export type NotificationType =
   | "ready_for_dispatch"
   | "order_completed"
   | "order_issue"
-  | "payment_received";
+  | "payment_received"
+  | "payment_required";

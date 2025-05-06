@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Order, ProductionStage, StatusType } from "@/types";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { CheckCircle, Clock, AlertCircle, AlertTriangle } from "lucide-react";
 import DatePickerWithPopover from "./DatePickerWithPopover";
 
 interface ProductionStageFormProps {
@@ -41,6 +41,18 @@ const ProductionStageForm: React.FC<ProductionStageFormProps> = ({ order }) => {
   const handleSubmit = () => {
     if (!selectedStage) {
       toast.error("Please select a production stage");
+      return;
+    }
+    
+    // For Ready to Dispatch stage, check if payment is complete
+    if (selectedStage === "Ready to Dispatch" && order.paymentStatus !== "Paid") {
+      toast.error("Full payment must be received before marking as Ready to Dispatch");
+      return;
+    }
+    
+    // Check if timeline is provided for Ready to Dispatch
+    if (selectedStage === "Ready to Dispatch" && !timeline) {
+      toast.error("Expected completion date is required for Ready to Dispatch status");
       return;
     }
     
@@ -76,8 +88,12 @@ const ProductionStageForm: React.FC<ProductionStageFormProps> = ({ order }) => {
     const updatedOrder = {
       ...order,
       productionStages: updatedStages,
-      // If all stages are completed, mark order as completed
-      status: updatedStages.every(s => s.status === "completed") ? "Completed" : order.status
+      // Set expected completion date if Ready to Dispatch
+      expectedCompletionDate: selectedStage === "Ready to Dispatch" && timeline ? 
+        timeline.toISOString() : order.expectedCompletionDate,
+      // If Ready to Dispatch is completed and payment is received, update status
+      status: selectedStage === "Ready to Dispatch" && stageStatus === "completed" && order.paymentStatus === "Paid" ? 
+        "Ready to Dispatch" : order.status
     };
     
     updateOrder(updatedOrder);
@@ -98,6 +114,16 @@ const ProductionStageForm: React.FC<ProductionStageFormProps> = ({ order }) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-6">
+        {selectedStage === "Ready to Dispatch" && order.paymentStatus !== "Paid" && (
+          <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200 rounded-md flex items-start">
+            <AlertTriangle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
+            <p className="text-sm">
+              Full payment must be received before order can be marked as Ready to Dispatch.
+              Please coordinate with the Sales team to verify payment status.
+            </p>
+          </div>
+        )}
+        
         <form className="space-y-4">
           <div>
             <label
@@ -161,7 +187,7 @@ const ProductionStageForm: React.FC<ProductionStageFormProps> = ({ order }) => {
               htmlFor="timeline"
               className="block text-sm font-medium leading-6 mb-2"
             >
-              Expected Completion Date
+              Expected Completion Date {selectedStage === "Ready to Dispatch" && <span className="text-red-500">*</span>}
             </label>
             <DatePickerWithPopover
               date={timeline}
@@ -193,6 +219,7 @@ const ProductionStageForm: React.FC<ProductionStageFormProps> = ({ order }) => {
             type="button"
             onClick={handleSubmit}
             className="w-full mt-4"
+            disabled={selectedStage === "Ready to Dispatch" && order.paymentStatus !== "Paid"}
           >
             Update Production Stage
           </Button>

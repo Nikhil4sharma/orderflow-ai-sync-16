@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Package, Send, CheckCircle } from "lucide-react";
+import { Package, Send, CheckCircle, AlertTriangle } from "lucide-react";
 import { Order, CourierPartner, DeliveryType, OrderStatus } from "@/types";
 import { Textarea } from "@/components/ui/textarea";
 import PermissionGated from "./PermissionGated";
@@ -51,6 +51,12 @@ const DispatchForm: React.FC<DispatchFormProps> = ({ order }) => {
       toast.error("Please fill all required fields");
       return;
     }
+    
+    // Check if payment is complete
+    if (order.paymentStatus !== "Paid") {
+      toast.error("Full payment is required before dispatch");
+      return;
+    }
 
     // Update order with dispatch details
     const updatedOrder = {
@@ -81,14 +87,20 @@ const DispatchForm: React.FC<DispatchFormProps> = ({ order }) => {
   };
 
   const handleVerify = () => {
+    // Check if payment is complete
+    if (order.paymentStatus !== "Paid") {
+      toast.error("Full payment is required before verification");
+      return;
+    }
+    
     // Verify the order (changes status to "Verified")
     verifyOrder(order.id);
     toast.success("Order has been verified successfully");
   };
 
-  // Check if order is marked as completed or ready to dispatch
-  const isOrderReadyForDispatch = order.status === "Completed" || order.status === "On Hold" || order.status === "In Progress";
-  const canDispatchOrder = order.status === "On Hold" || order.status === "In Progress";
+  // Check if order is ready for dispatch
+  const isOrderReadyForDispatch = order.status === "Ready to Dispatch";
+  const canDispatchOrder = order.status === "Ready to Dispatch" && order.paymentStatus === "Paid";
 
   return (
     <PermissionGated requiredPermission="dispatch_orders">
@@ -100,14 +112,31 @@ const DispatchForm: React.FC<DispatchFormProps> = ({ order }) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {order.paymentStatus !== "Paid" && (
+            <div className="mb-6 p-4 bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200 rounded-md flex items-start">
+              <AlertTriangle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium">Payment Required</p>
+                <p className="mt-1 text-sm">
+                  Full payment must be received before this order can be dispatched.
+                  Currently: {order.paidAmount.toLocaleString()} of {order.amount.toLocaleString()} received.
+                </p>
+              </div>
+            </div>
+          )}
+        
           {isOrderReadyForDispatch && (
             <div className="mb-6">
               <p className="mb-4">
-                This order has been marked as completed by the Production team. 
+                This order has been marked as ready for dispatch by the Production team. 
                 Please verify the order before dispatch.
               </p>
               <PermissionGated requiredPermission="verify_orders">
-                <Button onClick={handleVerify} className="w-full">
+                <Button 
+                  onClick={handleVerify} 
+                  className="w-full"
+                  disabled={order.paymentStatus !== "Paid"}
+                >
                   <CheckCircle className="h-4 w-4 mr-2" />
                   Verify Order
                 </Button>
@@ -201,7 +230,11 @@ const DispatchForm: React.FC<DispatchFormProps> = ({ order }) => {
                 />
               </div>
 
-              <Button type="submit" className="w-full">
+              <Button 
+                type="submit" 
+                className="w-full"
+                disabled={order.paymentStatus !== "Paid"}
+              >
                 <Send className="h-4 w-4 mr-2" />
                 Dispatch Order
               </Button>
