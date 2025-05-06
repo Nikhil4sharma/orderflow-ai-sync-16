@@ -1,10 +1,7 @@
 
 import React from "react";
-import { format } from "date-fns";
-import { Calendar as CalendarIcon } from "lucide-react";
+import { format, isValid, parse } from "date-fns";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import ManualDateInput from "./ui/manual-date-input";
 
 interface DatePickerWithPopoverProps {
@@ -12,6 +9,8 @@ interface DatePickerWithPopoverProps {
   onDateChange: (date: Date | undefined) => void;
   placeholder?: string;
   className?: string;
+  label?: string;
+  required?: boolean;
 }
 
 const DatePickerWithPopover: React.FC<DatePickerWithPopoverProps> = ({
@@ -19,10 +18,12 @@ const DatePickerWithPopover: React.FC<DatePickerWithPopoverProps> = ({
   onDateChange,
   placeholder = "Select a date",
   className,
+  label,
+  required = false,
 }) => {
   // Convert Date to string in the format YYYY-MM-DD
   const dateToString = (date: Date | undefined): string => {
-    if (!date) return "";
+    if (!date || !isValid(date)) return "";
     return format(date, "yyyy-MM-dd");
   };
 
@@ -30,13 +31,19 @@ const DatePickerWithPopover: React.FC<DatePickerWithPopoverProps> = ({
   const stringToDate = (dateStr: string): Date | undefined => {
     if (!dateStr || dateStr.trim() === "") return undefined;
     
-    // Try to parse the date
-    const parsedDate = new Date(dateStr);
-    
-    // Check if the date is valid
-    if (isNaN(parsedDate.getTime())) return undefined;
-    
-    return parsedDate;
+    // Try to parse the date using date-fns for better handling
+    try {
+      const parsedDate = parse(dateStr, "yyyy-MM-dd", new Date());
+      
+      // Check if the date is valid
+      if (isValid(parsedDate)) {
+        return parsedDate;
+      }
+      return undefined;
+    } catch (error) {
+      console.error("Error parsing date:", error);
+      return undefined;
+    }
   };
 
   const handleDateChange = (dateString: string) => {
@@ -46,10 +53,12 @@ const DatePickerWithPopover: React.FC<DatePickerWithPopoverProps> = ({
   return (
     <div className="w-full">
       <ManualDateInput
+        label={label}
         value={dateToString(date)}
         onChange={handleDateChange}
-        placeholder="YYYY-MM-DD"
-        className={className}
+        placeholder={placeholder}
+        className={cn(className)}
+        required={required}
       />
     </div>
   );

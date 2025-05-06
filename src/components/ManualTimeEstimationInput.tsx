@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { CalendarClock } from "lucide-react";
 import ManualDateInput from "@/components/ui/manual-date-input";
+import { Button } from "./ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ManualTimeEstimationInputProps {
   value: string;
@@ -27,6 +29,7 @@ const ManualTimeEstimationInput: React.FC<ManualTimeEstimationInputProps> = ({
   const [timeUnit, setTimeUnit] = useState<string>("hours");
   const [dateValue, setDateValue] = useState<string>("");
   const [useDate, setUseDate] = useState<boolean>(false);
+  const isMobile = useIsMobile();
 
   // Parse initial value on component mount
   useEffect(() => {
@@ -90,11 +93,15 @@ const ManualTimeEstimationInput: React.FC<ManualTimeEstimationInputProps> = ({
       // Switching to date mode
       if (dateValue) {
         onChange(`date: ${dateValue}`);
+      } else {
+        onChange("");
       }
     } else {
       // Switching to time mode
       if (timeValue) {
         onChange(`${timeValue} ${timeUnit}`);
+      } else {
+        onChange("");
       }
     }
   };
@@ -108,17 +115,21 @@ const ManualTimeEstimationInput: React.FC<ManualTimeEstimationInputProps> = ({
   ];
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3 bg-background p-4 rounded-lg border border-input/70">
       <div className="flex justify-between items-center">
-        <Label>Estimated Time for Completion {required && <span className="text-red-500">*</span>}</Label>
-        <button 
+        <Label className="text-base font-medium">
+          Estimated Time {required && <span className="text-red-500">*</span>}
+        </Label>
+        <Button 
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={toggleMode}
-          className="text-xs text-blue-500 flex items-center"
+          className="text-xs text-primary flex items-center h-8 px-2"
         >
-          <CalendarClock className="h-3 w-3 mr-1" />
-          {useDate ? "Switch to duration" : "Switch to specific date"}
-        </button>
+          <CalendarClock className="h-3.5 w-3.5 mr-1.5" />
+          {useDate ? "Use Duration" : "Use Date"}
+        </Button>
       </div>
       
       {useDate ? (
@@ -126,56 +137,68 @@ const ManualTimeEstimationInput: React.FC<ManualTimeEstimationInputProps> = ({
           value={dateValue}
           onChange={handleDateChange}
           required={required}
+          label={isMobile ? undefined : "Completion Date"}
           placeholder="YYYY-MM-DD"
         />
       ) : (
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-2">
-            <Input
-              type="number"
-              placeholder="Enter time"
-              value={timeValue}
-              onChange={(e) => handleTimeValueChange(e.target.value)}
-              min="0"
-              step="0.5"
-              required={required}
-              className={required && !timeValue ? "border-red-500" : ""}
-            />
-            <Select value={timeUnit} onValueChange={handleUnitChange}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="hours">Hours</SelectItem>
-                <SelectItem value="days">Days</SelectItem>
-                <SelectItem value="weeks">Weeks</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className={`grid ${isMobile ? "grid-cols-1 gap-2" : "grid-cols-2 gap-4"}`}>
+            <div className="space-y-2">
+              {!isMobile && <Label>Duration</Label>}
+              <Input
+                type="number"
+                placeholder="Enter time"
+                value={timeValue}
+                onChange={(e) => handleTimeValueChange(e.target.value)}
+                min="0"
+                step="0.5"
+                required={required}
+                className={required && !timeValue ? "border-red-500" : ""}
+              />
+            </div>
+            <div className="space-y-2">
+              {!isMobile && <Label>Unit</Label>}
+              <Select value={timeUnit} onValueChange={handleUnitChange}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="hours">Hours</SelectItem>
+                  <SelectItem value="days">Days</SelectItem>
+                  <SelectItem value="weeks">Weeks</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           
-          <div className="flex flex-wrap gap-2">
-            {predefinedDurations.map((duration) => (
-              <button
-                key={duration.value}
-                type="button"
-                onClick={() => {
-                  const [value, unit] = duration.value.split(" ");
-                  setTimeValue(value);
-                  setTimeUnit(unit);
-                  onChange(duration.value);
-                }}
-                className="px-3 py-1 bg-muted/50 hover:bg-muted text-xs rounded-full"
-              >
-                {duration.label}
-              </button>
-            ))}
+          <div>
+            <Label className="text-sm font-normal text-muted-foreground mb-2 block">
+              Quick select:
+            </Label>
+            <div className="flex flex-wrap gap-2">
+              {predefinedDurations.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    const [value, unit] = option.value.split(" ");
+                    setTimeValue(value);
+                    setTimeUnit(unit);
+                    onChange(option.value);
+                  }}
+                  className="px-3 py-1.5 bg-muted hover:bg-muted/80 text-xs rounded-full transition-colors"
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}
       
       <p className="text-xs text-muted-foreground">
         {useDate 
-          ? "Enter a specific date when this task will be completed (YYYY-MM-DD)" 
+          ? "Enter the specific date when this task will be completed" 
           : "Estimate how long this task will take to complete"
         }
       </p>

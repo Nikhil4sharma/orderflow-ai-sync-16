@@ -1,42 +1,122 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-}
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
-
-@keyframes logo-spin {
+/* Animation classes */
+@keyframes fadeIn {
   from {
-    transform: rotate(0deg);
+    opacity: 0;
+    transform: translateY(10px);
   }
   to {
-    transform: rotate(360deg);
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
+@keyframes slideIn {
+  from {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
   }
 }
 
-.card {
-  padding: 2em;
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
-.read-the-docs {
-  color: #888;
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.4s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out;
+}
+
+/* Login page specific styles */
+.login-page {
+  background: linear-gradient(to bottom, #f8f9fa, #e9ecef);
+}
+
+.dark .login-page {
+  background: linear-gradient(to bottom, #0f172a, #020617);
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  /* Smaller text on mobile */
+  h1 {
+    font-size: 1.5rem !important;
+  }
+  
+  h2 {
+    font-size: 1.25rem !important;
+  }
+  
+  /* Stack buttons on mobile */
+  .button-group-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  /* Make tables more compact on mobile */
+  .table-compact-mobile th,
+  .table-compact-mobile td {
+    padding: 0.5rem !important;
+  }
+}
+
+/* Glass card effect */
+.glass-card {
+  @apply backdrop-blur-sm bg-background/80 border border-border/30 shadow-sm;
+}
+
+/* Department-specific colors */
+.text-sales {
+  color: var(--brand-blue);
+}
+
+.text-design {
+  color: hsl(275, 80%, 55%);
+}
+
+.text-production {
+  color: hsl(150, 80%, 40%);
+}
+
+.text-prepress {
+  color: hsl(30, 90%, 50%);
+}
+
+/* Improved contrast for tab badges */
+.tab-badge {
+  @apply bg-muted-foreground/10 text-foreground px-2 py-0.5 text-xs rounded-full;
+}
+
+/* Fix form padding on mobile */
+.form-container {
+  @apply p-4 sm:p-6;
+}
+
+/* Fix mobile scrollable tables */
+.responsive-table-container {
+  @apply w-full overflow-x-auto;
 }

@@ -53,15 +53,26 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+// Root route redirect to dashboard if authenticated, login if not
+const RootRedirect = () => {
+  const { isAuthenticated } = useOrders();
+  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />;
+};
+
 function App() {
   return (
     <ThemeProvider defaultTheme="system" storageKey="app-theme">
       <OrderProvider>
         <Router>
           <Routes>
+            {/* Make root path redirect to login or dashboard based on auth status */}
+            <Route path="/" element={<RootRedirect />} />
+            
             <Route path="/login" element={<Login />} />
+            
+            {/* Make dashboard the main entry point after login */}
             <Route
-              path="/"
+              path="/dashboard"
               element={
                 <PrivateRoute>
                   <Layout />
@@ -69,45 +80,112 @@ function App() {
               }
             >
               <Route index element={<Dashboard />} />
-              <Route path="orders/:id" element={<OrderDetail />} />
-              <Route path="new-order" element={<NewOrder />} />
-              <Route path="profile" element={<Profile />} />
-              <Route path="admin" element={
-                <AdminRoute>
-                  <Admin />
-                </AdminRoute>
-              } />
-              <Route path="admin/users" element={
-                <AdminRoute>
-                  <ManageUsers />
-                </AdminRoute>
-              } />
-              <Route path="admin/departments" element={
-                <AdminRoute>
-                  <ManageDepartments />
-                </AdminRoute>
-              } />
-              <Route path="admin/settings" element={
-                <AdminRoute>
-                  <SystemSettings />
-                </AdminRoute>
-              } />
-              <Route path="admin/reports" element={
-                <AdminRoute>
-                  <Reports />
-                </AdminRoute>
-              } />
-              <Route path="admin/google-sheet" element={
-                <AdminRoute>
-                  <GoogleSheetSettings />
-                </AdminRoute>
-              } />
             </Route>
+            
+            <Route
+              path="/orders/:id"
+              element={
+                <PrivateRoute>
+                  <Layout />
+                </PrivateRoute>
+              }
+            >
+              <Route index element={<OrderDetail />} />
+            </Route>
+            
+            <Route
+              path="/new-order"
+              element={
+                <PrivateRoute>
+                  <Layout />
+                </PrivateRoute>
+              }
+            >
+              <Route index element={<NewOrder />} />
+            </Route>
+            
+            <Route
+              path="/profile"
+              element={
+                <PrivateRoute>
+                  <Layout />
+                </PrivateRoute>
+              }
+            >
+              <Route index element={<Profile />} />
+            </Route>
+            
+            <Route
+              path="/admin"
+              element={
+                <AdminRoute>
+                  <Layout />
+                </AdminRoute>
+              }
+            >
+              <Route index element={<Admin />} />
+            </Route>
+            
+            <Route
+              path="/admin/users"
+              element={
+                <AdminRoute>
+                  <Layout />
+                </AdminRoute>
+              }
+            >
+              <Route index element={<ManageUsers />} />
+            </Route>
+            
+            <Route
+              path="/admin/departments"
+              element={
+                <AdminRoute>
+                  <Layout />
+                </AdminRoute>
+              }
+            >
+              <Route index element={<ManageDepartments />} />
+            </Route>
+            
+            <Route
+              path="/admin/settings"
+              element={
+                <AdminRoute>
+                  <Layout />
+                </AdminRoute>
+              }
+            >
+              <Route index element={<SystemSettings />} />
+            </Route>
+            
+            <Route
+              path="/admin/reports"
+              element={
+                <AdminRoute>
+                  <Layout />
+                </AdminRoute>
+              }
+            >
+              <Route index element={<Reports />} />
+            </Route>
+            
+            <Route
+              path="/admin/google-sheet"
+              element={
+                <AdminRoute>
+                  <Layout />
+                </AdminRoute>
+              }
+            >
+              <Route index element={<GoogleSheetSettings />} />
+            </Route>
+            
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Router>
+        <Toaster position="top-center" richColors closeButton />
       </OrderProvider>
-      <Toaster position="top-center" richColors />
     </ThemeProvider>
   );
 }
