@@ -1,7 +1,7 @@
+
 import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOrders } from "@/contexts/OrderContext";
-import { format } from "date-fns";
 import {
   Card,
   CardContent,
@@ -49,7 +49,9 @@ const Reports: React.FC = () => {
       "On Hold": 0,
       "Issue": 0,
       "Dispatched": 0,
-      "Ready to Dispatch": 0
+      "Ready to Dispatch": 0,
+      "Pending Approval": 0,
+      "Pending Payment": 0
     };
     
     orders.forEach(order => {
@@ -119,23 +121,24 @@ const Reports: React.FC = () => {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Total Revenue</CardDescription>
-            <CardTitle className="text-3xl">${totalRevenue.toLocaleString()}</CardTitle>
+            <CardTitle className="text-3xl">₹{totalRevenue.toLocaleString()}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Pending Payments</CardDescription>
-            <CardTitle className="text-3xl text-amber-500">${pendingAmount.toLocaleString()}</CardTitle>
+            <CardTitle className="text-3xl text-amber-500">₹{pendingAmount.toLocaleString()}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Average Order Value</CardDescription>
-            <CardTitle className="text-3xl">${averageOrderValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}</CardTitle>
+            <CardTitle className="text-3xl">₹{averageOrderValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}</CardTitle>
           </CardHeader>
         </Card>
       </div>
 
+      {/* Tabs */}
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="overview">

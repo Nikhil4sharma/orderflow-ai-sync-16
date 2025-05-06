@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { CheckCircle, XCircle } from "lucide-react";
-import { Order } from "@/types";
+import { Order, OrderStatus } from "@/types";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 
@@ -35,7 +35,7 @@ const ApprovalResponseForm: React.FC<ApprovalResponseFormProps> = ({ order }) =>
     // Update order based on response
     const updatedOrder = {
       ...order,
-      status: responseType === "approve" ? "In Progress" : "On Hold",
+      status: responseType === "approve" ? "In Progress" as OrderStatus : "On Hold" as OrderStatus,
       pendingApprovalFrom: undefined,
       approvalReason: undefined
     };

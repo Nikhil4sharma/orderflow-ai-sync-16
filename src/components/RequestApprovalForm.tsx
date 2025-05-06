@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { MessageSquare } from "lucide-react";
 import { canRequestApprovalFromSales } from "@/lib/permissions";
-import { Order } from "@/types";
+import { Order, OrderStatus } from "@/types";
 
 interface RequestApprovalFormProps {
   order: Order;
@@ -28,7 +28,7 @@ const RequestApprovalForm: React.FC<RequestApprovalFormProps> = ({ order }) => {
     // Update the order with pending approval status
     const updatedOrder = {
       ...order,
-      status: "Pending Approval",
+      status: "Pending Approval" as OrderStatus,
       pendingApprovalFrom: "Sales",
       approvalReason
     };
