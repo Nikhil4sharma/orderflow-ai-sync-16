@@ -1,6 +1,7 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Order, User, OrderStatus, StatusUpdate, Department, Role, PaymentRecord, PermissionKey } from "@/types";
-import { getMockOrders } from "@/lib/mock-data";
+import { getDemoOrders } from "@/lib/demo-data";
 import { DashboardConfiguration } from "@/types/dashboardConfig";
 
 // Define the context type
@@ -35,7 +36,7 @@ const OrderContext = createContext<OrderContextType | undefined>(undefined);
 export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [orders, setOrders] = useState<Order[]>(() => {
     const savedOrders = localStorage.getItem("orders");
-    return savedOrders ? JSON.parse(savedOrders) : getMockOrders();
+    return savedOrders ? JSON.parse(savedOrders) : getDemoOrders();
   });
   
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
