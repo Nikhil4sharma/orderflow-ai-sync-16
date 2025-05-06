@@ -7,11 +7,11 @@ export type DesignStatus = 'Working on it' | 'Pending Feedback from Sales Team' 
 
 export type PrepressStatus = 'Waiting for approval' | 'Forwarded to production' | 'Working on it';
 
-export type OrderStatus = 'In Progress' | 'Completed' | 'On Hold' | 'Issue' | 'Verified' | 'Dispatched' | 'Ready to Dispatch';
+export type OrderStatus = 'In Progress' | 'Completed' | 'On Hold' | 'Issue' | 'Verified' | 'Dispatched' | 'Ready to Dispatch' | 'New';
 
 export type StatusType = 'completed' | 'processing' | 'issue';
 
-export type PaymentStatus = 'Not Paid' | 'Partially Paid' | 'Paid';
+export type PaymentStatus = 'Not Paid' | 'Partially Paid' | 'Paid' | 'Partial';
 
 export type CourierPartner = 'Shree Maruti' | 'DTDC' | 'FedEx' | 'DHL' | 'BlueDart' | 'Other';
 
@@ -103,11 +103,24 @@ export type PermissionKey =
   | 'manage_users'
   | 'manage_departments'
   | 'manage_orders'
-  | 'edit_orders'
+  | 'update_orders'
   | 'delete_orders'
   | 'view_finances'
   | 'manage_settings'
-  | 'export_data';
+  | 'export_data'
+  | 'create_orders' 
+  | 'update_order_status'
+  | 'verify_orders'
+  | 'dispatch_orders'
+  | 'view_reports'
+  | 'view_analytics'
+  | 'view_address_details'
+  | 'request_approval'
+  | 'provide_approval'
+  | 'forward_to_department'
+  | 'mark_ready_dispatch'
+  | 'verify_payment'
+  | 'view_delivery_details';
 
 export interface GoogleSheetConfig {
   sheetId: string;

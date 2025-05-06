@@ -1,5 +1,5 @@
 
-import { Order, User, Department, OrderStatus, PaymentStatus } from "@/types";
+import { Order, User, Department, OrderStatus, PaymentStatus, PermissionKey } from "@/types";
 import { v4 as uuidv4 } from "uuid";
 
 // Generate a random date within the past month
@@ -40,7 +40,7 @@ export const getMockOrders = (): Order[] => {
       pendingAmount,
       items: [`Product ${i + 1}`, `Product ${i + 2}`],
       createdAt,
-      status: statuses[Math.floor(Math.random() * statuses.length)],
+      status: statuses[Math.floor(Math.random() * statuses.length)] as OrderStatus,
       currentDepartment: departments[Math.floor(Math.random() * departments.length)],
       statusHistory: [
         {
@@ -53,7 +53,7 @@ export const getMockOrders = (): Order[] => {
           updatedBy: "System"
         }
       ],
-      paymentStatus
+      paymentStatus: paymentStatus as PaymentStatus
     };
   });
 };
@@ -71,7 +71,15 @@ export const getMockUsers = (): User[] => {
     password: "password",
     department: "Admin",
     role: "Admin",
-    permissions: ["manage_users", "manage_departments", "manage_orders", "edit_orders", "delete_orders", "view_finances", "manage_settings", "export_data"]
+    permissions: [
+      "manage_users", 
+      "manage_departments", 
+      "update_orders", 
+      "delete_orders", 
+      "view_finances", 
+      "manage_settings", 
+      "export_data"
+    ]
   };
   
   // Generate other random users
@@ -85,7 +93,8 @@ export const getMockUsers = (): User[] => {
       email: `user${i + 1}@example.com`,
       password: "password",
       department,
-      role
+      role,
+      permissions: [] as PermissionKey[]
     };
   });
   
@@ -106,4 +115,37 @@ export const getRandomDepartment = (): Department => {
 export const getRandomPaymentStatus = (): PaymentStatus => {
   const statuses: PaymentStatus[] = ["Not Paid", "Partially Paid", "Paid"];
   return statuses[Math.floor(Math.random() * statuses.length)];
+};
+
+// Add missing functions needed by other components
+export const getDepartments = (): Department[] => {
+  return ["Sales", "Design", "Production", "Prepress", "Admin"];
+};
+
+export const getAllowedStatusesForDepartment = (department: Department): OrderStatus[] => {
+  switch (department) {
+    case "Sales":
+      return ["In Progress", "Completed", "On Hold", "Issue"];
+    case "Design":
+      return ["In Progress", "Completed", "On Hold", "Issue"];
+    case "Production":
+      return ["In Progress", "Completed", "On Hold", "Issue", "Ready to Dispatch"];
+    case "Prepress":
+      return ["In Progress", "Completed", "On Hold", "Issue"];
+    case "Admin":
+      return ["In Progress", "Completed", "On Hold", "Issue", "Verified", "Dispatched", "Ready to Dispatch"];
+    default:
+      return ["In Progress", "Completed", "On Hold", "Issue"];
+  }
+};
+
+export const getNextDepartment = (currentDepartment: Department): Department | null => {
+  const flowOrder: Department[] = ["Sales", "Design", "Prepress", "Production"];
+  const currentIndex = flowOrder.indexOf(currentDepartment);
+  
+  if (currentIndex === -1 || currentIndex === flowOrder.length - 1) {
+    return null;
+  }
+  
+  return flowOrder[currentIndex + 1];
 };
