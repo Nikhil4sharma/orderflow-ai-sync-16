@@ -22,7 +22,7 @@ import { Badge } from "./ui/badge";
 import NotificationsDropdown from "./NotificationsDropdown";
 
 const Layout: React.FC = () => {
-  const { currentUser, logoutUser, orders } = useOrders();
+  const { currentUser, logout, orders } = useOrders();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const isMobile = useIsMobile();
@@ -105,7 +105,7 @@ const Layout: React.FC = () => {
   };
 
   const handleLogout = () => {
-    logoutUser();
+    logout(); // Use the logout function from the OrderContext
     toast.success("You have been logged out successfully");
   };
 
@@ -282,38 +282,33 @@ const Layout: React.FC = () => {
         )}
         
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t">
-          <div className="flex items-center gap-3">
-            <Avatar className="h-9 w-9 hover:ring-2 hover:ring-primary transition-all">
-              <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                {currentUser?.name?.[0] || "U"}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col">
-              <span className="text-sm font-medium">{currentUser?.name}</span>
-              <span className="text-xs text-muted-foreground">{currentUser?.department}</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Avatar className="h-8 w-8 mr-2">
+                <AvatarImage src="/placeholder.svg" alt={currentUser?.name || "User"} />
+                <AvatarFallback className="bg-primary/10 text-primary">
+                  {currentUser?.name?.[0] || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="text-sm">
+                <p className="font-medium truncate max-w-[120px]">{currentUser?.name}</p>
+                <p className="text-xs text-muted-foreground">{currentUser?.role}</p>
+              </div>
             </div>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleLogout}
+              className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
-          <Button 
-            variant="outline" 
-            className="w-full mt-3 text-sm h-9 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30 dark:hover:text-red-400 transition-colors"
-            onClick={handleLogout}
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Sign out
-          </Button>
         </div>
       </div>
-      
-      {/* Overlay to close menu when clicked outside */}
-      {isMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm transition-opacity duration-300"
-          onClick={() => setIsMenuOpen(false)}
-        />
-      )}
 
       {/* Main Content */}
-      <main className="flex-1 bg-background animate-fade-in">
+      <main className="flex-1 container mx-auto px-4 py-6">
         <Outlet />
       </main>
     </div>

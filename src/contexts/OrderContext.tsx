@@ -1,383 +1,235 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import {
-  Order,
-  User,
-  StatusUpdate,
-  PaymentRecord,
-  OrderStatus,
-  Department,
-  PermissionKey,
-  PaymentStatus
-} from "@/types";
-import { getMockOrders, getMockUsers } from "@/lib/mock-data";
-import { toast } from "sonner";
-import { DashboardConfiguration, DEFAULT_DASHBOARD_CONFIG } from "@/types/dashboardConfig";
 
-// Define our context type
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { Order, User, OrderStatus, StatusUpdate, DashboardElement } from "@/types";
+import { generateMockOrders, getDashboardConfig } from "@/lib/mock-data";
+
+// Define the context type
 interface OrderContextType {
   orders: Order[];
   addOrder: (order: Order) => void;
-  updateOrder: (order: Order) => void;
-  deleteOrder: (id: string) => void;
-  users: User[];
-  addUser: (user: User) => void;
-  updateUser: (user: User) => void;
-  deleteUser: (id: string) => void;
-  currentUser: User | null;
-  isAuthenticated: boolean;
-  loginUser: (email: string, password: string) => void;
-  logoutUser: () => void;
+  updateOrder: (updatedOrder: Order) => void;
+  deleteOrder: (orderId: string) => void;
   addStatusUpdate: (orderId: string, statusUpdate: Partial<StatusUpdate>) => void;
-  recordPayment: (orderId: string, payment: PaymentRecord) => void;
   verifyOrder: (orderId: string) => void;
-  dashboardConfig: DashboardConfiguration;
-  updateDashboardConfig: (config: DashboardConfiguration) => void;
-  canUserSeeElement: (department: Department, element: string) => boolean;
-  // Add missing methods
-  updateStatusUpdate: (updateId: string, update: Partial<StatusUpdate>) => void;
-  hasPermission: (permission: string) => boolean;
-  addPayment: (orderId: string, payment: Partial<PaymentRecord>) => void;
-  setCurrentUser: (user: User) => void;
-  removeUser: (userId: string) => void;
+  isAuthenticated: boolean;
+  currentUser: User | null;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => void;
+  canUserSeeElement: (department: string, element: DashboardElement) => boolean;
 }
 
-// Create the context
+// Create a context with an empty default value
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
 // Provider component
 export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // State for orders
   const [orders, setOrders] = useState<Order[]>(() => {
     const savedOrders = localStorage.getItem("orders");
-    return savedOrders ? JSON.parse(savedOrders) : getMockOrders();
+    return savedOrders ? JSON.parse(savedOrders) : generateMockOrders();
   });
-
-  // State for users
-  const [users, setUsers] = useState<User[]>(() => {
-    const savedUsers = localStorage.getItem("users");
-    return savedUsers ? JSON.parse(savedUsers) : getMockUsers();
-  });
-
-  // State for authentication and current user management 
-  const [currentUser, setCurrUser] = useState<User | null>(() => {
-    const savedUser = localStorage.getItem("currentUser");
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
+  
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     return localStorage.getItem("isAuthenticated") === "true";
   });
-
-  // State for dashboard configuration
-  const [dashboardConfig, setDashboardConfig] = useState<DashboardConfiguration>(() => {
-    const savedConfig = localStorage.getItem("dashboardConfig");
-    return savedConfig ? JSON.parse(savedConfig) : DEFAULT_DASHBOARD_CONFIG;
+  
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    const savedUser = localStorage.getItem("currentUser");
+    return savedUser ? JSON.parse(savedUser) : null;
   });
 
-  // Save orders to localStorage whenever it changes
+  // Save orders to local storage whenever they change
   useEffect(() => {
     localStorage.setItem("orders", JSON.stringify(orders));
   }, [orders]);
-
-  // Save users to localStorage whenever it changes
+  
+  // Save authentication state and user to local storage
   useEffect(() => {
-    localStorage.setItem("users", JSON.stringify(users));
-  }, [users]);
+    localStorage.setItem("isAuthenticated", isAuthenticated.toString());
+    if (currentUser) {
+      localStorage.setItem("currentUser", JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem("currentUser");
+    }
+  }, [isAuthenticated, currentUser]);
 
-  // Save authentication state to localStorage
-  useEffect(() => {
-    localStorage.setItem("currentUser", JSON.stringify(currentUser));
-    localStorage.setItem("isAuthenticated", String(isAuthenticated));
-  }, [currentUser, isAuthenticated]);
-
-  // Save dashboard configuration to localStorage
-  useEffect(() => {
-    localStorage.setItem("dashboardConfig", JSON.stringify(dashboardConfig));
-  }, [dashboardConfig]);
-
-  // Order functions
+  // Add a new order
   const addOrder = (order: Order) => {
-    setOrders((prevOrders) => [...prevOrders, order]);
+    setOrders(prevOrders => [...prevOrders, order]);
   };
 
-  const updateOrder = (order: Order) => {
-    setOrders((prevOrders) =>
-      prevOrders.map((o) => (o.id === order.id ? order : o))
+  // Update an existing order
+  const updateOrder = (updatedOrder: Order) => {
+    setOrders(prevOrders =>
+      prevOrders.map(order => (order.id === updatedOrder.id ? updatedOrder : order))
     );
   };
 
-  const deleteOrder = (id: string) => {
-    setOrders((prevOrders) => prevOrders.filter((o) => o.id !== id));
-  };
-
-  // User functions
-  const addUser = (user: User) => {
-    setUsers((prevUsers) => [...prevUsers, user]);
-  };
-
-  const updateUser = (user: User) => {
-    setUsers((prevUsers) =>
-      prevUsers.map((u) => (u.id === user.id ? user : u))
-    );
-  };
-
-  const deleteUser = (id: string) => {
-    setUsers((prevUsers) => prevUsers.filter((u) => u.id !== id));
+  // Delete an order
+  const deleteOrder = (orderId: string) => {
+    setOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
   };
   
-  // Implementation for setCurrentUser
-  const setCurrentUser = (user: User) => {
-    if (!user) {
-      setIsAuthenticated(false);
-    }
-    localStorage.setItem("currentUser", JSON.stringify(user));
-    setCurrUser(user);
-  };
-
-  // Authentication functions
-  const loginUser = (email: string, password: string) => {
-    // Find user with matching email and password
-    // Normalize email for case-insensitive comparison
-    const normalizedEmail = email.toLowerCase().trim();
-    
-    // Try to find the user with the exact email
-    const user = users.find(
-      (u) => u.email?.toLowerCase() === normalizedEmail && u.password === password
-    );
-
-    if (user) {
-      setCurrentUser(user);
-      setIsAuthenticated(true);
-      return;
-    }
-    
-    // If not found, throw an error
-    throw new Error("Invalid email or password");
-  };
-
-  // Add status update to an order
+  // Add a status update to an order
   const addStatusUpdate = (orderId: string, statusUpdate: Partial<StatusUpdate>) => {
-    const order = orders.find((o) => o.id === orderId);
-    if (!order) return;
-
-    // Create new status update with default values
-    const newStatusUpdate: StatusUpdate = {
-      id: `status-${Date.now()}`,
-      orderId,
-      department: statusUpdate.department || currentUser?.department || "Sales",
-      status: statusUpdate.status || "Updated",
-      remarks: statusUpdate.remarks || "",
-      timestamp: new Date().toISOString(),
-      updatedBy: currentUser?.name || "System",
-      editableUntil: statusUpdate.editableUntil,
-      selectedProduct: statusUpdate.selectedProduct,
-      estimatedTime: statusUpdate.estimatedTime
-    };
-
-    // Update order with new status update
-    const updatedOrder = {
-      ...order,
-      statusHistory: [...(order.statusHistory || []), newStatusUpdate]
-    };
-
-    updateOrder(updatedOrder);
-  };
-
-  // Record payment for an order
-  const recordPayment = (orderId: string, payment: PaymentRecord) => {
-    const order = orders.find((o) => o.id === orderId);
-    if (!order) return;
-
-    // Calculate new payment status
-    const newPaidAmount = order.paidAmount + payment.amount;
-    const newPendingAmount = order.amount - newPaidAmount;
-    let newPaymentStatus: PaymentStatus = "Not Paid";
-
-    if (newPaidAmount >= order.amount) {
-      newPaymentStatus = "Paid";
-    } else if (newPaidAmount > 0) {
-      newPaymentStatus = "Partial";
-    }
-
-    const updatedOrder = {
-      ...order,
-      paidAmount: newPaidAmount,
-      pendingAmount: newPendingAmount,
-      paymentStatus: newPaymentStatus,
-      paymentHistory: [
-        ...(order.paymentHistory || []),
-        {
-          ...payment,
-          id: `payment-${Date.now()}`,
-          date: payment.date || new Date().toISOString(),
-        },
-      ],
-    };
-
-    updateOrder(updatedOrder);
-
-    // Add status update for payment
-    addStatusUpdate(orderId, {
-      department: "Sales",
-      status: `Payment ${newPaymentStatus}`,
-      remarks: `Received payment of ₹${payment.amount} via ${payment.method}. ${payment.remarks || ''}`,
-    });
-  };
-
-  // Verify an order (mark as verified)
-  const verifyOrder = (orderId: string) => {
-    const order = orders.find((o) => o.id === orderId);
-    if (!order) return;
-    
-    // Update order status to verified
-    const updatedOrder = {
-      ...order,
-      status: "Verified" as OrderStatus,
-      verifiedBy: currentUser?.name || "Unknown",
-      verifiedAt: new Date().toISOString()
-    };
-    
-    updateOrder(updatedOrder);
-    
-    // Add status update for verification
-    addStatusUpdate(orderId, {
-      department: currentUser?.department || "Sales",
-      status: "Order Verified",
-      remarks: `Order verified by ${currentUser?.name || "Unknown"}`
-    });
-    
-    toast.success("Order has been verified successfully");
-  };
-
-  // Dashboard configuration functions
-  const updateDashboardConfig = (config: DashboardConfiguration) => {
-    // Update the timestamp and user who made the change
-    const updatedConfig = {
-      ...config,
-      lastUpdated: new Date().toISOString(),
-      updatedBy: currentUser?.name || 'Unknown'
-    };
-    
-    setDashboardConfig(updatedConfig);
-    toast.success("Dashboard configuration updated successfully");
-  };
-
-  // Check if a user's department can see a specific dashboard element
-  const canUserSeeElement = (department: Department, element: string) => {
-    if (!dashboardConfig.departmentConfigs[department]) {
-      return false;
-    }
-    
-    return dashboardConfig.departmentConfigs[department].visibleElements.includes(element as any);
-  };
-
-  // Implementation for updateStatusUpdate
-  const updateStatusUpdate = (updateId: string, update: Partial<StatusUpdate>) => {
     setOrders(prevOrders => 
       prevOrders.map(order => {
-        if (!order.statusHistory) return order;
+        if (order.id !== orderId) return order;
         
-        const statusIndex = order.statusHistory.findIndex(
-          status => status.id === updateId
-        );
-        
-        if (statusIndex === -1) return order;
-        
-        const updatedStatusHistory = [...order.statusHistory];
-        updatedStatusHistory[statusIndex] = {
-          ...updatedStatusHistory[statusIndex],
-          ...update
+        // Create new status update
+        const newUpdate: StatusUpdate = {
+          id: `status-${Date.now()}`,
+          orderId: orderId,
+          timestamp: new Date().toISOString(),
+          department: statusUpdate.department || currentUser?.department || "Admin",
+          status: statusUpdate.status || order.status,
+          remarks: statusUpdate.remarks || "",
+          updatedBy: currentUser?.name || "System",
+          estimatedTime: statusUpdate.estimatedTime || ""
         };
         
+        // Add to status history
         return {
           ...order,
-          statusHistory: updatedStatusHistory
+          statusHistory: [...(order.statusHistory || []), newUpdate]
         };
       })
     );
   };
-
-  // Implementation for hasPermission
-  const hasPermission = (permission: string) => {
-    if (!currentUser || !currentUser.permissions) return false;
-    return currentUser.permissions.includes(permission as PermissionKey);
+  
+  // Verify an order
+  const verifyOrder = (orderId: string) => {
+    setOrders(prevOrders =>
+      prevOrders.map(order => {
+        if (order.id !== orderId) return order;
+        
+        return {
+          ...order,
+          status: "Verified" as OrderStatus,
+        };
+      })
+    );
+    
+    // Add verification status update
+    addStatusUpdate(orderId, {
+      status: "Verified",
+      remarks: "Order verified by " + currentUser?.name,
+    });
   };
 
-  // Implementation for addPayment
-  const addPayment = (orderId: string, payment: Partial<PaymentRecord>) => {
-    const order = orders.find((o) => o.id === orderId);
-    if (!order) return;
+  // Login function
+  const login = async (email: string, password: string): Promise<boolean> => {
+    // In a real app, this would be an API call
+    
+    // Mock users for testing
+    const users = [
+      {
+        id: "user1",
+        email: "admin@chhapai.com",
+        password: "admin123",
+        name: "Admin User",
+        role: "Admin",
+        department: "Admin",
+      },
+      {
+        id: "user2",
+        email: "sales@chhapai.com",
+        password: "sales123",
+        name: "Sales User",
+        role: "Manager",
+        department: "Sales",
+      },
+      {
+        id: "user3",
+        email: "design@chhapai.com",
+        password: "design123",
+        name: "Design User",
+        role: "Worker",
+        department: "Design",
+      },
+      {
+        id: "user4",
+        email: "prepress@chhapai.com",
+        password: "prepress123",
+        name: "Prepress User",
+        role: "Worker",
+        department: "Prepress",
+      },
+      {
+        id: "user5",
+        email: "production@chhapai.com",
+        password: "production123",
+        name: "Production User",
+        role: "Worker",
+        department: "Production",
+      },
+      // Add more users as needed
+    ];
 
-    const newPayment: PaymentRecord = {
-      id: payment.id || `payment-${Date.now()}`,
-      amount: payment.amount || 0,
-      date: payment.date || new Date().toISOString(),
-      method: payment.method || "Unknown",
-      remarks: payment.remarks || ""
-    };
+    // Find user with matching email and password
+    const user = users.find(
+      (u) => u.email === email && u.password === password
+    );
 
-    // Calculate new payment status
-    const newPaidAmount = order.paidAmount + newPayment.amount;
-    const newPendingAmount = order.amount - newPaidAmount;
-    let newPaymentStatus: PaymentStatus = "Not Paid";
-
-    if (newPaidAmount >= order.amount) {
-      newPaymentStatus = "Paid";
-    } else if (newPaidAmount > 0) {
-      newPaymentStatus = "Partial";
+    if (user) {
+      setIsAuthenticated(true);
+      setCurrentUser({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role as any,
+        department: user.department as any,
+      });
+      return true;
     }
 
-    const updatedOrder = {
-      ...order,
-      paidAmount: newPaidAmount,
-      pendingAmount: newPendingAmount,
-      paymentStatus: newPaymentStatus,
-      paymentHistory: [
-        ...(order.paymentHistory || []),
-        newPayment
-      ],
-    };
-
-    updateOrder(updatedOrder);
+    return false;
   };
 
-  // Implementation for removeUser
-  const removeUser = (userId: string) => {
-    setUsers((prevUsers) => prevUsers.filter((u) => u.id !== userId));
+  // Logout function
+  const logout = () => {
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+    localStorage.removeItem("currentUser");
+    localStorage.setItem("isAuthenticated", "false");
+  };
+  
+  // Check if a user's department can see a specific dashboard element
+  const canUserSeeElement = (department: string, element: DashboardElement): boolean => {
+    const dashboardConfig = getDashboardConfig();
+    
+    // Get the configuration for this department
+    const deptConfig = dashboardConfig.find(config => config.department === department);
+    
+    // If no config is found, the element is not visible
+    if (!deptConfig) return false;
+    
+    // Check if the element is in the visible elements array
+    return deptConfig.visibleElements.includes(element);
   };
 
-  const value = {
+  // Provide the context value
+  const contextValue: OrderContextType = {
     orders,
     addOrder,
     updateOrder,
     deleteOrder,
-    users,
-    addUser,
-    updateUser,
-    deleteUser,
-    currentUser,
-    isAuthenticated,
-    loginUser,
-    logoutUser,
     addStatusUpdate,
-    recordPayment,
     verifyOrder,
-    dashboardConfig,
-    updateDashboardConfig,
+    isAuthenticated,
+    currentUser,
+    login,
+    logout,
     canUserSeeElement,
-    // Add the missing methods to the context value
-    updateStatusUpdate,
-    hasPermission,
-    addPayment,
-    setCurrentUser,
-    removeUser,
   };
 
   return (
-    <OrderContext.Provider value={value}>{children}</OrderContext.Provider>
+    <OrderContext.Provider value={contextValue}>
+      {children}
+    </OrderContext.Provider>
   );
 };
 
-// Custom hook to use the orders context
+// Custom hook to use the context
 export const useOrders = (): OrderContextType => {
   const context = useContext(OrderContext);
   if (context === undefined) {
