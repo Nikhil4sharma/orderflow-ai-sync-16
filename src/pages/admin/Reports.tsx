@@ -1,4 +1,3 @@
-
 import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOrders } from "@/contexts/OrderContext";
@@ -41,7 +40,7 @@ const Reports: React.FC = () => {
   const pendingAmount = useMemo(() => orders.reduce((sum, order) => sum + order.pendingAmount, 0), [orders]);
   const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
-  // Calculate status counts
+  // Calculate status counts - Fixed to include all required OrderStatus values
   const statusCounts = useMemo(() => {
     const counts: Record<OrderStatus, number> = {
       "In Progress": 0,
@@ -51,7 +50,9 @@ const Reports: React.FC = () => {
       "Dispatched": 0,
       "Ready to Dispatch": 0,
       "Pending Approval": 0,
-      "Pending Payment": 0
+      "Pending Payment": 0,
+      "New": 0,
+      "Verified": 0
     };
     
     orders.forEach(order => {
@@ -61,11 +62,12 @@ const Reports: React.FC = () => {
     return counts;
   }, [orders]);
   
-  // Calculate payment status
+  // Calculate payment status - Fixed to match the PaymentStatus type
   const paymentStatusCounts = useMemo(() => {
     const counts: Record<PaymentStatus, number> = {
       "Not Paid": 0,
       "Partial": 0,
+      "Partially Paid": 0, // Added the missing type
       "Paid": 0
     };
     
@@ -78,6 +80,7 @@ const Reports: React.FC = () => {
 
   // Calculate department workload
   const departmentWorkload = useMemo(() => {
+    
     const counts: Record<string, number> = {
       "Sales": 0,
       "Production": 0,
@@ -112,6 +115,7 @@ const Reports: React.FC = () => {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Total Orders</CardDescription>
@@ -139,6 +143,7 @@ const Reports: React.FC = () => {
       </div>
 
       {/* Tabs */}
+      
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="overview">

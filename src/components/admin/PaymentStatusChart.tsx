@@ -14,9 +14,10 @@ export const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({ data }) 
   }));
 
   // Custom colors for each status
-  const COLORS = {
+  const COLORS: Record<string, string> = {
     'Not Paid': '#f44336',
-    'Partially Paid': '#ff9800',
+    'Partial': '#ff9800',
+    'Partially Paid': '#ff9800', // Added color for Partially Paid
     'Paid': '#4CAF50'
   };
 
@@ -41,7 +42,7 @@ export const PaymentStatusChart: React.FC<PaymentStatusChartProps> = ({ data }) 
           {chartData.map((entry, index) => (
             <Cell 
               key={`cell-${index}`} 
-              fill={COLORS[entry.name as PaymentStatus] || '#8884d8'} 
+              fill={COLORS[entry.name] || '#8884d8'} 
             />
           ))}
         </Pie>
