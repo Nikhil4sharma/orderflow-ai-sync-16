@@ -58,17 +58,14 @@ export const getMockOrders = (): Order[] => {
   });
 };
 
-// Generate mock users
+// Generate mock users with the demo accounts
 export const getMockUsers = (): User[] => {
-  const departments: Department[] = ["Sales", "Design", "Production", "Prepress"];
-  const roles: Role[] = ["Admin", "Manager", "Staff"];
-  
-  // Always include an admin user
+  // Create the admin demo user
   const adminUser: User = {
     id: "admin-1",
     name: "Admin User",
-    email: "admin@example.com",
-    password: "password",
+    email: "admin@orderflow.com",
+    password: "admin123",
     department: "Sales" as Department,
     role: "Admin" as Role,
     permissions: [
@@ -81,10 +78,58 @@ export const getMockUsers = (): User[] => {
     ] as PermissionKey[]
   };
   
+  // Create the sales demo user
+  const salesUser: User = {
+    id: "sales-1",
+    name: "Sales User",
+    email: "sales@orderflow.com",
+    password: "sales123",
+    department: "Sales" as Department,
+    role: "Manager" as Role,
+    permissions: [
+      "view_orders", 
+      "create_orders", 
+      "update_orders", 
+      "update_order_status"
+    ] as PermissionKey[]
+  };
+  
+  // Create the design demo user
+  const designUser: User = {
+    id: "design-1",
+    name: "Design User",
+    email: "design@orderflow.com",
+    password: "design123",
+    department: "Design" as Department,
+    role: "Staff" as Role,
+    permissions: [
+      "view_orders", 
+      "update_order_status", 
+      "request_approval"
+    ] as PermissionKey[]
+  };
+  
+  // Create the production demo user
+  const productionUser: User = {
+    id: "production-1",
+    name: "Production User",
+    email: "production@orderflow.com",
+    password: "production123",
+    department: "Production" as Department,
+    role: "Manager" as Role,
+    permissions: [
+      "view_orders", 
+      "update_order_status", 
+      "mark_ready_dispatch"
+    ] as PermissionKey[]
+  };
+  
   // Generate other random users
-  const otherUsers = Array.from({ length: 5 }, (_, i) => {
-    const department = departments[Math.floor(Math.random() * departments.length)];
-    const role = roles[Math.floor(Math.random() * roles.length)];
+  const otherUsers = Array.from({ length: 3 }, (_, i) => {
+    const departmentOptions: Department[] = ["Sales", "Design", "Production", "Prepress"];
+    const roleOptions: Role[] = ["Admin", "Manager", "Staff"];
+    const department = departmentOptions[Math.floor(Math.random() * departmentOptions.length)];
+    const role = roleOptions[Math.floor(Math.random() * roleOptions.length)];
     
     return {
       id: `user-${i + 1}`,
@@ -97,7 +142,7 @@ export const getMockUsers = (): User[] => {
     };
   });
   
-  return [adminUser, ...otherUsers];
+  return [adminUser, salesUser, designUser, productionUser, ...otherUsers];
 };
 
 // Export other utility functions as needed
@@ -131,8 +176,10 @@ export const getAllowedStatusesForDepartment = (department: Department): OrderSt
       return ["In Progress", "Completed", "On Hold", "Issue", "Ready to Dispatch"];
     case "Prepress":
       return ["In Progress", "Completed", "On Hold", "Issue"];
+    case "Admin":
+      return ["In Progress", "Completed", "On Hold", "Issue", "Ready to Dispatch", "Dispatched", "New", "Pending Approval"];
     default:
-      return ["In Progress", "Completed", "On Hold", "Issue", "Ready to Dispatch", "Verified", "Dispatched"];
+      return ["In Progress", "Completed", "On Hold", "Issue", "Ready to Dispatch", "Dispatched"];
   }
 };
 

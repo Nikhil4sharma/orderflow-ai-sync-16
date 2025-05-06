@@ -128,20 +128,3 @@ export type PermissionKey =
   | 'mark_ready_dispatch'
   | 'verify_payment'
   | 'view_delivery_details';
-
-export interface GoogleSheetConfig {
-  sheetId: string;
-  tabName: string;
-  apiKey?: string;
-  lastSyncedAt?: string;
-}
-
-export interface FilterOptions {
-  department: Department | 'All';
-  status: OrderStatus | 'All';
-  searchTerm: string;
-  dateRange?: {
-    start: Date | null;
-    end: Date | null;
-  };
-}

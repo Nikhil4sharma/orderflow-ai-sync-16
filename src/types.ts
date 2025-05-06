@@ -9,9 +9,9 @@ export type User = {
   permissions: PermissionKey[];
 };
 
-export type Role = "Admin" | "Manager" | "User";
+export type Role = "Admin" | "Manager" | "Staff" | "User";
 
-export type Department = "Sales" | "Design" | "Prepress" | "Production";
+export type Department = "Sales" | "Design" | "Prepress" | "Production" | "Admin";
 
 // Updated order status to match the workflow
 export type OrderStatus = 
@@ -22,7 +22,9 @@ export type OrderStatus =
   | "Issue"
   | "Ready to Dispatch"
   | "Pending Approval"
-  | "Pending Payment";
+  | "Pending Payment"
+  | "New"
+  | "Verified";
 
 // Design department specific statuses
 export type DesignStatus = 
@@ -55,7 +57,7 @@ export type ProductionStage =
   | "Quality Check"
   | "Ready to Dispatch";
 
-export type PaymentStatus = "Not Paid" | "Partial" | "Paid";
+export type PaymentStatus = "Not Paid" | "Partial" | "Paid" | "Partially Paid";
 
 export type CourierPartner = "Shree Maruti" | "DTDC" | "FedEx" | "DHL" | "BlueDart" | "Other";
 
@@ -108,6 +110,10 @@ export type Order = {
   
   // Timeline tracking
   expectedCompletionDate?: string;
+  
+  // Verification details
+  verifiedBy?: string;
+  verifiedAt?: string;
 };
 
 export type ProductionStageStatus = {
