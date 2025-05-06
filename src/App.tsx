@@ -24,6 +24,8 @@ import NotFound from "./pages/NotFound";
 import { ThemeProvider } from "./components/theme-provider";
 import { Toaster } from "sonner";
 import "./App.css";
+import Orders from "./pages/Orders";
+import DesignTasks from "./pages/DesignTasks";
 
 // Private route component
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
@@ -101,6 +103,28 @@ function App() {
               }
             >
               <Route index element={<OrderDetail />} />
+            </Route>
+            
+            <Route
+              path="/orders"
+              element={
+                <PrivateRoute>
+                  <Layout />
+                </PrivateRoute>
+              }
+            >
+              <Route index element={<Orders />} />
+            </Route>
+            
+            <Route
+              path="/design-tasks"
+              element={
+                <PrivateRoute>
+                  <Layout />
+                </PrivateRoute>
+              }
+            >
+              <Route index element={<DesignTasks />} />
             </Route>
             
             <Route

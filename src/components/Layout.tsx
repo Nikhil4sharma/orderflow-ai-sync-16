@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation, Link, NavLink } from "react-router-dom";
 import { useOrders } from "@/contexts/OrderContext";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -13,14 +13,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Link } from "react-router-dom";
 import ThemeToggle from "./ThemeToggle";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
+import ChhapaiLogo from "./ChhapaiLogo";
+import { Badge } from "./ui/badge";
 
 const Layout: React.FC = () => {
-  const { currentUser, logoutUser } = useOrders();
+  const { currentUser, logoutUser, orders } = useOrders();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const isMobile = useIsMobile();
@@ -32,52 +33,64 @@ const Layout: React.FC = () => {
       pathParts[0].charAt(0).toUpperCase() + pathParts[0].slice(1) : 
       'Dashboard';
     
-    document.title = `${currentSection} | OrderFlow Management`;
+    document.title = `${currentSection} | Chhapai Management`;
   }, [location.pathname]);
 
-  // Define navigation items with department-specific visibility
+  // Count orders by status for badges
+  const countOrdersByStatus = (status: string) => {
+    return orders.filter(order => order.status === status).length;
+  };
+
+  // Define navigation items with department-specific visibility and order counts
   const navItems = [
     { 
       name: 'Dashboard', 
       path: '/dashboard', 
       icon: <Home className="w-5 h-5 mr-2" />,
-      showFor: ['Admin', 'Sales', 'Design', 'Production', 'Prepress'] // Everyone sees this
+      showFor: ['Admin', 'Sales', 'Design', 'Production', 'Prepress'],
+      badge: null
     },
     { 
       name: 'New Order', 
       path: '/new-order', 
       icon: <PlusCircle className="w-5 h-5 mr-2" />, 
-      showFor: ['Admin', 'Sales'] // Only sales and admin
+      showFor: ['Admin', 'Sales'],
+      badge: null
     },
     { 
       name: 'Orders', 
       path: '/orders', 
       icon: <FileText className="w-5 h-5 mr-2" />,
-      showFor: ['Admin', 'Sales', 'Design', 'Production', 'Prepress'] // Everyone sees this
-    },
-    { 
-      name: 'Reports', 
-      path: '/reports', 
-      icon: <BarChart className="w-5 h-5 mr-2" />,
-      showFor: ['Admin', 'Sales'] // Only visible to admin and sales
+      showFor: ['Admin', 'Sales', 'Design', 'Production', 'Prepress'],
+      badge: orders.length
     },
     { 
       name: 'Design Tasks', 
       path: '/design-tasks', 
       icon: <NotebookPen className="w-5 h-5 mr-2" />,
-      showFor: ['Admin', 'Design'] // Only visible to design team and admin
+      showFor: ['Admin', 'Design'],
+      badge: orders.filter(o => o.currentDepartment === 'Design').length
+    },
+    { 
+      name: 'Reports', 
+      path: '/reports', 
+      icon: <BarChart className="w-5 h-5 mr-2" />,
+      showFor: ['Admin', 'Sales'],
+      badge: null
     },
     { 
       name: 'Admin', 
       path: '/admin', 
       icon: <Settings className="w-5 h-5 mr-2" />, 
-      showFor: ['Admin'] // Only visible to admin
+      showFor: ['Admin'],
+      badge: null
     },
     { 
       name: 'Profile', 
       path: '/profile', 
       icon: <User className="w-5 h-5 mr-2" />,
-      showFor: ['Admin', 'Sales', 'Design', 'Production', 'Prepress'] // Everyone sees this
+      showFor: ['Admin', 'Sales', 'Design', 'Production', 'Prepress'],
+      badge: null
     },
   ];
 
@@ -104,9 +117,8 @@ const Layout: React.FC = () => {
             <Button variant="ghost" size="icon" onClick={toggleMenu} aria-label="Menu">
               <Menu className="h-5 w-5" />
             </Button>
-            <Link to="/dashboard" className="text-xl font-bold flex items-center">
-              <span className="bg-primary text-primary-foreground p-1 rounded mr-2 hidden sm:flex">OF</span>
-              <span className={isMobile ? "text-lg" : "text-xl"}>Order Management</span>
+            <Link to="/dashboard" className="flex items-center">
+              <ChhapaiLogo size={isMobile ? "sm" : "md"} />
             </Link>
           </div>
           
@@ -170,8 +182,7 @@ const Layout: React.FC = () => {
       >
         <div className="p-4 flex items-center justify-between border-b">
           <div className="flex items-center">
-            <span className="bg-primary text-primary-foreground p-1.5 rounded mr-2 text-sm font-semibold">OF</span>
-            <span className="font-bold text-lg">OrderFlow</span>
+            <ChhapaiLogo size="sm" />
           </div>
           <Button variant="ghost" size="sm" onClick={toggleMenu} className="h-8 w-8 p-0" aria-label="Close menu">
             <X className="h-5 w-5" />
@@ -186,17 +197,24 @@ const Layout: React.FC = () => {
             <ul className="space-y-1">
               {filteredNavItems.map((item) => (
                 <li key={item.path}>
-                  <Link 
+                  <NavLink 
                     to={item.path}
-                    className={cn(
-                      "flex items-center px-3 py-2.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors",
-                      location.pathname === item.path && "bg-accent text-accent-foreground font-medium"
+                    className={({ isActive }) => cn(
+                      "flex items-center justify-between px-3 py-2.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors",
+                      isActive && "bg-accent text-accent-foreground font-medium"
                     )}
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    {item.icon}
-                    {item.name}
-                  </Link>
+                    <div className="flex items-center">
+                      {item.icon}
+                      {item.name}
+                    </div>
+                    {item.badge !== null && (
+                      <Badge variant="outline" className="bg-background ml-2">
+                        {item.badge}
+                      </Badge>
+                    )}
+                  </NavLink>
                 </li>
               ))}
             </ul>
@@ -211,43 +229,43 @@ const Layout: React.FC = () => {
             <nav>
               <ul className="space-y-1">
                 <li>
-                  <Link 
+                  <NavLink 
                     to="/admin/users"
-                    className={cn(
+                    className={({ isActive }) => cn(
                       "flex items-center px-3 py-2 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors",
-                      location.pathname === "/admin/users" && "bg-accent text-accent-foreground font-medium"
+                      isActive && "bg-accent text-accent-foreground font-medium"
                     )}
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <User className="w-5 h-5 mr-2" />
                     Manage Users
-                  </Link>
+                  </NavLink>
                 </li>
                 <li>
-                  <Link 
+                  <NavLink 
                     to="/admin/departments"
-                    className={cn(
+                    className={({ isActive }) => cn(
                       "flex items-center px-3 py-2 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors",
-                      location.pathname === "/admin/departments" && "bg-accent text-accent-foreground font-medium"
+                      isActive && "bg-accent text-accent-foreground font-medium"
                     )}
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <FileText className="w-5 h-5 mr-2" />
                     Manage Departments
-                  </Link>
+                  </NavLink>
                 </li>
                 <li>
-                  <Link 
+                  <NavLink 
                     to="/admin/settings"
-                    className={cn(
+                    className={({ isActive }) => cn(
                       "flex items-center px-3 py-2 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors",
-                      location.pathname === "/admin/settings" && "bg-accent text-accent-foreground font-medium"
+                      isActive && "bg-accent text-accent-foreground font-medium"
                     )}
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <Settings className="w-5 h-5 mr-2" />
                     System Settings
-                  </Link>
+                  </NavLink>
                 </li>
               </ul>
             </nav>
