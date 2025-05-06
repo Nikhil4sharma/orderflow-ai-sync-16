@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import {
   Order,
@@ -153,6 +154,34 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setIsAuthenticated(false);
   };
 
+  // Add status update to an order
+  const addStatusUpdate = (orderId: string, statusUpdate: Partial<StatusUpdate>) => {
+    const order = orders.find((o) => o.id === orderId);
+    if (!order) return;
+
+    // Create new status update with default values
+    const newStatusUpdate: StatusUpdate = {
+      id: `status-${Date.now()}`,
+      orderId,
+      department: statusUpdate.department || currentUser?.department || "Sales",
+      status: statusUpdate.status || "Updated",
+      remarks: statusUpdate.remarks || "",
+      timestamp: new Date().toISOString(),
+      updatedBy: currentUser?.name || "System",
+      editableUntil: statusUpdate.editableUntil,
+      selectedProduct: statusUpdate.selectedProduct,
+      estimatedTime: statusUpdate.estimatedTime
+    };
+
+    // Update order with new status update
+    const updatedOrder = {
+      ...order,
+      statusHistory: [...(order.statusHistory || []), newStatusUpdate]
+    };
+
+    updateOrder(updatedOrder);
+  };
+
   // Record payment for an order
   const recordPayment = (orderId: string, payment: PaymentRecord) => {
     const order = orders.find((o) => o.id === orderId);
@@ -192,6 +221,31 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       status: `Payment ${newPaymentStatus}`,
       remarks: `Received payment of ₹${payment.amount} via ${payment.method}. ${payment.remarks || ''}`,
     });
+  };
+
+  // Verify an order (mark as verified)
+  const verifyOrder = (orderId: string) => {
+    const order = orders.find((o) => o.id === orderId);
+    if (!order) return;
+    
+    // Update order status to verified
+    const updatedOrder = {
+      ...order,
+      status: "Verified" as OrderStatus,
+      verifiedBy: currentUser?.name || "Unknown",
+      verifiedAt: new Date().toISOString()
+    };
+    
+    updateOrder(updatedOrder);
+    
+    // Add status update for verification
+    addStatusUpdate(orderId, {
+      department: currentUser?.department || "Sales",
+      status: "Order Verified",
+      remarks: `Order verified by ${currentUser?.name || "Unknown"}`
+    });
+    
+    toast.success("Order has been verified successfully");
   };
 
   // Dashboard configuration functions

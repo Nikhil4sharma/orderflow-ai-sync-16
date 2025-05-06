@@ -1,3 +1,4 @@
+
 export type Department = 'Sales' | 'Production' | 'Design' | 'Prepress' | 'Admin';
 
 export type ProductionStage = 'Printing' | 'Cutting' | 'Pasting' | 'Foiling' | 'Electroplating' | 'Letterpress' | 'Embossed' | 'Diecut' | 'Quality Check' | 'Ready to Dispatch';
@@ -6,11 +7,11 @@ export type DesignStatus = 'Working on it' | 'Pending Feedback from Sales Team' 
 
 export type PrepressStatus = 'Waiting for approval' | 'Forwarded to production' | 'Working on it';
 
-export type OrderStatus = 'In Progress' | 'Completed' | 'On Hold' | 'Issue' | 'Verified' | 'Dispatched' | 'Ready to Dispatch' | 'New';
+export type OrderStatus = 'In Progress' | 'Completed' | 'On Hold' | 'Issue' | 'Verified' | 'Dispatched' | 'Ready to Dispatch' | 'New' | 'Pending Approval';
 
 export type StatusType = 'completed' | 'processing' | 'issue';
 
-export type PaymentStatus = 'Not Paid' | 'Partially Paid' | 'Paid' | 'Partial';
+export type PaymentStatus = 'Not Paid' | 'Partial' | 'Paid' | 'Partially Paid';
 
 export type CourierPartner = 'Shree Maruti' | 'DTDC' | 'FedEx' | 'DHL' | 'BlueDart' | 'Other';
 
@@ -88,6 +89,11 @@ export interface Order {
   // Fields for Google Sheet integration
   sheetSyncId?: string;
   lastSyncedAt?: string;
+  // Fields for approval
+  pendingApprovalFrom?: Department;
+  approvalReason?: string;
+  verifiedBy?: string;
+  verifiedAt?: string;
 }
 
 export interface User {

@@ -1,5 +1,5 @@
 
-import { Order, User, Department, OrderStatus, PaymentStatus, PermissionKey } from "@/types";
+import { Order, User, Department, OrderStatus, PaymentStatus, PermissionKey, Role } from "@/types";
 import { v4 as uuidv4 } from "uuid";
 
 // Generate a random date within the past month
@@ -61,7 +61,7 @@ export const getMockOrders = (): Order[] => {
 // Generate mock users
 export const getMockUsers = (): User[] => {
   const departments: Department[] = ["Sales", "Design", "Production", "Prepress"];
-  const roles = ["Admin", "Manager", "Staff"];
+  const roles: Role[] = ["Admin", "Manager", "Staff"];
   
   // Always include an admin user
   const adminUser: User = {
@@ -69,8 +69,8 @@ export const getMockUsers = (): User[] => {
     name: "Admin User",
     email: "admin@example.com",
     password: "password",
-    department: "Sales" as Department, // Sales is a valid department type
-    role: "Admin" as "Admin" | "Manager" | "Staff",
+    department: "Sales" as Department,
+    role: "Admin" as Role,
     permissions: [
       "manage_users", 
       "manage_departments", 
@@ -92,7 +92,7 @@ export const getMockUsers = (): User[] => {
       email: `user${i + 1}@example.com`,
       password: "password",
       department,
-      role: role as "Admin" | "Manager" | "Staff",
+      role,
       permissions: [] as PermissionKey[]
     };
   });
@@ -131,10 +131,8 @@ export const getAllowedStatusesForDepartment = (department: Department): OrderSt
       return ["In Progress", "Completed", "On Hold", "Issue", "Ready to Dispatch"];
     case "Prepress":
       return ["In Progress", "Completed", "On Hold", "Issue"];
-    case "Admin":
-      return ["In Progress", "Completed", "On Hold", "Issue", "Ready to Dispatch", "Verified", "Dispatched"];
     default:
-      return ["In Progress", "Completed", "On Hold", "Issue"];
+      return ["In Progress", "Completed", "On Hold", "Issue", "Ready to Dispatch", "Verified", "Dispatched"];
   }
 };
 
