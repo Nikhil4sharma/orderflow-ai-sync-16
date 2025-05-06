@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import {
   Order,
@@ -58,8 +59,8 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return savedUsers ? JSON.parse(savedUsers) : getMockUsers();
   });
 
-  // State for authentication
-  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+  // State for authentication and current user management 
+  const [currentUser, setCurrUser] = useState<User | null>(() => {
     const savedUser = localStorage.getItem("currentUser");
     return savedUser ? JSON.parse(savedUser) : null;
   });
@@ -123,6 +124,15 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const deleteUser = (id: string) => {
     setUsers((prevUsers) => prevUsers.filter((u) => u.id !== id));
   };
+  
+  // Implementation for setCurrentUser
+  const setCurrentUser = (user: User) => {
+    if (!user) {
+      setIsAuthenticated(false);
+    }
+    localStorage.setItem("currentUser", JSON.stringify(user));
+    setCurrUser(user);
+  };
 
   // Authentication functions
   const loginUser = (email: string, password: string) => {
@@ -176,12 +186,12 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     // Calculate new payment status
     const newPaidAmount = order.paidAmount + payment.amount;
     const newPendingAmount = order.amount - newPaidAmount;
-    let newPaymentStatus: "Paid" | "Partial" | "Not Paid" = "Not Paid";
+    let newPaymentStatus: PaymentStatus = "Not Paid";
 
     if (newPaidAmount >= order.amount) {
       newPaymentStatus = "Paid";
     } else if (newPaidAmount > 0) {
-      newPaymentStatus = "Partial";
+      newPaymentStatus = "Partially Paid";
     }
 
     const updatedOrder = {
@@ -251,7 +261,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return dashboardConfig.departmentConfigs[department].visibleElements.includes(element as any);
   };
 
-  // Add the missing implementation for updateStatusUpdate
+  // Implementation for updateStatusUpdate
   const updateStatusUpdate = (updateId: string, update: Partial<StatusUpdate>) => {
     setOrders(prevOrders => 
       prevOrders.map(order => {
@@ -277,13 +287,13 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     );
   };
 
-  // Add the missing implementation for hasPermission
+  // Implementation for hasPermission
   const hasPermission = (permission: string) => {
     if (!currentUser || !currentUser.permissions) return false;
     return currentUser.permissions.includes(permission as PermissionKey);
   };
 
-  // Add the missing implementation for addPayment
+  // Implementation for addPayment
   const addPayment = (orderId: string, payment: Partial<PaymentRecord>) => {
     const order = orders.find((o) => o.id === orderId);
     if (!order) return;
@@ -304,7 +314,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (newPaidAmount >= order.amount) {
       newPaymentStatus = "Paid";
     } else if (newPaidAmount > 0) {
-      newPaymentStatus = "Partial";
+      newPaymentStatus = "Partially Paid";
     }
 
     const updatedOrder = {
@@ -321,22 +331,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     updateOrder(updatedOrder);
   };
 
-  // Add the missing implementation for setCurrentUser
-  const setCurrentUser = (user: User) => {
-    if (!user) {
-      setIsAuthenticated(false);
-    }
-    localStorage.setItem("currentUser", JSON.stringify(user));
-    setCurrUser(user);
-  };
-  
-  // Update the current user state with a proper setter function
-  const [currUser, setCurrUser] = useState<User | null>(() => {
-    const savedUser = localStorage.getItem("currentUser");
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
-  
-  // Add the missing implementation for removeUser
+  // Implementation for removeUser
   const removeUser = (userId: string) => {
     setUsers((prevUsers) => prevUsers.filter((u) => u.id !== userId));
   };
@@ -350,7 +345,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     addUser,
     updateUser,
     deleteUser,
-    currentUser: currUser,
+    currentUser,
     isAuthenticated,
     loginUser,
     logoutUser,

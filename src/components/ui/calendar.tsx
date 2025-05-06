@@ -1,8 +1,4 @@
 
-// Since this component likely comes from shadcn/ui, we need to remove the iconLeft property
-// without seeing the full file, I'll provide a fix assuming the error occurs in a props structure
-// We'll replace the custom components code with a corrected version
-
 import * as React from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { DayPicker } from "react-day-picker"
@@ -57,9 +53,8 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        // Remove the iconLeft property causing the error
-        IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
-        IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
+        IconLeft: () => <ChevronLeft className="h-4 w-4" />,
+        IconRight: () => <ChevronRight className="h-4 w-4" />,
       }}
       {...props}
     />

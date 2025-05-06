@@ -1,218 +1,109 @@
 
-import { Department, DesignStatus, OrderStatus, PermissionKey, PrepressStatus, ProductionStage, ProductionStatus, Role, User } from "@/types";
-import { toast } from "sonner";
-import { demoOrders } from "./demo-orders";
+import { Order, User, Department, OrderStatus, PaymentStatus } from "@/types";
 import { v4 as uuidv4 } from "uuid";
 
-// Export the demo orders as mock orders
-export const getMockOrders = () => {
-  return demoOrders;
+// Generate a random date within the past month
+const getRandomDate = () => {
+  const now = new Date();
+  const pastMonth = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+  const randomTime = pastMonth.getTime() + Math.random() * (now.getTime() - pastMonth.getTime());
+  return new Date(randomTime).toISOString();
 };
 
-// Export demo users
-export const getMockUsers = () => {
-  return users;
+// Generate a random order number
+const generateOrderNumber = () => {
+  const prefix = "ORD";
+  const randomNum = Math.floor(10000 + Math.random() * 90000);
+  return `${prefix}-${randomNum}`;
 };
 
-// Demo users for the application
-export const users: User[] = [
-  {
-    id: "1",
-    name: "Admin User",
-    email: "admin@example.com",
-    department: "Sales",
-    role: "Admin",
-    permissions: [
-      "view_orders",
-      "create_orders",
-      "update_orders",
-      "delete_orders",
-      "view_users",
-      "manage_users",
-      "manage_departments",
-      "update_order_status",
-      "verify_orders",
-      "dispatch_orders",
-      "view_reports",
-      "export_data",
-      "view_analytics",
-      "manage_settings",
-      "view_address_details"
-    ]
-  },
-  {
-    id: "2",
-    name: "Sales Manager",
-    email: "sales@example.com",
-    department: "Sales",
-    role: "Manager",
-    permissions: [
-      "view_orders",
-      "create_orders",
-      "update_orders",
-      "update_order_status",
-      "verify_orders",
-      "dispatch_orders",
-      "view_reports",
-      "view_address_details"
-    ]
-  },
-  {
-    id: "3",
-    name: "Design Team",
-    email: "design@example.com",
-    department: "Design",
-    role: "User",
-    permissions: [
-      "view_orders",
-      "update_order_status"
-    ]
-  },
-  {
-    id: "4",
-    name: "Prepress Team",
-    email: "prepress@example.com",
-    department: "Prepress",
-    role: "User",
-    permissions: [
-      "view_orders",
-      "update_order_status"
-    ]
-  },
-  {
-    id: "5",
-    name: "Production Team",
-    email: "production@example.com",
-    department: "Production",
-    role: "User",
-    permissions: [
-      "view_orders",
-      "update_order_status",
-      "view_address_details"
-    ]
-  }
-];
-
-// Function to get allowed statuses based on department
-export const getAllowedStatusesForDepartment = (department: Department): string[] => {
-  switch (department) {
-    case 'Sales':
-      return ['In Progress', 'On Hold', 'Completed', 'Dispatched', 'Issue'];
-    case 'Design':
-      return ['Working on it', 'Pending Feedback from Sales Team', 'Forwarded to Prepress'];
-    case 'Prepress':
-      return ['Waiting for approval', 'Working on it', 'Forwarded to production'];
-    case 'Production':
-      return ['In Progress', 'On Hold', 'Ready to Dispatch', 'Completed', 'Issue'];
-    default:
-      return ['In Progress', 'On Hold', 'Completed', 'Issue'];
-  }
-};
-
-// Function to determine what department comes next in the workflow
-export const getNextDepartment = (currentDepartment: Department): Department | null => {
-  switch (currentDepartment) {
-    case 'Sales':
-      return 'Design';
-    case 'Design':
-      return 'Prepress';
-    case 'Prepress':
-      return 'Production';
-    case 'Production':
-      return 'Sales'; // Back to sales for dispatch
-    default:
-      return null;
-  }
-};
-
-// Status color classes helper
-export const getStatusColorClass = (status: string): string => {
-  // Base styling for all badges
-  let baseClass = "px-2 py-1 rounded-full text-xs font-medium";
+// Generate mock orders
+export const getMockOrders = (): Order[] => {
+  const departments: Department[] = ["Sales", "Design", "Production", "Prepress"];
+  const statuses: OrderStatus[] = ["In Progress", "Completed", "On Hold", "Issue", "Verified"];
+  const paymentStatuses: PaymentStatus[] = ["Not Paid", "Partially Paid", "Paid"];
   
-  // Department specific statuses
-  if (status === "Working on it" || status === "In Progress") {
-    return `${baseClass} bg-amber-100 text-amber-800 dark:bg-amber-800 dark:text-amber-100`;
-  }
-  
-  if (status === "Pending Feedback from Sales Team" || status === "Waiting for approval") {
-    return `${baseClass} bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-100`;
-  }
-  
-  if (status === "Forwarded to Prepress" || status === "Forwarded to production") {
-    return `${baseClass} bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100`;
-  }
-  
-  if (status === "Ready to Dispatch") {
-    return `${baseClass} bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100`;
-  }
-  
-  // Generic statuses
-  switch (status) {
-    case "Completed":
-    case "Dispatched":
-      return `${baseClass} bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100`;
-    case "On Hold":
-      return `${baseClass} bg-orange-100 text-orange-800 dark:bg-orange-800 dark:text-orange-100`;
-    case "Issue":
-      return `${baseClass} bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100`;
-    default:
-      return `${baseClass} bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100`;
-  }
-};
-
-// Mock function to generate notifications
-export const generateNotification = (
-  order: { id: string; orderNumber: string, currentDepartment: Department, status: string },
-  forDepartments: Department[] = ["Sales", "Design", "Prepress", "Production"]
-) => {
-  const getNotificationMessage = () => {
-    if (order.status === "Pending Feedback from Sales Team") {
-      return `Order ${order.orderNumber} requires feedback from Sales Team`;
-    }
-    if (order.status === "Waiting for approval") {
-      return `Order ${order.orderNumber} is waiting for approval from Sales Team`;
-    }
-    if (order.status === "Ready to Dispatch") {
-      return `Order ${order.orderNumber} is ready for dispatch`;
-    }
-    return `Order ${order.orderNumber} status updated to ${order.status}`;
-  };
-  
-  toast(getNotificationMessage(), {
-    description: `Current department: ${order.currentDepartment}`,
-    action: {
-      label: "View",
-      onClick: () => {
-        console.log("View order clicked:", order.id);
-        // In a real app, this would navigate to the order detail
-      }
-    }
+  return Array.from({ length: 15 }, (_, i) => {
+    const amount = Math.floor(1000 + Math.random() * 10000);
+    const paidAmount = Math.random() > 0.5 ? amount : Math.floor(Math.random() * amount);
+    const pendingAmount = amount - paidAmount;
+    const paymentStatus = paidAmount === 0 ? "Not Paid" : paidAmount === amount ? "Paid" : "Partially Paid";
+    const createdAt = getRandomDate();
+    const orderNumber = generateOrderNumber();
+    
+    return {
+      id: uuidv4(),
+      orderNumber,
+      clientName: `Client ${i + 1}`,
+      amount,
+      paidAmount,
+      pendingAmount,
+      items: [`Product ${i + 1}`, `Product ${i + 2}`],
+      createdAt,
+      status: statuses[Math.floor(Math.random() * statuses.length)],
+      currentDepartment: departments[Math.floor(Math.random() * departments.length)],
+      statusHistory: [
+        {
+          id: uuidv4(),
+          orderId: uuidv4(),
+          department: "Sales",
+          status: "Created",
+          remarks: "Order created",
+          timestamp: createdAt,
+          updatedBy: "System"
+        }
+      ],
+      paymentStatus
+    };
   });
 };
 
-// Get all departments
-export const getDepartments = (): Department[] => {
-  return ["Sales", "Design", "Prepress", "Production"];
+// Generate mock users
+export const getMockUsers = (): User[] => {
+  const departments: Department[] = ["Sales", "Design", "Production", "Prepress", "Admin"];
+  const roles = ["Admin", "Manager", "Staff"];
+  
+  // Always include an admin user
+  const adminUser: User = {
+    id: "admin-1",
+    name: "Admin User",
+    email: "admin@example.com",
+    password: "password",
+    department: "Admin",
+    role: "Admin",
+    permissions: ["manage_users", "manage_departments", "manage_orders", "edit_orders", "delete_orders", "view_finances", "manage_settings", "export_data"]
+  };
+  
+  // Generate other random users
+  const otherUsers = Array.from({ length: 5 }, (_, i) => {
+    const department = departments[Math.floor(Math.random() * (departments.length - 1))]; // Exclude Admin
+    const role = roles[Math.floor(Math.random() * roles.length)];
+    
+    return {
+      id: `user-${i + 1}`,
+      name: `User ${i + 1}`,
+      email: `user${i + 1}@example.com`,
+      password: "password",
+      department,
+      role
+    };
+  });
+  
+  return [adminUser, ...otherUsers];
 };
 
-// Get production stages in sequence
-export const getProductionStages = (): ProductionStage[] => {
-  return [
-    "Printing",
-    "Pasting",
-    "Cutting",
-    "Foiling", 
-    "Letterpress",
-    "Embossed", 
-    "Diecut",
-    "Quality Check",
-    "Ready to Dispatch"
-  ];
+// Export other utility functions as needed
+export const getRandomOrderStatus = (): OrderStatus => {
+  const statuses: OrderStatus[] = ["In Progress", "Completed", "On Hold", "Issue", "Verified"];
+  return statuses[Math.floor(Math.random() * statuses.length)];
 };
 
-// Helper function to determine if an order can be edited by a department
-export const canDepartmentEditOrder = (department: Department, currentDepartment: Department): boolean => {
-  if (department === 'Sales') return true; // Sales can always edit
-  return department === currentDepartment; // Other departments can only edit if they're the current department
+export const getRandomDepartment = (): Department => {
+  const departments: Department[] = ["Sales", "Design", "Production", "Prepress", "Admin"];
+  return departments[Math.floor(Math.random() * departments.length)];
+};
+
+export const getRandomPaymentStatus = (): PaymentStatus => {
+  const statuses: PaymentStatus[] = ["Not Paid", "Partially Paid", "Paid"];
+  return statuses[Math.floor(Math.random() * statuses.length)];
 };

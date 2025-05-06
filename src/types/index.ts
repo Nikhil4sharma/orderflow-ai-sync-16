@@ -1,3 +1,4 @@
+
 export type Department = 'Sales' | 'Production' | 'Design' | 'Prepress' | 'Admin';
 
 export type ProductionStage = 'Printing' | 'Cutting' | 'Pasting' | 'Foiling' | 'Electroplating' | 'Letterpress' | 'Embossed' | 'Diecut' | 'Quality Check' | 'Ready to Dispatch';
@@ -95,7 +96,18 @@ export interface User {
   password?: string;
   department: Department;
   role: string;
+  permissions?: PermissionKey[];
 }
+
+export type PermissionKey = 
+  | 'manage_users'
+  | 'manage_departments'
+  | 'manage_orders'
+  | 'edit_orders'
+  | 'delete_orders'
+  | 'view_finances'
+  | 'manage_settings'
+  | 'export_data';
 
 export interface GoogleSheetConfig {
   sheetId: string;

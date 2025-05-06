@@ -17,13 +17,11 @@ const TaskListCard: React.FC = () => {
 
     return orders.filter(order => {
       if (currentUser.role === "Admin") {
-        // Use "In Progress" instead of "New" to match the OrderStatus type
         return order.status === "In Progress";
       }
 
       return (
         order.currentDepartment === currentUser.department &&
-        // Use "In Progress" instead of "New"
         order.status === "In Progress"
       );
     });
@@ -40,7 +38,6 @@ const TaskListCard: React.FC = () => {
   const getTaskDescription = (order: Order) => {
     switch (currentUser?.department) {
       case "Sales":
-        // Change "New" to "In Progress"
         if (order.status === "In Progress") return "Process new order";
         if (order.paymentStatus !== "Paid") return "Collect payment";
         return "Follow-up required";
