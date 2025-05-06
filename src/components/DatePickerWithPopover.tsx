@@ -70,7 +70,7 @@ const DatePickerWithPopover: React.FC<DatePickerWithPopoverProps> = ({
           value={dateToString(date)}
           onChange={handleDateChange}
           placeholder={placeholder}
-          className={cn("flex-grow", className)}
+          className={cn("flex-grow hover:border-primary transition-colors", className)}
           required={required}
         />
         <Popover>
@@ -78,7 +78,7 @@ const DatePickerWithPopover: React.FC<DatePickerWithPopoverProps> = ({
             <Button
               variant="outline"
               className={cn(
-                "px-3 border border-input hover:bg-accent hover:text-accent-foreground",
+                "px-3 border border-input hover:bg-accent hover:text-accent-foreground transition-all hover:border-primary",
                 !date && "text-muted-foreground"
               )}
               type="button"
@@ -92,6 +92,7 @@ const DatePickerWithPopover: React.FC<DatePickerWithPopoverProps> = ({
               selected={date}
               onSelect={onDateChange}
               initialFocus
+              className="pointer-events-auto"
             />
           </PopoverContent>
         </Popover>

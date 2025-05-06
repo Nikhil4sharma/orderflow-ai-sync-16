@@ -4,7 +4,7 @@ import { Outlet, useLocation, Link, NavLink } from "react-router-dom";
 import { useOrders } from "@/contexts/OrderContext";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Bell, LogOut, Menu, Settings, User, Home, FileText, PlusCircle, BarChart, X, NotebookPen } from "lucide-react";
+import { LogOut, Menu, Settings, User, Home, FileText, PlusCircle, BarChart, X, NotebookPen } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +19,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import ChhapaiLogo from "./ChhapaiLogo";
 import { Badge } from "./ui/badge";
+import NotificationsDropdown from "./NotificationsDropdown";
 
 const Layout: React.FC = () => {
   const { currentUser, logoutUser, orders } = useOrders();
@@ -73,7 +74,7 @@ const Layout: React.FC = () => {
     },
     { 
       name: 'Reports', 
-      path: '/reports', 
+      path: '/admin/reports', 
       icon: <BarChart className="w-5 h-5 mr-2" />,
       showFor: ['Admin', 'Sales'],
       badge: null
@@ -114,7 +115,13 @@ const Layout: React.FC = () => {
       <header className="bg-background border-b border-border sticky top-0 z-10 w-full">
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={toggleMenu} aria-label="Menu">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={toggleMenu} 
+              aria-label="Menu"
+              className="hover:bg-accent transition-colors hover:scale-105"
+            >
               <Menu className="h-5 w-5" />
             </Button>
             <Link to="/dashboard" className="flex items-center">
@@ -125,13 +132,15 @@ const Layout: React.FC = () => {
           <div className="flex items-center gap-2">
             <ThemeToggle />
             
-            <Button variant="ghost" size="icon" aria-label="Notifications">
-              <Bell className="h-5 w-5" />
-            </Button>
+            <NotificationsDropdown />
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full" aria-label="User menu">
+                <Button 
+                  variant="ghost" 
+                  className="relative h-10 w-10 rounded-full hover:bg-accent transition-colors hover:scale-105" 
+                  aria-label="User menu"
+                >
                   <Avatar className="h-9 w-9">
                     <AvatarImage src="/placeholder.svg" alt={currentUser?.name || "User"} />
                     <AvatarFallback className="bg-primary/10 text-primary font-medium">
@@ -149,21 +158,21 @@ const Layout: React.FC = () => {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link to="/profile" className="w-full flex cursor-pointer items-center">
+                  <Link to="/profile" className="w-full flex cursor-pointer items-center hover:text-primary transition-colors">
                     <User className="mr-2 h-4 w-4" />
                     Profile
                   </Link>
                 </DropdownMenuItem>
                 {currentUser?.role === "Admin" && (
                   <DropdownMenuItem asChild>
-                    <Link to="/admin" className="w-full flex cursor-pointer items-center">
+                    <Link to="/admin" className="w-full flex cursor-pointer items-center hover:text-primary transition-colors">
                       <Settings className="mr-2 h-4 w-4" />
                       Admin
                     </Link>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-500 focus:text-red-500 focus:bg-red-50 dark:focus:bg-red-950/30">
+                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-500 focus:text-red-500 focus:bg-red-50 dark:focus:bg-red-950/30 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
                   <LogOut className="mr-2 h-4 w-4" />
                   Logout
                 </DropdownMenuItem>
@@ -184,7 +193,7 @@ const Layout: React.FC = () => {
           <div className="flex items-center">
             <ChhapaiLogo size="sm" />
           </div>
-          <Button variant="ghost" size="sm" onClick={toggleMenu} className="h-8 w-8 p-0" aria-label="Close menu">
+          <Button variant="ghost" size="sm" onClick={toggleMenu} className="h-8 w-8 p-0 hover:bg-accent hover:scale-110 transition-all" aria-label="Close menu">
             <X className="h-5 w-5" />
           </Button>
         </div>
@@ -200,7 +209,7 @@ const Layout: React.FC = () => {
                   <NavLink 
                     to={item.path}
                     className={({ isActive }) => cn(
-                      "flex items-center justify-between px-3 py-2.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors",
+                      "flex items-center justify-between px-3 py-2.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-all hover:translate-x-1",
                       isActive && "bg-accent text-accent-foreground font-medium"
                     )}
                     onClick={() => setIsMenuOpen(false)}
@@ -232,7 +241,7 @@ const Layout: React.FC = () => {
                   <NavLink 
                     to="/admin/users"
                     className={({ isActive }) => cn(
-                      "flex items-center px-3 py-2 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors",
+                      "flex items-center px-3 py-2 rounded-md hover:bg-accent hover:text-accent-foreground transition-all hover:translate-x-1",
                       isActive && "bg-accent text-accent-foreground font-medium"
                     )}
                     onClick={() => setIsMenuOpen(false)}
@@ -245,7 +254,7 @@ const Layout: React.FC = () => {
                   <NavLink 
                     to="/admin/departments"
                     className={({ isActive }) => cn(
-                      "flex items-center px-3 py-2 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors",
+                      "flex items-center px-3 py-2 rounded-md hover:bg-accent hover:text-accent-foreground transition-all hover:translate-x-1",
                       isActive && "bg-accent text-accent-foreground font-medium"
                     )}
                     onClick={() => setIsMenuOpen(false)}
@@ -258,7 +267,7 @@ const Layout: React.FC = () => {
                   <NavLink 
                     to="/admin/settings"
                     className={({ isActive }) => cn(
-                      "flex items-center px-3 py-2 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors",
+                      "flex items-center px-3 py-2 rounded-md hover:bg-accent hover:text-accent-foreground transition-all hover:translate-x-1",
                       isActive && "bg-accent text-accent-foreground font-medium"
                     )}
                     onClick={() => setIsMenuOpen(false)}
@@ -274,7 +283,7 @@ const Layout: React.FC = () => {
         
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t">
           <div className="flex items-center gap-3">
-            <Avatar className="h-9 w-9">
+            <Avatar className="h-9 w-9 hover:ring-2 hover:ring-primary transition-all">
               <AvatarFallback className="bg-primary/10 text-primary font-medium">
                 {currentUser?.name?.[0] || "U"}
               </AvatarFallback>
@@ -286,7 +295,7 @@ const Layout: React.FC = () => {
           </div>
           <Button 
             variant="outline" 
-            className="w-full mt-3 text-sm h-9"
+            className="w-full mt-3 text-sm h-9 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30 dark:hover:text-red-400 transition-colors"
             onClick={handleLogout}
           >
             <LogOut className="h-4 w-4 mr-2" />
@@ -298,13 +307,13 @@ const Layout: React.FC = () => {
       {/* Overlay to close menu when clicked outside */}
       {isMenuOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm"
+          className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm transition-opacity duration-300"
           onClick={() => setIsMenuOpen(false)}
         />
       )}
 
       {/* Main Content */}
-      <main className="flex-1 bg-background">
+      <main className="flex-1 bg-background animate-fade-in">
         <Outlet />
       </main>
     </div>

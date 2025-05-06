@@ -14,44 +14,30 @@ const ChhapaiLogo: React.FC<ChhapaiLogoProps> = ({
   const { theme } = useTheme();
   const isDarkTheme = theme === "dark";
   
-  // Define sizes
+  // Define sizes for different variants
   const sizes = {
-    sm: { width: 120, height: 30 },
-    md: { width: 160, height: 40 },
-    lg: { width: 200, height: 50 },
+    sm: { fontSize: "18px" },
+    md: { fontSize: "24px" },
+    lg: { fontSize: "30px" },
   };
   
   // Colors based on theme
   const logoColor = isDarkTheme ? "#FFFFFF" : "#000000";
   
   return (
-    <div className={`flex items-center ${className}`} style={sizes[size]}>
-      <svg 
-        width={sizes[size].height} 
-        height={sizes[size].height} 
-        viewBox="0 0 100 100" 
-        fill="none" 
-        xmlns="http://www.w3.org/2000/svg"
-        className="mr-2"
-      >
-        <circle cx="50" cy="50" r="45" stroke={logoColor} strokeWidth="6" fill="transparent" />
-        <path 
-          d="M70 25 L30 75" 
-          stroke={logoColor} 
-          strokeWidth="6" 
-          strokeLinecap="round" 
-        />
-      </svg>
-      
+    <div 
+      className={`logo-container flex items-center ${className} transition-all duration-300 hover:scale-105`}
+    >
       <span 
+        className="font-bold tracking-tight hover:text-primary transition-colors duration-300"
         style={{ 
           color: logoColor,
           fontFamily: "Inter, -apple-system, system-ui, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-          fontWeight: 700,
-          fontSize: size === "sm" ? "18px" : size === "md" ? "24px" : "30px",
+          fontSize: sizes[size].fontSize,
+          textShadow: isDarkTheme ? "0 0 20px rgba(255,255,255,0.1)" : "none",
         }}
       >
-        chhapai
+        chhapai.com
       </span>
     </div>
   );
