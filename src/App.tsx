@@ -19,6 +19,7 @@ import ManageDepartments from "./pages/admin/ManageDepartments";
 import SystemSettings from "./pages/admin/SystemSettings";
 import Reports from "./pages/admin/Reports";
 import GoogleSheetSettings from "./pages/admin/GoogleSheetSettings";
+import DashboardSettings from "./pages/admin/DashboardSettings";
 import { useOrders, OrderProvider } from "./contexts/OrderContext";
 import NotFound from "./pages/NotFound";
 import { ThemeProvider } from "./components/theme-provider";
@@ -191,6 +192,17 @@ function App() {
               }
             >
               <Route index element={<SystemSettings />} />
+            </Route>
+            
+            <Route
+              path="/admin/dashboard-settings"
+              element={
+                <AdminRoute>
+                  <Layout />
+                </AdminRoute>
+              }
+            >
+              <Route index element={<DashboardSettings />} />
             </Route>
             
             <Route

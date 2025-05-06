@@ -1,281 +1,93 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useOrders } from "@/contexts/OrderContext";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { toast } from "sonner";
-import { User, ArrowLeft, Shield, UserPlus, Settings, FolderPlus, LayoutDashboard, BarChart } from "lucide-react";
-import { Department, User as UserType, Role } from "@/types";
 
-const Admin: React.FC = () => {
-  const navigate = useNavigate();
-  const { users, addUser, currentUser } = useOrders();
-  
-  // New user form state
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [department, setDepartment] = useState<Department>("Sales");
-  const [role, setRole] = useState<Role>("User");
-  
-  // Check if current user is admin
-  if (currentUser?.role !== "Admin") {
-    toast.error("Access denied. Admin privileges required.");
-    navigate("/");
-    return null;
-  }
+import React from "react";
+import { Link } from "react-router-dom";
+import { Card, CardDescription } from "@/components/ui/card";
+import { 
+  Users, 
+  FileText, 
+  Settings, 
+  BarChart, 
+  FileSpreadsheet,
+  LayoutDashboard
+} from "lucide-react";
 
-  const handleCreateUser = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validation
-    if (!name || !email || !password) {
-      toast.error("Please fill all required fields");
-      return;
+const Admin = () => {
+  // Define admin sections
+  const adminSections = [
+    {
+      title: "Manage Users",
+      description: "Add, edit, and manage user accounts",
+      icon: <Users className="h-6 w-6" />,
+      path: "/admin/users",
+      color: "bg-blue-500/10 text-blue-500"
+    },
+    {
+      title: "Manage Departments",
+      description: "Configure department settings and roles",
+      icon: <FileText className="h-6 w-6" />,
+      path: "/admin/departments",
+      color: "bg-purple-500/10 text-purple-500"
+    },
+    {
+      title: "Dashboard Settings",
+      description: "Configure dashboard elements for each department",
+      icon: <LayoutDashboard className="h-6 w-6" />,
+      path: "/admin/dashboard-settings",
+      color: "bg-amber-500/10 text-amber-500"
+    },
+    {
+      title: "System Settings",
+      description: "Update system-wide configuration",
+      icon: <Settings className="h-6 w-6" />,
+      path: "/admin/settings",
+      color: "bg-green-500/10 text-green-500"
+    },
+    {
+      title: "Reports",
+      description: "View and generate system reports",
+      icon: <BarChart className="h-6 w-6" />,
+      path: "/admin/reports",
+      color: "bg-indigo-500/10 text-indigo-500"
+    },
+    {
+      title: "Google Sheet Integration",
+      description: "Configure integration with Google Sheets",
+      icon: <FileSpreadsheet className="h-6 w-6" />,
+      path: "/admin/google-sheet",
+      color: "bg-red-500/10 text-red-500"
     }
-    
-    // Check if email is already in use
-    const emailExists = users.some(user => user.email === email);
-    if (emailExists) {
-      toast.error("Email is already in use");
-      return;
-    }
-    
-    // Create new user
-    const newUser: UserType = {
-      id: `user-${Date.now()}`,
-      name,
-      email,
-      password, // Now valid with our updated User type
-      department,
-      role,
-      permissions: [] // Add the required permissions array
-    };
-    
-    // Add user
-    addUser(newUser);
-    
-    // Reset form
-    setName("");
-    setEmail("");
-    setPassword("");
-    setDepartment("Sales");
-    setRole("User");
-    
-    toast.success("User created successfully");
-  };
+  ];
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <Button
-        variant="ghost"
-        className="mb-4"
-        onClick={() => navigate("/")}
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" /> Back to Dashboard
-      </Button>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Shield className="h-5 w-5 mr-2" />
-              Admin Dashboard
-            </CardTitle>
-            <CardDescription>
-              Manage users and system settings
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <Button 
-                variant="outline" 
-                className="w-full justify-start"
-                onClick={() => navigate("/admin/users")}
-              >
-                <User className="h-4 w-4 mr-2" />
-                Manage Users
-              </Button>
-              <Button 
-                variant="outline" 
-                className="w-full justify-start"
-                onClick={() => navigate("/admin/departments")}
-              >
-                <FolderPlus className="h-4 w-4 mr-2" />
-                Manage Departments
-              </Button>
-              <Button 
-                variant="outline" 
-                className="w-full justify-start"
-                onClick={() => navigate("/admin/settings")}
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                System Settings
-              </Button>
-              <Button 
-                variant="outline" 
-                className="w-full justify-start"
-                onClick={() => navigate("/admin/reports")}
-              >
-                <BarChart className="h-4 w-4 mr-2" />
-                Analytics & Reports
-              </Button>
-              <Button 
-                variant="outline" 
-                className="w-full justify-start"
-                onClick={() => navigate("/")}
-              >
-                <LayoutDashboard className="h-4 w-4 mr-2" />
-                Return to Dashboard
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <UserPlus className="h-5 w-5 mr-2" />
-              Create New User
-            </CardTitle>
-            <CardDescription>
-              Add a new user to the system
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleCreateUser} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  placeholder="John Doe"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
+      <p className="text-muted-foreground mb-8">
+        Configure system settings and manage users
+      </p>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {adminSections.map((section) => (
+          <Link
+            to={section.path}
+            key={section.title}
+            className="block"
+          >
+            <Card className="hover:bg-accent hover:-translate-y-1 transition-all duration-200 h-full p-6">
+              <div className="flex items-start space-x-4">
+                <div className={`p-3 rounded-lg ${section.color}`}>
+                  {section.icon}
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">{section.title}</h3>
+                  <CardDescription className="mt-1">
+                    {section.description}
+                  </CardDescription>
+                </div>
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="john@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
-                <Select
-                  value={department}
-                  onValueChange={(value) => setDepartment(value as Department)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select department" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Sales">Sales</SelectItem>
-                    <SelectItem value="Production">Production</SelectItem>
-                    <SelectItem value="Design">Design</SelectItem>
-                    <SelectItem value="Prepress">Prepress</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="role">Role</Label>
-                <Select
-                  value={role}
-                  onValueChange={(value) => setRole(value as Role)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Admin">Admin</SelectItem>
-                    <SelectItem value="Manager">Manager</SelectItem>
-                    <SelectItem value="User">User</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <Button type="submit" className="w-full">
-                <UserPlus className="h-4 w-4 mr-2" />
-                Create User
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+            </Card>
+          </Link>
+        ))}
       </div>
-      
-      <Card className="mt-6 glass-card">
-        <CardHeader>
-          <CardTitle>Current Users</CardTitle>
-          <CardDescription>
-            All users in the system
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-accent/50">
-                  <th className="p-3 text-left">Name</th>
-                  <th className="p-3 text-left">Email</th>
-                  <th className="p-3 text-left">Department</th>
-                  <th className="p-3 text-left">Role</th>
-                  <th className="p-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((user) => (
-                  <tr key={user.id} className="border-b border-opacity-20">
-                    <td className="p-3">{user.name}</td>
-                    <td className="p-3">{user.email || "N/A"}</td>
-                    <td className="p-3">{user.department}</td>
-                    <td className="p-3">{user.role}</td>
-                    <td className="p-3 text-right">
-                      <Button variant="ghost" size="sm" onClick={() => navigate("/admin/users")}>
-                        Edit
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };
