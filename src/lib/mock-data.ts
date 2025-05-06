@@ -69,8 +69,8 @@ export const getMockUsers = (): User[] => {
     name: "Admin User",
     email: "admin@example.com",
     password: "password",
-    department: "Sales" as Department, // Admin is not a valid department type, using Sales
-    role: "Admin",
+    department: "Sales" as Department, // Sales is a valid department type
+    role: "Admin" as "Admin" | "Manager" | "Staff",
     permissions: [
       "manage_users", 
       "manage_departments", 
@@ -92,7 +92,7 @@ export const getMockUsers = (): User[] => {
       email: `user${i + 1}@example.com`,
       password: "password",
       department,
-      role,
+      role: role as "Admin" | "Manager" | "Staff",
       permissions: [] as PermissionKey[]
     };
   });
@@ -131,6 +131,8 @@ export const getAllowedStatusesForDepartment = (department: Department): OrderSt
       return ["In Progress", "Completed", "On Hold", "Issue", "Ready to Dispatch"];
     case "Prepress":
       return ["In Progress", "Completed", "On Hold", "Issue"];
+    case "Admin":
+      return ["In Progress", "Completed", "On Hold", "Issue", "Ready to Dispatch", "Verified", "Dispatched"];
     default:
       return ["In Progress", "Completed", "On Hold", "Issue"];
   }

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import {
   Order,
@@ -154,30 +153,6 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setIsAuthenticated(false);
   };
 
-  // Add status update to order
-  const addStatusUpdate = (orderId: string, statusUpdate: Partial<StatusUpdate>) => {
-    const order = orders.find((o) => o.id === orderId);
-    if (!order) return;
-
-    const newStatusUpdate: StatusUpdate = {
-      id: `status-${Date.now()}`,
-      orderId,
-      timestamp: new Date().toISOString(),
-      department: statusUpdate.department || currentUser?.department || "Sales",
-      status: statusUpdate.status || order.status,
-      remarks: statusUpdate.remarks || "",
-      updatedBy: currentUser?.name || "Anonymous",
-      estimatedTime: statusUpdate.estimatedTime,
-    };
-
-    const updatedOrder = {
-      ...order,
-      statusHistory: [...(order.statusHistory || []), newStatusUpdate],
-    };
-
-    updateOrder(updatedOrder);
-  };
-
   // Record payment for an order
   const recordPayment = (orderId: string, payment: PaymentRecord) => {
     const order = orders.find((o) => o.id === orderId);
@@ -191,7 +166,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (newPaidAmount >= order.amount) {
       newPaymentStatus = "Paid";
     } else if (newPaidAmount > 0) {
-      newPaymentStatus = "Partially Paid";
+      newPaymentStatus = "Partial";
     }
 
     const updatedOrder = {
@@ -216,26 +191,6 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       department: "Sales",
       status: `Payment ${newPaymentStatus}`,
       remarks: `Received payment of ₹${payment.amount} via ${payment.method}. ${payment.remarks || ''}`,
-    });
-  };
-
-  // Verify order (for production to dispatch)
-  const verifyOrder = (orderId: string) => {
-    const order = orders.find((o) => o.id === orderId);
-    if (!order) return;
-
-    const updatedOrder = {
-      ...order,
-      status: "Verified" as OrderStatus,
-    };
-
-    updateOrder(updatedOrder);
-
-    // Add status update for verification
-    addStatusUpdate(orderId, {
-      department: "Sales",
-      status: "Verified",
-      remarks: "Order verified and ready to dispatch",
     });
   };
 
@@ -314,7 +269,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (newPaidAmount >= order.amount) {
       newPaymentStatus = "Paid";
     } else if (newPaidAmount > 0) {
-      newPaymentStatus = "Partially Paid";
+      newPaymentStatus = "Partial";
     }
 
     const updatedOrder = {

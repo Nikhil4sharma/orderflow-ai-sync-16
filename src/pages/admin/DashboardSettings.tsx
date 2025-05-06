@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { 
   Card, 
@@ -104,9 +103,6 @@ const DashboardSettings = () => {
   
   // Reset to default
   const resetToDefault = () => {
-    // Reset Admin to see everything, other departments to see limited views
-    const currentDept = dashboardConfig.departmentConfigs;
-    
     // Reset without using the imported default to avoid reference issues
     const resetConfig: DashboardConfiguration = {
       departmentConfigs: {
@@ -150,7 +146,7 @@ const DashboardSettings = () => {
           ]
         },
         Admin: {
-          department: 'Admin',
+          department: 'Admin' as Department,
           visibleElements: [
             'financialSummary',
             'orderApprovals',
