@@ -17,10 +17,10 @@ import { toast } from "sonner";
 
 const UserMenu: React.FC = () => {
   const navigate = useNavigate();
-  const { currentUser, logoutUser } = useOrders();
+  const { currentUser, logout } = useOrders();
   
   const handleLogout = () => {
-    logoutUser();
+    logout();
     toast.success("Logged out successfully");
     navigate("/login");
   };

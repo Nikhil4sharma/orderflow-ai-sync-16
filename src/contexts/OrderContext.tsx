@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { Order, User, OrderStatus, StatusUpdate, DashboardElement } from "@/types";
-import { generateMockOrders, getDashboardConfig } from "@/lib/mock-data";
+import { Order, User, OrderStatus, StatusUpdate } from "@/types";
+import { getMockOrders } from "@/lib/mock-data";
 
 // Define the context type
 interface OrderContextType {
@@ -15,7 +15,7 @@ interface OrderContextType {
   currentUser: User | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  canUserSeeElement: (department: string, element: DashboardElement) => boolean;
+  canUserSeeElement: (department: string, element: string) => boolean;
 }
 
 // Create a context with an empty default value
@@ -25,7 +25,7 @@ const OrderContext = createContext<OrderContextType | undefined>(undefined);
 export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [orders, setOrders] = useState<Order[]>(() => {
     const savedOrders = localStorage.getItem("orders");
-    return savedOrders ? JSON.parse(savedOrders) : generateMockOrders();
+    return savedOrders ? JSON.parse(savedOrders) : getMockOrders();
   });
   
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
@@ -172,13 +172,16 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     if (user) {
       setIsAuthenticated(true);
-      setCurrentUser({
+      // Fix the type issue - create a valid User object
+      const userObj: User = {
         id: user.id,
         email: user.email,
         name: user.name,
-        role: user.role as any,
-        department: user.department as any,
-      });
+        role: user.role,
+        department: user.department,
+        permissions: [], // Add the required permissions field
+      };
+      setCurrentUser(userObj);
       return true;
     }
 
@@ -194,17 +197,19 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
   
   // Check if a user's department can see a specific dashboard element
-  const canUserSeeElement = (department: string, element: DashboardElement): boolean => {
-    const dashboardConfig = getDashboardConfig();
+  const canUserSeeElement = (department: string, element: string): boolean => {
+    // Simplified implementation since getDashboardConfig doesn't exist
+    // Default permissions - can be expanded later
+    const defaultPermissions = {
+      "Admin": ["orders", "sales", "production", "design", "prepress", "finance"],
+      "Sales": ["orders", "sales", "finance"],
+      "Design": ["orders", "design"],
+      "Production": ["orders", "production"],
+      "Prepress": ["orders", "prepress"]
+    };
     
-    // Get the configuration for this department
-    const deptConfig = dashboardConfig.find(config => config.department === department);
-    
-    // If no config is found, the element is not visible
-    if (!deptConfig) return false;
-    
-    // Check if the element is in the visible elements array
-    return deptConfig.visibleElements.includes(element);
+    // @ts-ignore - Type safety for the mock implementation
+    return defaultPermissions[department]?.includes(element) || false;
   };
 
   // Provide the context value
