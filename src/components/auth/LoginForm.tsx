@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { useOrders } from "@/contexts/OrderContext";
 import { LogIn, UserRound, Mail, Lock, Info } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import OrderFlowLogo from "@/components/OrderFlowLogo";
+import ChhapaiLogo from "@/components/ChhapaiLogo";
 import { Checkbox } from "@/components/ui/checkbox";
 
 const LoginForm: React.FC = () => {
@@ -46,11 +46,17 @@ const LoginForm: React.FC = () => {
     setIsLoading(true);
 
     try {
+      // Validate inputs
+      if (!email || !password) {
+        toast.error("Please enter both email and password");
+        setIsLoading(false);
+        return;
+      }
+      
       // Simulate login process
       await new Promise(resolve => setTimeout(resolve, 800));
       
       // For demo purposes, we'll use a simple check
-      // In a real app, this would validate against stored users
       if (email === "admin@orderflow.com" && password === "admin123") {
         loginUser(email, password);
         toast.success("Welcome back, Administrator!");
@@ -71,7 +77,8 @@ const LoginForm: React.FC = () => {
         toast.error("Invalid credentials. Please try again.");
       }
     } catch (error) {
-      toast.error("An error occurred during login.");
+      console.error("Login error:", error);
+      toast.error("An error occurred during login. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -80,7 +87,7 @@ const LoginForm: React.FC = () => {
   return (
     <>
       <div className="text-center mb-6">
-        <OrderFlowLogo size="lg" className="mx-auto" />
+        <ChhapaiLogo size="lg" className="mx-auto" />
         <p className="text-muted-foreground mt-2">Order Management System</p>
       </div>
       
@@ -167,28 +174,26 @@ const LoginForm: React.FC = () => {
               {isLoading ? "Signing In..." : "Sign In"}
             </Button>
             
-            <div className="bg-muted/50 rounded-lg p-3 text-sm">
+            <div className="bg-muted/50 rounded-lg p-4 text-sm">
               <div className="flex items-start gap-2">
                 <Info className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="font-medium text-foreground mb-1">Demo Accounts</p>
-                  <div className={`grid ${isMobile ? "grid-cols-1 gap-y-2" : "grid-cols-2 gap-2"}`}>
-                    <div className="flex justify-between gap-2">
-                      <span className="text-muted-foreground">Admin:</span>
-                      <span className="font-mono">admin@orderflow.com / admin123</span>
-                    </div>
-                    <div className="flex justify-between gap-2">
-                      <span className="text-muted-foreground">Sales:</span>
-                      <span className="font-mono">sales@orderflow.com / sales123</span>
-                    </div>
-                    <div className="flex justify-between gap-2">
-                      <span className="text-muted-foreground">Design:</span>
-                      <span className="font-mono">design@orderflow.com / design123</span>
-                    </div>
-                    <div className="flex justify-between gap-2">
-                      <span className="text-muted-foreground">Production:</span>
-                      <span className="font-mono">production@orderflow.com / production123</span>
-                    </div>
+                  <p className="font-medium text-foreground mb-2">Demo Accounts</p>
+                  <div className="grid grid-cols-1 gap-y-2">
+                    {[
+                      { role: "Admin", email: "admin@orderflow.com", password: "admin123" },
+                      { role: "Sales", email: "sales@orderflow.com", password: "sales123" },
+                      { role: "Design", email: "design@orderflow.com", password: "design123" },
+                      { role: "Production", email: "production@orderflow.com", password: "production123" }
+                    ].map((account) => (
+                      <div key={account.role} className="p-2 border border-border/30 rounded-md hover:bg-muted transition-colors">
+                        <div className="font-medium text-sm mb-1">{account.role}</div>
+                        <div className="flex flex-col gap-1 text-xs">
+                          <code className="font-mono bg-background/80 px-1 py-0.5 rounded">{account.email}</code>
+                          <code className="font-mono bg-background/80 px-1 py-0.5 rounded">{account.password}</code>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>

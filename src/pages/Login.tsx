@@ -31,7 +31,7 @@ const Login: React.FC = () => {
 
   // Set document title
   useEffect(() => {
-    document.title = "Sign In | OrderFlow Management";
+    document.title = "Sign In | Chhapai Order Management";
     
     // Add a class to the body for custom styling during login
     document.body.classList.add('login-page');
@@ -57,7 +57,7 @@ const Login: React.FC = () => {
       >
         <LoginForm />
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          &copy; {new Date().getFullYear()} OrderFlow Management System
+          &copy; {new Date().getFullYear()} Chhapai Order Management System
         </p>
       </motion.div>
     </div>
