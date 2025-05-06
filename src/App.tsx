@@ -20,9 +20,9 @@ import SystemSettings from "./pages/admin/SystemSettings";
 import Reports from "./pages/admin/Reports";
 import GoogleSheetSettings from "./pages/admin/GoogleSheetSettings";
 import { useOrders, OrderProvider } from "./contexts/OrderContext";
-import { Toaster } from "./components/ui/toaster";
 import NotFound from "./pages/NotFound";
 import { ThemeProvider } from "./components/theme-provider";
+import { Toaster } from "sonner";
 import "./App.css";
 
 // Private route component
@@ -105,9 +105,9 @@ function App() {
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
-          <Toaster />
         </Router>
       </OrderProvider>
+      <Toaster position="top-center" richColors />
     </ThemeProvider>
   );
 }
