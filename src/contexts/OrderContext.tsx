@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import {
   Order,
@@ -137,21 +136,22 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   // Authentication functions
   const loginUser = (email: string, password: string) => {
     // Find user with matching email and password
+    // Normalize email for case-insensitive comparison
+    const normalizedEmail = email.toLowerCase().trim();
+    
+    // Try to find the user with the exact email
     const user = users.find(
-      (u) => u.email === email && u.password === password
+      (u) => u.email?.toLowerCase() === normalizedEmail && u.password === password
     );
 
     if (user) {
       setCurrentUser(user);
       setIsAuthenticated(true);
-    } else {
-      throw new Error("Invalid email or password");
+      return;
     }
-  };
-
-  const logoutUser = () => {
-    setCurrentUser(null);
-    setIsAuthenticated(false);
+    
+    // If not found, throw an error
+    throw new Error("Invalid email or password");
   };
 
   // Add status update to an order

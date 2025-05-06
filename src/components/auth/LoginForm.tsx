@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,30 +53,28 @@ const LoginForm: React.FC = () => {
       }
       
       // Normalize email to lowercase for case-insensitive comparison
-      const normalizedEmail = email.toLowerCase();
+      const normalizedEmail = email.toLowerCase().trim();
       
-      // Simulate login process
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // For demo purposes, we'll use a simple check with normalized emails
-      // Modified to work with both chhapai.com and orderflow.com domains
-      if ((normalizedEmail === "admin@chhapai.com" || normalizedEmail === "admin@orderflow.com") && password === "admin123") {
-        loginUser(normalizedEmail, password);
-        toast.success("Welcome back, Administrator!");
+      // Try to login directly with the normalized email
+      try {
+        await loginUser(normalizedEmail, password);
+        
+        // Determine the user role from email for a personalized welcome message
+        let userRole = "User";
+        if (normalizedEmail.includes("admin")) {
+          userRole = "Administrator";
+        } else if (normalizedEmail.includes("sales")) {
+          userRole = "Sales Representative";
+        } else if (normalizedEmail.includes("design")) {
+          userRole = "Designer";
+        } else if (normalizedEmail.includes("production")) {
+          userRole = "Production Manager";
+        }
+        
+        toast.success(`Welcome back, ${userRole}!`);
         navigate("/dashboard");
-      } else if ((normalizedEmail === "sales@chhapai.com" || normalizedEmail === "sales@orderflow.com") && password === "sales123") {
-        loginUser(normalizedEmail, password);
-        toast.success("Welcome back, Sales Representative!");
-        navigate("/dashboard");
-      } else if ((normalizedEmail === "design@chhapai.com" || normalizedEmail === "design@orderflow.com") && password === "design123") {
-        loginUser(normalizedEmail, password);
-        toast.success("Welcome back, Designer!");
-        navigate("/dashboard");
-      } else if ((normalizedEmail === "production@chhapai.com" || normalizedEmail === "production@orderflow.com") && password === "production123") {
-        loginUser(normalizedEmail, password);
-        toast.success("Welcome back, Production Manager!");
-        navigate("/dashboard");
-      } else {
+      } catch (error) {
+        console.error("Login error:", error);
         toast.error("Invalid credentials. Please try again.");
       }
     } catch (error) {
@@ -88,6 +85,7 @@ const LoginForm: React.FC = () => {
     }
   };
 
+  
   return (
     <>
       <div className="text-center mb-6">
