@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import {
   Order,
@@ -6,7 +5,9 @@ import {
   StatusUpdate,
   PaymentRecord,
   OrderStatus,
-  Department
+  Department,
+  PermissionKey,
+  PaymentStatus
 } from "@/types";
 import { getMockOrders, getMockUsers } from "@/lib/mock-data";
 import { toast } from "sonner";
@@ -29,10 +30,15 @@ interface OrderContextType {
   addStatusUpdate: (orderId: string, statusUpdate: Partial<StatusUpdate>) => void;
   recordPayment: (orderId: string, payment: PaymentRecord) => void;
   verifyOrder: (orderId: string) => void;
-  // New dashboard configuration properties
   dashboardConfig: DashboardConfiguration;
   updateDashboardConfig: (config: DashboardConfiguration) => void;
   canUserSeeElement: (department: Department, element: string) => boolean;
+  // Add missing methods
+  updateStatusUpdate: (updateId: string, update: Partial<StatusUpdate>) => void;
+  hasPermission: (permission: string) => boolean;
+  addPayment: (orderId: string, payment: Partial<PaymentRecord>) => void;
+  setCurrentUser: (user: User) => void;
+  removeUser: (userId: string) => void;
 }
 
 // Create the context
@@ -245,6 +251,96 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return dashboardConfig.departmentConfigs[department].visibleElements.includes(element as any);
   };
 
+  // Add the missing implementation for updateStatusUpdate
+  const updateStatusUpdate = (updateId: string, update: Partial<StatusUpdate>) => {
+    setOrders(prevOrders => 
+      prevOrders.map(order => {
+        if (!order.statusHistory) return order;
+        
+        const statusIndex = order.statusHistory.findIndex(
+          status => status.id === updateId
+        );
+        
+        if (statusIndex === -1) return order;
+        
+        const updatedStatusHistory = [...order.statusHistory];
+        updatedStatusHistory[statusIndex] = {
+          ...updatedStatusHistory[statusIndex],
+          ...update
+        };
+        
+        return {
+          ...order,
+          statusHistory: updatedStatusHistory
+        };
+      })
+    );
+  };
+
+  // Add the missing implementation for hasPermission
+  const hasPermission = (permission: string) => {
+    if (!currentUser || !currentUser.permissions) return false;
+    return currentUser.permissions.includes(permission as PermissionKey);
+  };
+
+  // Add the missing implementation for addPayment
+  const addPayment = (orderId: string, payment: Partial<PaymentRecord>) => {
+    const order = orders.find((o) => o.id === orderId);
+    if (!order) return;
+
+    const newPayment: PaymentRecord = {
+      id: payment.id || `payment-${Date.now()}`,
+      amount: payment.amount || 0,
+      date: payment.date || new Date().toISOString(),
+      method: payment.method || "Unknown",
+      remarks: payment.remarks || ""
+    };
+
+    // Calculate new payment status
+    const newPaidAmount = order.paidAmount + newPayment.amount;
+    const newPendingAmount = order.amount - newPaidAmount;
+    let newPaymentStatus: PaymentStatus = "Not Paid";
+
+    if (newPaidAmount >= order.amount) {
+      newPaymentStatus = "Paid";
+    } else if (newPaidAmount > 0) {
+      newPaymentStatus = "Partial";
+    }
+
+    const updatedOrder = {
+      ...order,
+      paidAmount: newPaidAmount,
+      pendingAmount: newPendingAmount,
+      paymentStatus: newPaymentStatus,
+      paymentHistory: [
+        ...(order.paymentHistory || []),
+        newPayment
+      ],
+    };
+
+    updateOrder(updatedOrder);
+  };
+
+  // Add the missing implementation for setCurrentUser
+  const setCurrentUser = (user: User) => {
+    if (!user) {
+      setIsAuthenticated(false);
+    }
+    localStorage.setItem("currentUser", JSON.stringify(user));
+    setCurrUser(user);
+  };
+  
+  // Update the current user state with a proper setter function
+  const [currUser, setCurrUser] = useState<User | null>(() => {
+    const savedUser = localStorage.getItem("currentUser");
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
+  
+  // Add the missing implementation for removeUser
+  const removeUser = (userId: string) => {
+    setUsers((prevUsers) => prevUsers.filter((u) => u.id !== userId));
+  };
+
   const value = {
     orders,
     addOrder,
@@ -254,7 +350,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     addUser,
     updateUser,
     deleteUser,
-    currentUser,
+    currentUser: currUser,
     isAuthenticated,
     loginUser,
     logoutUser,
@@ -264,6 +360,12 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     dashboardConfig,
     updateDashboardConfig,
     canUserSeeElement,
+    // Add the missing methods to the context value
+    updateStatusUpdate,
+    hasPermission,
+    addPayment,
+    setCurrentUser,
+    removeUser,
   };
 
   return (

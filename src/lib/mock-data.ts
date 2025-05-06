@@ -1,6 +1,18 @@
 
 import { Department, DesignStatus, OrderStatus, PermissionKey, PrepressStatus, ProductionStage, ProductionStatus, Role, User } from "@/types";
 import { toast } from "sonner";
+import { demoOrders } from "./demo-orders";
+import { v4 as uuidv4 } from "uuid";
+
+// Export the demo orders as mock orders
+export const getMockOrders = () => {
+  return demoOrders;
+};
+
+// Export demo users
+export const getMockUsers = () => {
+  return users;
+};
 
 // Demo users for the application
 export const users: User[] = [

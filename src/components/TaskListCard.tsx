@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "react-router-dom";
 import { ClipboardList, Clock } from "lucide-react";
-import { Order } from "@/types";
+import { Order, OrderStatus } from "@/types";
 
 const TaskListCard: React.FC = () => {
   const { orders, currentUser } = useOrders();
@@ -17,12 +17,14 @@ const TaskListCard: React.FC = () => {
 
     return orders.filter(order => {
       if (currentUser.role === "Admin") {
-        return order.status === "New" || order.status === "In Progress";
+        // Use "In Progress" instead of "New" to match the OrderStatus type
+        return order.status === "In Progress";
       }
 
       return (
         order.currentDepartment === currentUser.department &&
-        (order.status === "New" || order.status === "In Progress")
+        // Use "In Progress" instead of "New"
+        order.status === "In Progress"
       );
     });
   };
@@ -38,7 +40,8 @@ const TaskListCard: React.FC = () => {
   const getTaskDescription = (order: Order) => {
     switch (currentUser?.department) {
       case "Sales":
-        if (order.status === "New") return "Process new order";
+        // Change "New" to "In Progress"
+        if (order.status === "In Progress") return "Process new order";
         if (order.paymentStatus !== "Paid") return "Collect payment";
         return "Follow-up required";
       
