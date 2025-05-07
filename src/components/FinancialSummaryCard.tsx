@@ -25,11 +25,11 @@ const FinancialSummaryCard: React.FC<FinancialSummaryCardProps> = ({
   const getPaymentStatusStyle = (status: PaymentStatus) => {
     switch(status) {
       case 'Paid':
-        return { color: 'text-green-500', bg: 'bg-green-100 dark:bg-green-900/20', icon: <CheckCircle className="h-4 w-4 mr-1" /> };
+        return { color: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-900/30', icon: <CheckCircle className="h-4 w-4 mr-1" /> };
       case 'Partial':
-        return { color: 'text-amber-500', bg: 'bg-amber-100 dark:bg-amber-900/20', icon: <AlertCircle className="h-4 w-4 mr-1" /> };
+        return { color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100 dark:bg-amber-900/30', icon: <AlertCircle className="h-4 w-4 mr-1" /> };
       default:
-        return { color: 'text-red-500', bg: 'bg-red-100 dark:bg-red-900/20', icon: <AlertCircle className="h-4 w-4 mr-1" /> };
+        return { color: 'text-red-600 dark:text-red-400', bg: 'bg-red-100 dark:bg-red-900/30', icon: <AlertCircle className="h-4 w-4 mr-1" /> };
     }
   };
   
@@ -37,7 +37,7 @@ const FinancialSummaryCard: React.FC<FinancialSummaryCardProps> = ({
   
   return (
     <Card className="glass-card overflow-hidden">
-      <div className={`w-full h-1 ${paymentPercent < 100 ? "bg-amber-500" : "bg-green-500"}`}></div>
+      <div className={`w-full h-1.5 ${paymentPercent < 100 ? "bg-amber-500" : "bg-green-500"}`}></div>
       
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
@@ -47,7 +47,7 @@ const FinancialSummaryCard: React.FC<FinancialSummaryCardProps> = ({
             </div>
             <CardTitle>Financial Summary</CardTitle>
           </div>
-          <div className={`${statusStyle.bg} ${statusStyle.color} px-2 py-1 rounded-md text-xs font-medium flex items-center`}>
+          <div className={`${statusStyle.bg} ${statusStyle.color} px-2.5 py-1.5 rounded-md text-xs font-medium flex items-center`}>
             {statusStyle.icon}
             {order.paymentStatus}
           </div>
@@ -61,11 +61,11 @@ const FinancialSummaryCard: React.FC<FinancialSummaryCardProps> = ({
             <span>Payment Progress</span>
             <span className="font-medium">{paymentPercent}%</span>
           </div>
-          <Progress value={paymentPercent} className="h-2" />
+          <Progress value={paymentPercent} className="h-2.5" />
         </div>
         
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="rounded-md bg-muted/50 p-4">
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="rounded-md bg-muted/60 p-4">
             <div className="text-xs text-muted-foreground">Total</div>
             <div className="flex items-baseline mt-1">
               <IndianRupee className="h-3 w-3 mr-1" />
@@ -73,7 +73,7 @@ const FinancialSummaryCard: React.FC<FinancialSummaryCardProps> = ({
             </div>
           </div>
           
-          <div className="rounded-md bg-muted/50 p-4">
+          <div className="rounded-md bg-muted/60 p-4">
             <div className="text-xs text-muted-foreground">Paid</div>
             <div className="flex items-baseline mt-1">
               <IndianRupee className="h-3 w-3 mr-1 text-green-500" />
@@ -81,7 +81,7 @@ const FinancialSummaryCard: React.FC<FinancialSummaryCardProps> = ({
             </div>
           </div>
           
-          <div className="rounded-md bg-muted/50 p-4 col-span-2">
+          <div className="rounded-md bg-muted/60 p-4">
             <div className="text-xs text-muted-foreground">Pending</div>
             <div className="flex items-baseline mt-1">
               <IndianRupee className={`h-3 w-3 mr-1 ${order.pendingAmount > 0 ? "text-amber-500" : "text-muted-foreground"}`} />
@@ -95,17 +95,20 @@ const FinancialSummaryCard: React.FC<FinancialSummaryCardProps> = ({
         {order.paymentHistory && order.paymentHistory.length > 0 && (
           <div className="mb-6">
             <h4 className="text-sm font-medium mb-2">Payment History</h4>
-            <div className="space-y-2 max-h-52 overflow-y-auto">
+            <div className="space-y-2 max-h-60 overflow-y-auto border border-border/50 rounded-md divide-y divide-border/50">
               {order.paymentHistory.map((payment, index) => (
-                <div key={payment.id || index} className="bg-muted/30 p-3 rounded-md">
+                <div key={payment.id || index} className="p-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">{formatIndianRupees(payment.amount)}</span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-sm font-medium flex items-center">
+                      <IndianRupee className="h-3 w-3 mr-1" />
+                      {formatIndianRupees(payment.amount)}
+                    </span>
+                    <span className="text-xs bg-muted/50 px-2 py-0.5 rounded">
                       {new Date(payment.date).toLocaleDateString()}
                     </span>
                   </div>
                   <div className="flex justify-between items-center mt-1">
-                    <span className="text-xs">{payment.method}</span>
+                    <span className="text-xs px-2 py-0.5 bg-primary/10 rounded text-primary">{payment.method}</span>
                     {payment.remarks && (
                       <span className="text-xs text-muted-foreground truncate max-w-[200px]" title={payment.remarks}>
                         {payment.remarks}
@@ -122,7 +125,6 @@ const FinancialSummaryCard: React.FC<FinancialSummaryCardProps> = ({
           <Button 
             onClick={onRecordPayment} 
             className="w-full"
-            variant="outline"
           >
             <CreditCard className="h-4 w-4 mr-2" />
             Record Payment

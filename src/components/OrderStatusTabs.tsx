@@ -34,7 +34,7 @@ const OrderStatusTabs: React.FC<OrderStatusTabsProps> = ({
           >
             <span className="mr-1">{status}</span>
             {countByStatus[status] > 0 && (
-              <span className="inline-flex items-center justify-center w-5 h-5 ml-1 text-xs font-medium rounded-full bg-muted-foreground/20 text-zinc-950">
+              <span className="inline-flex items-center justify-center w-5 h-5 ml-1 text-xs font-medium rounded-full bg-primary/20 text-primary dark:bg-primary/30">
                 {countByStatus[status]}
               </span>
             )}

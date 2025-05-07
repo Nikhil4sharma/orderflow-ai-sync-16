@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useOrders } from "@/contexts/OrderContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Clipboard, ClipboardCheck, IndianRupee, Clock, Tag, FileText, Phone, MapPin } from "lucide-react";
+import { ArrowLeft, Clipboard, ClipboardCheck, IndianRupee, Clock, Tag, FileText } from "lucide-react";
 import StatusBadge from "@/components/StatusBadge";
 import OrderTimeline from "@/components/OrderTimeline";
 import PaymentHistory from "@/components/PaymentHistory";
@@ -11,10 +11,8 @@ import { Department, OrderStatus, PaymentStatus, StatusType } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { format, isAfter, addHours, parseISO } from "date-fns";
+import { format, isAfter, addHours } from "date-fns";
 import DatePickerWithPopover from "@/components/DatePickerWithPopover";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CheckCircle, AlertCircle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -29,6 +27,9 @@ import { canViewAddressDetails } from "@/lib/permissions";
 import ProductStatusList from "@/components/ProductStatusList";
 import { canViewFinancialData, orderNeedsApproval } from "@/lib/utils";
 import ApprovalForm from "@/components/ApprovalForm";
+import OrderFinancialDetails from "@/components/OrderFinancialDetails";
+import EnhancedPaymentForm from "@/components/EnhancedPaymentForm";
+import FinancialSummaryCard from "@/components/FinancialSummaryCard";
 
 const OrderDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -391,20 +392,20 @@ const OrderDetail: React.FC = () => {
                       Status
                     </label>
                     <div className="mt-2">
-                      <select
-                        id="status"
-                        className="block w-full rounded-md border-0 py-1.5 bg-background text-foreground shadow-sm ring-1 ring-inset ring-input focus:ring-2 focus:ring-inset focus:ring-primary sm:max-w-xs sm:text-sm sm:leading-6"
-                        value={status}
-                        onChange={(e) => setStatus(e.target.value as OrderStatus)}
-                      >
-                        <option value="New">New</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="Ready to Dispatch">Ready to Dispatch</option>
-                        <option value="Completed">Completed</option>
-                        <option value="On Hold">On Hold</option>
-                        <option value="Issue">Issue</option>
-                        <option value="Dispatched">Dispatched</option>
-                      </select>
+                      <Select value={status} onValueChange={(v) => setStatus(v as OrderStatus)}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="New">New</SelectItem>
+                          <SelectItem value="In Progress">In Progress</SelectItem>
+                          <SelectItem value="Ready to Dispatch">Ready to Dispatch</SelectItem>
+                          <SelectItem value="Completed">Completed</SelectItem>
+                          <SelectItem value="On Hold">On Hold</SelectItem>
+                          <SelectItem value="Issue">Issue</SelectItem>
+                          <SelectItem value="Dispatched">Dispatched</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
@@ -417,17 +418,17 @@ const OrderDetail: React.FC = () => {
                         Department
                       </label>
                       <div className="mt-2">
-                        <select
-                          id="department"
-                          className="block w-full rounded-md border-0 py-1.5 bg-background text-foreground shadow-sm ring-1 ring-inset ring-input focus:ring-2 focus:ring-inset focus:ring-primary sm:max-w-xs sm:text-sm sm:leading-6"
-                          value={department}
-                          onChange={(e) => setDepartment(e.target.value as Department)}
-                        >
-                          <option value="Sales">Sales</option>
-                          <option value="Production">Production</option>
-                          <option value="Design">Design</option>
-                          <option value="Prepress">Prepress</option>
-                        </select>
+                        <Select value={department} onValueChange={(v) => setDepartment(v as Department)}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select department" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Sales">Sales</SelectItem>
+                            <SelectItem value="Production">Production</SelectItem>
+                            <SelectItem value="Design">Design</SelectItem>
+                            <SelectItem value="Prepress">Prepress</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                   )}
@@ -463,12 +464,12 @@ const OrderDetail: React.FC = () => {
                       Remarks
                     </label>
                     <div className="mt-2">
-                      <textarea
+                      <Textarea
                         id="remarks"
                         rows={3}
-                        className="block w-full rounded-md border-0 py-1.5 bg-background text-foreground shadow-sm ring-1 ring-inset ring-input placeholder:text-muted-foreground focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
                         value={remarks}
                         onChange={(e) => setRemarks(e.target.value)}
+                        placeholder="Enter any additional details or comments"
                       />
                     </div>
                   </div>
@@ -628,173 +629,23 @@ const OrderDetail: React.FC = () => {
         
         {canViewFinancial && (
           <TabsContent value="financial" className="space-y-6 pt-4">
-            {/* Payment Record Form */}
-            <Card className="glass-card">
-              <CardHeader className="border-b border-border/30">
-                <CardTitle className="flex items-center">
-                  <IndianRupee className="h-5 w-5 mr-2" /> 
-                  Record Payment
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <form onSubmit={handlePaymentSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label
-                        htmlFor="paidAmount"
-                        className="block text-sm font-medium leading-6"
-                      >
-                        Amount Received (₹)*
-                      </label>
-                      <div className="mt-2 relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <IndianRupee className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <Input
-                          id="paidAmount"
-                          type="number"
-                          className="pl-10"
-                          value={paidAmount}
-                          onChange={(e) => setPaidAmount(e.target.value)}
-                          required
-                        />
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label
-                        htmlFor="paymentDate"
-                        className="block text-sm font-medium leading-6 mb-2"
-                      >
-                        Payment Date*
-                      </label>
-                      <DatePickerWithPopover
-                        date={paymentDate}
-                        onDateChange={setPaymentDate}
-                        placeholder="Select payment date"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="paymentMethod"
-                      className="block text-sm font-medium leading-6"
-                    >
-                      Payment Method*
-                    </label>
-                    <div className="mt-2">
-                      <select
-                        id="paymentMethod"
-                        className="block w-full rounded-md border-0 py-1.5 bg-background text-foreground shadow-sm ring-1 ring-inset ring-input focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
-                        value={paymentMethod}
-                        onChange={(e) => setPaymentMethod(e.target.value)}
-                        required
-                      >
-                        <option value="">Select payment method</option>
-                        <option value="Cash">Cash</option>
-                        <option value="Bank Transfer">Bank Transfer</option>
-                        <option value="UPI">UPI</option>
-                        <option value="Credit Card">Credit Card</option>
-                        <option value="Cheque">Cheque</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="paymentRemarks"
-                      className="block text-sm font-medium leading-6"
-                    >
-                      Payment Remarks
-                    </label>
-                    <div className="mt-2">
-                      <textarea
-                        id="paymentRemarks"
-                        rows={2}
-                        className="block w-full rounded-md border-0 py-1.5 bg-background text-foreground shadow-sm ring-1 ring-inset ring-input placeholder:text-muted-foreground focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
-                        value={paymentRemarks}
-                        onChange={(e) => setPaymentRemarks(e.target.value)}
-                        placeholder="Transaction ID, cheque number, etc."
-                      />
-                    </div>
-                  </div>
-
-                  <Button 
-                    type="submit"
-                    className="w-full mt-4"
-                  >
-                    Record Payment
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+            <OrderFinancialDetails order={order} />
+            
+            {/* Enhanced Payment Form */}
+            <EnhancedPaymentForm 
+              order={order} 
+              onPaymentRecorded={() => setActiveTab("financial")}
+            />
             
             {/* Payment History */}
             {order.paymentHistory && order.paymentHistory.length > 0 && (
               <div>
-                <h2 className="text-2xl font-semibold mb-4 flex items-center">
+                <h2 className="text-xl font-semibold mb-4 flex items-center">
                   <IndianRupee className="h-5 w-5 mr-2" /> Payment History
                 </h2>
                 <PaymentHistory payments={order.paymentHistory} />
               </div>
             )}
-            
-            {/* Financial Summary */}
-            <Card className="glass-card">
-              <CardHeader className="border-b border-border/30">
-                <CardTitle className="flex items-center">
-                  <FileText className="h-5 w-5 mr-2" /> 
-                  Financial Summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 pt-6">
-                <div className="flex justify-between">
-                  <span className="font-medium">Total Amount:</span>
-                  <span className="flex items-center">
-                    <IndianRupee className="h-3.5 w-3.5 mr-1" />
-                    {formatCurrency(order.amount || 0)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-medium">Paid Amount:</span>
-                  <span className="flex items-center text-green-500">
-                    <IndianRupee className="h-3.5 w-3.5 mr-1" />
-                    {formatCurrency(order.paidAmount || 0)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-medium">Pending Amount:</span>
-                  <span className="flex items-center text-amber-500">
-                    <IndianRupee className="h-3.5 w-3.5 mr-1" />
-                    {formatCurrency(order.pendingAmount || order.amount || 0)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-medium">Payment Status:</span>
-                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                    order.paymentStatus === "Paid" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" :
-                    order.paymentStatus === "Partial" ? "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200" :
-                    "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                  }`}>
-                    {order.paymentStatus || "Not Paid"}
-                  </span>
-                </div>
-                {order.paymentHistory && order.paymentHistory.length > 0 && (
-                  <div className="flex justify-between">
-                    <span className="font-medium">Last Payment Date:</span>
-                    <span>
-                      {format(
-                        parseISO(
-                          order.paymentHistory[order.paymentHistory.length - 1].date
-                        ),
-                        'MMM dd, yyyy'
-                      )}
-                    </span>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </TabsContent>
         )}
       </Tabs>
