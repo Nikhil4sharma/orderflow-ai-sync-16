@@ -12,6 +12,7 @@ import TaskListCard from "@/components/TaskListCard";
 import DashboardElement from "@/components/DashboardElement";
 import OrderStatusTabs from "@/components/OrderStatusTabs";
 import OrderGrid from "@/components/OrderGrid";
+import RoleBasedSliderMenu from "@/components/RoleBasedSliderMenu";
 import { Order } from "@/types";
 
 const Dashboard = () => {
@@ -102,9 +103,9 @@ const Dashboard = () => {
           <FinancialOverviewCard />
         </DashboardElement>
         
-        {/* Task list */}
-        <DashboardElement elementId="taskList">
-          <TaskListCard />
+        {/* Role-based slider menu */}
+        <DashboardElement elementId="sliderMenu">
+          <RoleBasedSliderMenu />
         </DashboardElement>
       </div>
       
@@ -136,6 +137,13 @@ const Dashboard = () => {
         />
         
         <OrderGrid orders={filteredOrders} />
+      </div>
+      
+      {/* Task list moved to bottom for better layout */}
+      <div className="mt-8">
+        <DashboardElement elementId="taskList">
+          <TaskListCard />
+        </DashboardElement>
       </div>
     </div>
   );

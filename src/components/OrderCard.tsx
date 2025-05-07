@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Calendar, Clock, DollarSign, User, FileText, ArrowRight } from "lucide-react";
+import { Calendar, Clock, User, FileText, ArrowRight } from "lucide-react";
 import { formatIndianRupees } from "@/lib/utils";
 
 interface OrderCardProps {
@@ -82,7 +82,6 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
             <span className="font-medium ml-1">{formatDate(order.createdAt)}</span>
           </div>
           <div className="flex items-center">
-            <DollarSign className="h-3 w-3 mr-1 text-muted-foreground" />
             <span className="font-medium">{formatIndianRupees(order.amount)}</span>
           </div>
         </div>
