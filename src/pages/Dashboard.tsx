@@ -14,6 +14,7 @@ import OrderStatusTabs from "@/components/OrderStatusTabs";
 import OrderGrid from "@/components/OrderGrid";
 import RoleBasedSliderMenu from "@/components/RoleBasedSliderMenu";
 import { Order } from "@/types";
+import { DashboardElement as DashboardElementType } from "@/types/dashboardConfig";
 
 const Dashboard = () => {
   const { currentUser, orders } = useOrders();
@@ -103,8 +104,8 @@ const Dashboard = () => {
           <FinancialOverviewCard />
         </DashboardElement>
         
-        {/* Role-based slider menu */}
-        <DashboardElement elementId="sliderMenu">
+        {/* Role-based slider menu - using a valid dashboard element type */}
+        <DashboardElement elementId="recentOrders" fallback={<RoleBasedSliderMenu />}>
           <RoleBasedSliderMenu />
         </DashboardElement>
       </div>

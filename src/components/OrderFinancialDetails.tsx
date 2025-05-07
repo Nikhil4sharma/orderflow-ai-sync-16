@@ -14,6 +14,17 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Order, PaymentStatus } from "@/types";
 
+// Extended type definition for products that include financial data
+interface ProductWithPrice {
+  id: string;
+  name: string;
+  status: string;
+  quantity?: number;
+  unitPrice?: number;
+  price?: number;
+  remarks?: string;
+}
+
 interface OrderFinancialDetailsProps {
   order: Order;
 }
@@ -24,9 +35,9 @@ const OrderFinancialDetails: React.FC<OrderFinancialDetailsProps> = ({ order }) 
   const pendingAmount = order.pendingAmount || 0;
   const paymentPercent = Math.min(Math.round((paidAmount / totalAmount) * 100), 100);
   
-  // If order has product-wise pricing
+  // If order has product-wise pricing - safely check for properties
   const hasProductDetails = order.productStatus && order.productStatus.length > 0 && 
-    order.productStatus.some(p => p.price !== undefined);
+    order.productStatus.some(p => 'price' in p);
 
   return (
     <div className="space-y-6">
@@ -134,18 +145,22 @@ const OrderFinancialDetails: React.FC<OrderFinancialDetailsProps> = ({ order }) 
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {order.productStatus.map((product, index) => (
-                  <TableRow key={product.id || index}>
-                    <TableCell className="font-medium">{product.name || `Product ${index + 1}`}</TableCell>
-                    <TableCell>{product.quantity || 1}</TableCell>
-                    <TableCell>
-                      {product.unitPrice ? formatIndianRupees(product.unitPrice) : "-"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {product.price ? formatIndianRupees(product.price) : "-"}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {order.productStatus && order.productStatus.map((product, index) => {
+                  // Safely handle potentially missing properties
+                  const productWithPrice = product as unknown as ProductWithPrice;
+                  return (
+                    <TableRow key={product.id || index}>
+                      <TableCell className="font-medium">{product.name || `Product ${index + 1}`}</TableCell>
+                      <TableCell>{productWithPrice.quantity || 1}</TableCell>
+                      <TableCell>
+                        {productWithPrice.unitPrice ? formatIndianRupees(productWithPrice.unitPrice) : "-"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {productWithPrice.price ? formatIndianRupees(productWithPrice.price) : "-"}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
                 {/* Total row */}
                 <TableRow>
                   <TableCell colSpan={3} className="text-right font-medium">Total</TableCell>

@@ -10,7 +10,7 @@ import { CreditCard, IndianRupee, Calendar } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import DatePickerWithPopover from "@/components/DatePickerWithPopover";
 import { useOrders } from "@/contexts/OrderContext";
-import { Order } from "@/types";
+import { Order, PaymentStatus } from "@/types";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface EnhancedPaymentFormProps {
@@ -68,7 +68,7 @@ const EnhancedPaymentForm: React.FC<EnhancedPaymentFormProps> = ({ order, onPaym
     const newPendingAmount = Math.max(0, order.amount - newPaidAmount);
     
     // Determine new payment status
-    let paymentStatus = "Not Paid";
+    let paymentStatus: PaymentStatus = "Not Paid";
     if (newPaidAmount >= order.amount) {
       paymentStatus = "Paid";
     } else if (newPaidAmount > 0) {
