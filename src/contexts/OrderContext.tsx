@@ -1,8 +1,9 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Order, User, OrderStatus, StatusUpdate, Department, Role, PaymentRecord, PermissionKey } from "@/types";
 import { getDemoOrders } from "@/lib/demo-data";
 import { DashboardConfiguration } from "@/types/dashboardConfig";
+import { addHours, addMinutes } from "date-fns";
+import { toast } from "sonner";
 
 // Define the context type
 interface OrderContextType {
@@ -12,6 +13,7 @@ interface OrderContextType {
   deleteOrder: (orderId: string) => void;
   addStatusUpdate: (orderId: string, statusUpdate: Partial<StatusUpdate>) => void;
   updateStatusUpdate: (update: StatusUpdate) => void;
+  undoStatusUpdate: (updateId: string) => void;
   addPayment: (orderId: string, payment: Partial<PaymentRecord>) => void;
   verifyOrder: (orderId: string) => void;
   isAuthenticated: boolean;
@@ -168,33 +170,45 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   
   // Add a status update to an order
   const addStatusUpdate = (orderId: string, statusUpdate: Partial<StatusUpdate>) => {
+    const now = new Date();
+    
     setOrders(prevOrders => 
       prevOrders.map(order => {
         if (order.id !== orderId) return order;
         
-        // Create new status update
+        // Create new status update with undo/edit time limits
         const newUpdate: StatusUpdate = {
           id: `status-${Date.now()}`,
           orderId: orderId,
-          timestamp: new Date().toISOString(),
+          timestamp: now.toISOString(),
           department: statusUpdate.department || currentUser?.department || "Admin",
           status: statusUpdate.status || order.status,
           remarks: statusUpdate.remarks || "",
           updatedBy: currentUser?.name || "System",
-          estimatedTime: statusUpdate.estimatedTime || ""
+          estimatedTime: statusUpdate.estimatedTime || "",
+          selectedProduct: statusUpdate.selectedProduct,
+          // Set editable time limit - 1 hour for regular users, unlimited for admins
+          editableUntil: currentUser?.role === "Admin" ? 
+            addHours(now, 24 * 365).toISOString() : // Admin - editable for a year (effectively forever)
+            addHours(now, 1).toISOString(), // Regular users - 1 hour edit window
         };
         
         // Add to status history
         return {
           ...order,
-          statusHistory: [...(order.statusHistory || []), newUpdate]
+          statusHistory: [...(order.statusHistory || []), newUpdate],
+          lastUpdated: now.toISOString(),
         };
       })
     );
+    
+    toast.success("Status update added successfully");
   };
 
   // Update a status update
   const updateStatusUpdate = (update: StatusUpdate) => {
+    const now = new Date();
+    
     setOrders(prevOrders => 
       prevOrders.map(order => {
         if (order.id !== update.orderId) return order;
@@ -203,11 +217,52 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         return {
           ...order,
           statusHistory: order.statusHistory.map(statusUpdate => 
-            statusUpdate.id === update.id ? update : statusUpdate
-          )
+            statusUpdate.id === update.id ? 
+            {
+              ...update,
+              updatedAt: now.toISOString(), // Track when the update was edited
+            } : 
+            statusUpdate
+          ),
+          lastUpdated: now.toISOString(),
         };
       })
     );
+    
+    toast.success("Status update modified successfully");
+  };
+  
+  // Undo (delete) a status update
+  const undoStatusUpdate = (updateId: string) => {
+    setOrders(prevOrders => 
+      prevOrders.map(order => {
+        // Find if this order contains the update
+        const hasUpdate = order.statusHistory.some(update => update.id === updateId);
+        
+        if (!hasUpdate) return order;
+        
+        // Remove the specified update from history
+        const updatedHistory = order.statusHistory.filter(update => update.id !== updateId);
+        
+        // If this was the only update, we need to keep at least the initial state
+        if (updatedHistory.length === 0) {
+          return order;
+        }
+        
+        // Get the most recent status after removing the undone update
+        const latestUpdate = updatedHistory[updatedHistory.length - 1];
+        
+        // Update order status based on latest remaining update
+        return {
+          ...order,
+          status: latestUpdate.status as OrderStatus,
+          statusHistory: updatedHistory,
+          lastUpdated: new Date().toISOString(),
+        };
+      })
+    );
+    
+    toast.success("Status update has been undone");
   };
 
   // Add payment record to an order
@@ -417,6 +472,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     deleteOrder,
     addStatusUpdate,
     updateStatusUpdate,
+    undoStatusUpdate,
     addPayment,
     verifyOrder,
     isAuthenticated,

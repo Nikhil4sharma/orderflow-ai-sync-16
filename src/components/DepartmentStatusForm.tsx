@@ -6,7 +6,8 @@ import {
   Card, 
   CardContent, 
   CardHeader, 
-  CardTitle 
+  CardTitle,
+  CardFooter
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { 
@@ -18,8 +19,10 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Department, DesignStatus, Order, PrepressStatus } from "@/types";
-import { format } from "date-fns";
+import { Clock, AlertCircle } from "lucide-react";
 import TimeEstimationInput from "./TimeEstimationInput";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface DepartmentStatusFormProps {
   order: Order;
@@ -27,7 +30,7 @@ interface DepartmentStatusFormProps {
 }
 
 const DepartmentStatusForm: React.FC<DepartmentStatusFormProps> = ({ order, department }) => {
-  const { updateOrder, addStatusUpdate } = useOrders();
+  const { updateOrder, addStatusUpdate, currentUser } = useOrders();
   
   // Form state based on department
   const [status, setStatus] = useState<string>("");
@@ -45,6 +48,20 @@ const DepartmentStatusForm: React.FC<DepartmentStatusFormProps> = ({ order, depa
       default:
         return ['In Progress', 'On Hold', 'Completed', 'Issue'];
     }
+  };
+  
+  // Get color based on selected status
+  const getStatusColor = (selectedStatus: string): string => {
+    if (selectedStatus.includes('Pending') || selectedStatus.includes('Waiting')) {
+      return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200';
+    } else if (selectedStatus.includes('Completed') || selectedStatus.includes('Forwarded')) {
+      return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+    } else if (selectedStatus.includes('Issue')) {
+      return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+    } else if (selectedStatus.includes('Working')) {
+      return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+    }
+    return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
   };
   
   const handleSubmit = () => {
@@ -88,7 +105,7 @@ const DepartmentStatusForm: React.FC<DepartmentStatusFormProps> = ({ order, depa
     
     updateOrder(updatedOrder);
     
-    // Add status update to timeline
+    // Add status update to timeline with edit/undo capabilities
     addStatusUpdate(order.id, {
       orderId: order.id,
       department: department,
@@ -104,11 +121,14 @@ const DepartmentStatusForm: React.FC<DepartmentStatusFormProps> = ({ order, depa
   };
   
   return (
-    <Card className="glass-card">
-      <CardHeader className="border-b border-border/30">
-        <CardTitle className="flex items-center">
+    <Card className="glass-card overflow-hidden border-t-4 border-t-primary">
+      <CardHeader className="bg-muted/50">
+        <CardTitle className="flex items-center text-lg">
           Update {department} Status
         </CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Update the status of this order for your department
+        </p>
       </CardHeader>
       <CardContent className="pt-6">
         <form className="space-y-4">
@@ -135,6 +155,14 @@ const DepartmentStatusForm: React.FC<DepartmentStatusFormProps> = ({ order, depa
                   ))}
                 </SelectContent>
               </Select>
+              
+              {status && (
+                <div className="mt-2">
+                  <Badge className={`${getStatusColor(status)}`}>
+                    {status}
+                  </Badge>
+                </div>
+              )}
             </div>
           </div>
           
@@ -164,16 +192,25 @@ const DepartmentStatusForm: React.FC<DepartmentStatusFormProps> = ({ order, depa
               />
             </div>
           </div>
-          
-          <Button 
-            type="button"
-            onClick={handleSubmit}
-            className="w-full mt-4"
-          >
-            Update Status
-          </Button>
         </form>
       </CardContent>
+      <CardFooter className="bg-muted/30 border-t border-border/50 flex flex-col items-start pt-4">
+        <Alert variant="outline" className="mb-4 text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-900">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle className="text-sm font-medium">Important</AlertTitle>
+          <AlertDescription className="text-xs">
+            Status updates can be undone within 5 minutes and edited within 1 hour.
+          </AlertDescription>
+        </Alert>
+        
+        <Button 
+          onClick={handleSubmit}
+          className="w-full mt-2"
+        >
+          <Clock className="mr-1 h-4 w-4" />
+          Update Status
+        </Button>
+      </CardFooter>
     </Card>
   );
 };
