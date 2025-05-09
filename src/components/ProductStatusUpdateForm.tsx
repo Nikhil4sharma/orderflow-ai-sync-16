@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useOrders } from "@/contexts/OrderContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -204,11 +203,7 @@ const ProductStatusUpdateForm: React.FC<ProductStatusUpdateFormProps> = ({
               <Calendar className="h-4 w-4 mr-1" />
               Estimated Completion Date
             </Label>
-            <DatePicker
-              date={estimatedDate}
-              setDate={setEstimatedDate}
-              className="w-full"
-            />
+            <DatePicker date={estimatedDate} setDate={setEstimatedDate} label="Estimated Completion Date" required={false} />
           </div>
           
           <div>

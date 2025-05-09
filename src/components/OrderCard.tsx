@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Order } from "@/types";
@@ -9,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Calendar, Clock, User, FileText, ArrowRight, IndianRupee } from "lucide-react";
 import { formatIndianRupees } from "@/lib/utils";
+import { notifyOrderStatusChanged } from '@/utils/notifications';
 
 interface OrderCardProps {
   order: Order;
@@ -17,10 +17,16 @@ interface OrderCardProps {
 const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
   const navigate = useNavigate();
   
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return 'Not set';
     try {
-      return format(new Date(dateString), 'MMM dd, yyyy');
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return 'Invalid date';
+      }
+      return format(date, 'MMM dd, yyyy');
     } catch (error) {
+      console.error('Date formatting error:', error);
       return 'Invalid date';
     }
   };
@@ -42,6 +48,12 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
       case 'Not Paid': return 'bg-red-100 text-red-800 dark:bg-red-800/30 dark:text-red-300';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-300';
     }
+  };
+
+  const handleStatusChange = async (newStatus: string) => {
+    // Implement the logic to update the order status
+    // After updating the status, notify the user
+    await notifyOrderStatusChanged(order.id, order.orderNumber, newStatus, order.department);
   };
 
   return (

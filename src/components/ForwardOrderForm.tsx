@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useOrders } from "@/contexts/OrderContext";
 import { Button } from "@/components/ui/button";
@@ -48,10 +47,10 @@ const ForwardOrderForm: React.FC<ForwardOrderFormProps> = ({ order, onForward })
     
     updateOrder(updatedOrder);
     
-    // Add status update to timeline
+    // Add status update to timeline with remarks and new department
     addStatusUpdate(order.id, {
       orderId: order.id,
-      department: order.currentDepartment,
+      department: nextDepartment, // Show new department in timeline
       status: `Forwarded to ${nextDepartment}`,
       remarks: remarks
     });

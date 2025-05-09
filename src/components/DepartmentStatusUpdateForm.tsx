@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useOrders } from '@/contexts/OrderContext';
 import { Order, OrderStatus } from '@/types';
@@ -10,6 +9,7 @@ import { toast } from 'sonner';
 import { getAllowedStatusesForDepartment } from '@/lib/mock-data';
 import { ClipboardCheck } from 'lucide-react';
 import TimeEstimationInput from './TimeEstimationInput';
+import { DatePicker } from "@/components/ui/date-picker";
 
 interface DepartmentStatusUpdateFormProps {
   order: Order;
@@ -85,11 +85,7 @@ const DepartmentStatusUpdateForm: React.FC<DepartmentStatusUpdateFormProps> = ({
           </div>
           
           <div className="space-y-2">
-            <TimeEstimationInput
-              value={estimatedTime}
-              onChange={setEstimatedTime}
-              required={true}
-            />
+            <DatePicker date={estimatedTime ? new Date(estimatedTime) : undefined} setDate={d => setEstimatedTime(d ? d.toISOString() : '')} label="Estimated Completion Date" required={true} />
           </div>
           
           <div className="space-y-2">

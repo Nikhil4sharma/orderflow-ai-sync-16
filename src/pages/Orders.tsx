@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useOrders } from "@/contexts/OrderContext";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,22 @@ import { useNavigate } from "react-router-dom";
 import { FileText, Search, PlusCircle, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { OrderStatus } from "@/types";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import OrdersList from "@/components/OrdersList";
+
+// Custom tab logic: if order.status is 'Pending Approval' or remarks/status indicate 'Pending Feedback from Sales Team', show in Pending Approval tab
+const getTabStatus = (order) => {
+  if (
+    order.status === "Pending Approval" ||
+    order.remarks === "Pending Feedback from Sales Team" ||
+    order.designStatus === "Pending Feedback from Sales Team" ||
+    order.prepressStatus === "Waiting for approval"
+  ) {
+    return "Pending Approval";
+  }
+  // Add more logic as needed for other tabs
+  return order.status;
+};
 
 const Orders: React.FC = () => {
   const { orders, currentUser } = useOrders();
@@ -15,21 +30,34 @@ const Orders: React.FC = () => {
   
   const [searchText, setSearchText] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus | null>(null);
-  
+  const [sortBy, setSortBy] = useState<string>("date-desc");
+  const [departmentFilter, setDepartmentFilter] = useState<string>("All");
+  const [minAmount, setMinAmount] = useState<string>("");
+  const [maxAmount, setMaxAmount] = useState<string>("");
+
   // Filter orders based on department access and search text
-  const filteredOrders = orders.filter(order => {
+  let filteredOrders = orders.filter(order => {
     // Department-based access control
     if (currentUser?.role !== "Admin" && 
         currentUser?.department !== order.currentDepartment && 
         !["Sales"].includes(currentUser?.department || "")) {
       return false;
     }
-    
+    // Department filter
+    if (departmentFilter !== "All" && order.currentDepartment !== departmentFilter) {
+      return false;
+    }
     // Status filter
     if (selectedStatus && order.status !== selectedStatus) {
       return false;
     }
-    
+    // Amount filter
+    if (minAmount && order.amount < parseFloat(minAmount)) {
+      return false;
+    }
+    if (maxAmount && order.amount > parseFloat(maxAmount)) {
+      return false;
+    }
     // Search text filter
     if (searchText) {
       const searchLower = searchText.toLowerCase();
@@ -39,10 +67,29 @@ const Orders: React.FC = () => {
         order.status.toLowerCase().includes(searchLower)
       );
     }
-    
     return true;
   });
-  
+
+  // Sort orders
+  filteredOrders = [...filteredOrders].sort((a, b) => {
+    switch (sortBy) {
+      case "date-asc":
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      case "date-desc":
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      case "amount-asc":
+        return a.amount - b.amount;
+      case "amount-desc":
+        return b.amount - a.amount;
+      case "status-asc":
+        return a.status.localeCompare(b.status);
+      case "status-desc":
+        return b.status.localeCompare(a.status);
+      default:
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    }
+  });
+
   // Get counts for each status
   const getStatusCount = (status: OrderStatus | "All"): number => {
     if (status === "All") {
@@ -50,10 +97,12 @@ const Orders: React.FC = () => {
     }
     return orders.filter(order => order.status === status).length;
   };
-  
+
   // Create filter tabs - defined statuses plus "All" special case for filtering
   const statuses: (OrderStatus | "All")[] = ["All", "In Progress", "Pending Approval", "Issue", "Ready to Dispatch", "Completed"];
-  
+  const departments = ["All", "Sales", "Production", "Design", "Prepress", "Admin"];
+
+  if (!currentUser) return null;
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
@@ -61,7 +110,6 @@ const Orders: React.FC = () => {
           <h1 className="text-2xl font-bold">Orders</h1>
           <p className="text-muted-foreground">View and manage all orders</p>
         </div>
-        
         <div className="flex gap-2 mt-4 md:mt-0">
           <Button 
             variant="outline"
@@ -72,93 +120,7 @@ const Orders: React.FC = () => {
           </Button>
         </div>
       </div>
-      
-      <div className="mb-6">
-        <div className="flex flex-col sm:flex-row gap-4 mb-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="Search orders..."
-              className="pl-9"
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm hidden sm:inline">Filter:</span>
-          </div>
-        </div>
-        
-        <div className="flex overflow-x-auto gap-2 pb-2">
-          {statuses.map((status) => (
-            <Button
-              key={status}
-              variant={(selectedStatus === status) || (status === "All" && selectedStatus === null) ? "default" : "outline"}
-              className="whitespace-nowrap"
-              onClick={() => setSelectedStatus(status === "All" ? null : status)}
-            >
-              {status}
-              {status === "All" ? (
-                <span className="ml-2 bg-primary-foreground text-primary rounded-full h-6 min-w-6 flex items-center justify-center px-1.5 text-xs">
-                  {getStatusCount("All")}
-                </span>
-              ) : (
-                <span className="ml-2 bg-primary-foreground text-primary rounded-full h-6 min-w-6 flex items-center justify-center px-1.5 text-xs">
-                  {getStatusCount(status)}
-                </span>
-              )}
-            </Button>
-          ))}
-        </div>
-      </div>
-      
-      {filteredOrders.length === 0 ? (
-        <Card className="w-full">
-          <CardContent className="flex flex-col items-center justify-center p-6">
-            <FileText className="h-16 w-16 text-muted-foreground/50 mb-4" />
-            <h3 className="text-lg font-medium">No orders found</h3>
-            <p className="text-muted-foreground text-center mt-2">
-              {searchText ? "Try a different search term or filter" : "There are no orders to display"}
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredOrders.map((order) => (
-            <Card key={order.id} className="w-full hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h3 className="font-semibold text-lg">{order.orderNumber}</h3>
-                    <p className="text-sm text-muted-foreground">{order.clientName}</p>
-                  </div>
-                  <StatusBadge status={order.status} />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-2 text-sm mb-4">
-                  <div>
-                    <span className="text-muted-foreground">Department</span>
-                    <p>{order.currentDepartment}</p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Amount</span>
-                    <p>₹{order.amount.toLocaleString()}</p>
-                  </div>
-                </div>
-                
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => navigate(`/orders/${order.id}`)}
-                >
-                  View Details
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+      <OrdersList orders={orders} currentUser={currentUser} getTabStatus={getTabStatus} />
     </div>
   );
 };

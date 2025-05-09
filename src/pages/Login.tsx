@@ -1,51 +1,22 @@
-
 import React, { useEffect } from "react";
-import { Navigate, useLocation } from "react-router-dom";
-import { useOrders } from "@/contexts/OrderContext";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import LoginForm from "@/components/auth/LoginForm";
 import { motion } from "framer-motion";
 import ChhapaiLogo from "@/components/ChhapaiLogo";
 
-const Login: React.FC = () => {
-  const { isAuthenticated, currentUser } = useOrders();
-  const location = useLocation();
-  const from = location.state?.from?.pathname || "/dashboard";
+export default function Login() {
+  const navigate = useNavigate();
+  const { currentUser, loading } = useAuth();
 
-  // Determine where to redirect based on department
-  const getRedirectPath = () => {
-    if (!currentUser) return "/dashboard";
-    
-    // Redirect to appropriate department view based on user role/department
-    switch(currentUser.department) {
-      case "Production":
-        return "/dashboard?department=production";
-      case "Design":
-        return "/dashboard?department=design";
-      case "Prepress":
-        return "/dashboard?department=prepress";
-      case "Sales":
-        return "/dashboard?department=sales";
-      default:
-        return "/dashboard";
-    }
-  };
-
-  // Set document title
   useEffect(() => {
-    document.title = "Sign In | Chhapai Order Management";
-    
-    // Add a class to the body for custom styling during login
-    document.body.classList.add('login-page');
-    
-    // Clean up
-    return () => {
-      document.body.classList.remove('login-page');
-    };
-  }, []);
+    if (currentUser) {
+      navigate("/dashboard");
+    }
+  }, [currentUser, navigate]);
 
-  // If user is already authenticated, redirect to the department-specific destination
-  if (isAuthenticated) {
-    return <Navigate to={getRedirectPath()} replace />;
+  if (loading) {
+    return <div>Loading...</div>;
   }
 
   return (
@@ -101,6 +72,4 @@ const Login: React.FC = () => {
       </div>
     </div>
   );
-};
-
-export default Login;
+}

@@ -1,10 +1,10 @@
-
 import React from "react";
 import { useOrders } from "@/contexts/OrderContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { formatIndianRupees } from "@/lib/utils";
-import { IndianRupee } from "lucide-react";
+import { IndianRupee, TrendingUp } from "lucide-react";
+import { RevenueChart } from "@/components/admin/RevenueChart";
 
 const FinancialOverviewCard: React.FC = () => {
   const { orders, currentUser } = useOrders();
@@ -20,13 +20,12 @@ const FinancialOverviewCard: React.FC = () => {
   const totalAmount = relevantOrders.reduce((sum, order) => sum + order.amount, 0);
   const totalPaid = relevantOrders.reduce((sum, order) => sum + order.paidAmount, 0);
   const totalPending = totalAmount - totalPaid;
-  
+  const avgOrderValue = relevantOrders.length > 0 ? totalAmount / relevantOrders.length : 0;
   const paymentPercentage = totalAmount > 0 ? Math.round((totalPaid / totalAmount) * 100) : 0;
 
   // Recent payments (last 30 days)
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  
   const recentPayments = relevantOrders
     .flatMap(order => order.paymentHistory || [])
     .filter(payment => new Date(payment.date) > thirtyDaysAgo)
@@ -37,7 +36,6 @@ const FinancialOverviewCard: React.FC = () => {
   const currentMonthPayments = recentPayments.filter(
     payment => new Date(payment.date).getMonth() === currentMonth
   );
-  
   const currentMonthRevenue = currentMonthPayments.reduce(
     (sum, payment) => sum + payment.amount, 0
   );
@@ -58,29 +56,37 @@ const FinancialOverviewCard: React.FC = () => {
           </div>
           <Progress value={paymentPercentage} className="h-2" />
         </div>
-        
         <div className="grid grid-cols-2 gap-4">
           <div className="p-3 rounded-md bg-muted/30">
             <div className="text-xs text-muted-foreground">Total Orders</div>
             <div className="text-lg font-semibold mt-1">{formatIndianRupees(totalAmount)}</div>
           </div>
-          
           <div className="p-3 rounded-md bg-muted/30">
             <div className="text-xs text-muted-foreground">Paid Amount</div>
             <div className="text-lg font-semibold mt-1 text-green-600">{formatIndianRupees(totalPaid)}</div>
           </div>
+          <div className="p-3 rounded-md bg-muted/30">
+            <div className="text-xs text-muted-foreground">Outstanding Amount</div>
+            <div className="text-lg font-semibold mt-1 text-red-500">{formatIndianRupees(totalPending)}</div>
+          </div>
+          <div className="p-3 rounded-md bg-muted/30">
+            <div className="text-xs text-muted-foreground">Avg. Order Value</div>
+            <div className="text-lg font-semibold mt-1 text-blue-500">{formatIndianRupees(avgOrderValue)}</div>
+          </div>
         </div>
-        
         <div>
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium">Monthly Revenue</span>
+            <span className="text-sm font-medium flex items-center"><TrendingUp className="h-4 w-4 mr-1" />Monthly Revenue</span>
             <span className="text-xs text-muted-foreground">Current Month</span>
           </div>
           <div className="p-3 rounded-md bg-primary/10">
             <div className="text-lg font-semibold">{formatIndianRupees(currentMonthRevenue)}</div>
           </div>
+          {/* Mini revenue chart */}
+          <div className="mt-2">
+            <RevenueChart orders={relevantOrders} height={120} />
+          </div>
         </div>
-        
         {recentPayments.length > 0 && (
           <div>
             <div className="text-sm font-medium mb-2">Recent Payments</div>

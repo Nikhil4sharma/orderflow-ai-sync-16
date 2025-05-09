@@ -21,6 +21,9 @@ import {
 import { toast } from "sonner";
 import { ArrowLeft, User, UserPlus, PenLine, Trash } from "lucide-react";
 import { Department, User as UserType, Role } from "@/types";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
 
 const ManageUsers: React.FC = () => {
   const navigate = useNavigate();
@@ -40,7 +43,7 @@ const ManageUsers: React.FC = () => {
     return null;
   }
 
-  const handleCreateUser = (e: React.FormEvent) => {
+  const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validation
@@ -49,35 +52,49 @@ const ManageUsers: React.FC = () => {
       return;
     }
     
-    // Check if email is already in use
+    // Check if email is already in use (local check)
     const emailExists = users.some(user => user.email === email);
     if (emailExists) {
       toast.error("Email is already in use");
       return;
     }
-    
-    // Create new user
-    const newUser: UserType = {
-      id: `user-${Date.now()}`,
-      name,
-      email,
-      password, // This is now valid with our updated User type
-      department,
-      role,
-      permissions: [] // Add the required permissions array
-    };
-    
-    // Add user
-    addUser(newUser);
-    
-    // Reset form
-    setName("");
-    setEmail("");
-    setPassword("");
-    setDepartment("Sales");
-    setRole("User");
-    
-    toast.success("User created successfully");
+
+    try {
+      // 1. Create user in Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const uid = userCredential.user.uid;
+
+      // 2. Add user profile to Firestore
+      const newUser: UserType = {
+        id: uid,
+        name,
+        email,
+        department,
+        role,
+        permissions: []
+      };
+      await setDoc(doc(db, "users", uid), newUser);
+
+      // 3. Add to local state (without password)
+      addUser({ ...newUser });
+
+      // 4. Reset form
+      setName("");
+      setEmail("");
+      setPassword("");
+      setDepartment("Sales");
+      setRole("User");
+
+      toast.success("User created and synced with Firebase successfully");
+    } catch (error: any) {
+      if (error.code === "auth/email-already-in-use") {
+        toast.error("Email is already registered in Firebase");
+      } else if (error.code === "auth/weak-password") {
+        toast.error("Password is too weak (minimum 6 characters)");
+      } else {
+        toast.error("Failed to create user: " + (error.message || error));
+      }
+    }
   };
 
   const handleDeleteUser = (userId: string) => {

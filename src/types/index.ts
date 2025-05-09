@@ -1,3 +1,4 @@
+import { DateRange } from 'react-day-picker';
 
 export type Department = 'Sales' | 'Production' | 'Design' | 'Prepress' | 'Admin';
 
@@ -18,6 +19,9 @@ export type CourierPartner = 'Shree Maruti' | 'DTDC' | 'FedEx' | 'DHL' | 'BlueDa
 export type DeliveryType = 'Normal' | 'Express';
 
 export type Role = 'Admin' | 'Manager' | 'Staff' | string;
+
+export type NotificationPriority = 'high' | 'medium' | 'low';
+export type NotificationCategory = 'order' | 'payment' | 'status' | 'user' | 'system';
 
 export interface ProductStatus {
   id: string;
@@ -128,3 +132,29 @@ export type PermissionKey =
   | 'mark_ready_dispatch'
   | 'verify_payment'
   | 'view_delivery_details';
+
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  priority: NotificationPriority;
+  category: NotificationCategory;
+  orderId?: string;
+  userId?: string;
+  department?: string;
+  read: boolean;
+  createdAt: string;
+  data?: Record<string, any>;
+}
+
+export interface OrderFilters {
+  department?: Department;
+  status?: OrderStatus;
+  paymentStatus?: PaymentStatus;
+  dateRange?: DateRange;
+  amountRange?: {
+    min?: number;
+    max?: number;
+  };
+  searchTerm?: string;
+}

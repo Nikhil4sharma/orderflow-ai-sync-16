@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { CreditCard, IndianRupee, Calendar } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import DatePickerWithPopover from "@/components/DatePickerWithPopover";
+import { DatePicker } from "@/components/ui/date-picker";
 import { useOrders } from "@/contexts/OrderContext";
 import { Order, PaymentStatus } from "@/types";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -165,11 +164,7 @@ const EnhancedPaymentForm: React.FC<EnhancedPaymentFormProps> = ({ order, onPaym
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="paymentDate">Payment Date</Label>
-              <DatePickerWithPopover
-                date={paymentDate}
-                onDateChange={setPaymentDate}
-                placeholder="Select date"
-              />
+              <DatePicker date={paymentDate} setDate={setPaymentDate} label="Payment Date" required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="paymentMethod">Payment Method</Label>

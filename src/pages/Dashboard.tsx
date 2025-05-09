@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import DashboardApprovalSection from "@/components/DashboardApprovalSection";
 import { useOrders } from "@/contexts/OrderContext";
@@ -12,9 +11,12 @@ import TaskListCard from "@/components/TaskListCard";
 import DashboardElement from "@/components/DashboardElement";
 import OrderStatusTabs from "@/components/OrderStatusTabs";
 import OrderGrid from "@/components/OrderGrid";
-import RoleBasedSliderMenu from "@/components/RoleBasedSliderMenu";
-import { Order } from "@/types";
+import { Order, OrderStatus } from "@/types";
 import { DashboardElement as DashboardElementType } from "@/types/dashboardConfig";
+import OrdersList from "@/components/OrdersList";
+import { OrderStatusPieChart } from "@/components/admin/OrderStatusPieChart";
+import { DepartmentWorkloadChart } from "@/components/admin/DepartmentWorkloadChart";
+import { RevenueChart } from "@/components/admin/RevenueChart";
 
 const Dashboard = () => {
   const { currentUser, orders } = useOrders();
@@ -60,6 +62,19 @@ const Dashboard = () => {
   const filteredOrders = getDepartmentOrders();
   const orderCounts = getOrderCountByStatus();
 
+  // Analytics data for charts
+  const allStatuses: OrderStatus[] = [
+    "New", "In Progress", "On Hold", "Completed", "Dispatched", "Issue", "Ready to Dispatch", "Pending Approval", "Pending Payment", "Verified"
+  ];
+  const statusCountsForChart: Record<OrderStatus, number> = allStatuses.reduce((acc, status) => {
+    acc[status] = orders.filter(order => order.status === status).length;
+    return acc;
+  }, {} as Record<OrderStatus, number>);
+  const departmentCounts = orders.reduce((acc, order) => {
+    acc[order.currentDepartment] = (acc[order.currentDepartment] || 0) + 1;
+    return acc;
+  }, {});
+
   if (!currentUser) {
     return null;
   }
@@ -68,7 +83,11 @@ const Dashboard = () => {
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {currentUser.role === "Admin"
+              ? "Welcome Mr. Rajesh ji"
+              : `Welcome Back ${currentUser.name}`}
+          </h1>
           <p className="text-muted-foreground mt-1">
             Welcome back, {currentUser.name}
           </p>
@@ -103,11 +122,6 @@ const Dashboard = () => {
         <DashboardElement elementId="financialSummary">
           <FinancialOverviewCard />
         </DashboardElement>
-        
-        {/* Role-based slider menu - using a valid dashboard element type */}
-        <DashboardElement elementId="recentOrders" fallback={<RoleBasedSliderMenu />}>
-          <RoleBasedSliderMenu />
-        </DashboardElement>
       </div>
       
       {/* Approvals section */}
@@ -130,14 +144,7 @@ const Dashboard = () => {
             </Button>
           </Link>
         </div>
-        
-        <OrderStatusTabs 
-          activeStatus={activeStatus}
-          onChange={setActiveStatus}
-          countByStatus={orderCounts}
-        />
-        
-        <OrderGrid orders={filteredOrders} />
+        <OrdersList orders={filteredOrders} currentUser={currentUser} />
       </div>
       
       {/* Task list moved to bottom for better layout */}

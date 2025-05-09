@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { StatusUpdate, User } from "@/types";
 import StatusBadge from "./StatusBadge";
@@ -31,17 +30,20 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { notifyOrderStatusChanged } from '@/utils/notifications';
 
 interface OrderTimelineProps {
   statusHistory: StatusUpdate[];
   currentUser: User;
   canEditStatusUpdate: (update: StatusUpdate) => boolean;
+  order: any;
 }
 
 const OrderTimeline: React.FC<OrderTimelineProps> = ({ 
   statusHistory, 
   currentUser,
-  canEditStatusUpdate 
+  canEditStatusUpdate,
+  order
 }) => {
   const { updateStatusUpdate, undoStatusUpdate, hasPermission } = useOrders();
   const [selectedUpdate, setSelectedUpdate] = useState<StatusUpdate | null>(null);
@@ -106,14 +108,15 @@ const OrderTimeline: React.FC<OrderTimelineProps> = ({
     console.log("Editing status update:", update);
   };
 
-  const handleUndoUpdate = (update: StatusUpdate) => {
+  const handleUndoUpdate = async (update: StatusUpdate) => {
     if (!canUndoUpdate(update)) {
       toast.error("This update can no longer be undone");
       return;
     }
 
-    undoStatusUpdate(update.id);
+    await undoStatusUpdate(update.id);
     toast.success("Status update has been undone");
+    await notifyOrderStatusChanged(order.id, order.orderNumber, newStatus, order.department);
   };
 
   // Get department-specific styles for visual differentiation
@@ -190,37 +193,32 @@ const OrderTimeline: React.FC<OrderTimelineProps> = ({
               
               <div className="flex-1 bg-card/80 backdrop-blur-sm rounded-lg p-4 shadow-sm border border-border/50 hover:border-border transition-all duration-200">
                 <div className="flex flex-col">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center">
-                      <h4 className="text-sm font-medium flex items-center">
-                        <span className={`px-2 py-0.5 rounded-full text-xs mr-2 ${getDepartmentStyles(update.department)}/20 text-${getDepartmentStyles(update.department).replace('bg-', '')}`}>
+                  <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="text-sm font-medium flex items-center gap-2">
+                        <span className={`px-2 py-0.5 rounded-full text-xs ${getDepartmentStyles(update.department)}/20 text-${getDepartmentStyles(update.department).replace('bg-', '')}`}>
                           {update.department}
                         </span>
                         <StatusBadge status={update.status} />
-                        
-                        {isRecentUpdate(update) && (
-                          <span className="ml-2 px-1.5 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 text-xs rounded-sm">
-                            New
+                        {/* Remarks as pill/tab */}
+                        {update.remarks && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-muted/60 border border-border/30 text-xs font-normal text-muted-foreground ml-2">
+                            <span className="font-medium text-muted-foreground/80 mr-1">Remarks:</span> {update.remarks}
                           </span>
                         )}
                       </h4>
                     </div>
-                    
                     <span className="text-xs text-muted-foreground flex items-center">
                       <Clock className="h-3 w-3 mr-1" />
                       {formatDate(update.timestamp)}
                     </span>
                   </div>
                   
-                  {update.remarks && (
-                    <p className="text-sm mt-1 text-foreground/80">{update.remarks}</p>
-                  )}
-                  
                   {update.selectedProduct && (
                     <div className="mt-1.5 flex items-center">
                       <span className="text-xs inline-flex items-center px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                         <Tag className="h-3 w-3 mr-1" />
-                        Product: {update.selectedProduct}
+                        Product: {order?.productStatus?.find(p => p.id === update.selectedProduct)?.name || update.selectedProduct}
                       </span>
                     </div>
                   )}

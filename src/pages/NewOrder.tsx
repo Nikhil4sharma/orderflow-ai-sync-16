@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOrders } from "@/contexts/OrderContext";
@@ -16,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Plus, Minus, IndianRupee } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
-import { DatePicker } from "@/components/ui/date-picker";
+import ModernDatePicker from "@/components/ui/ModernDatePicker";
 import MobileBackButton from "@/components/MobileBackButton";
 
 const NewOrder: React.FC = () => {
@@ -32,9 +31,15 @@ const NewOrder: React.FC = () => {
   const [products, setProducts] = useState<{ name: string }[]>([{ name: "" }]);
   const [expectedDeliveryDate, setExpectedDeliveryDate] = useState<Date | undefined>(undefined);
   const [loading, setLoading] = useState(false);
+  const [orderNumber, setOrderNumber] = useState("");
   
   // Validate form
   const isFormValid = () => {
+    if (!orderNumber.trim()) {
+      toast.error("Order number is required");
+      return false;
+    }
+    
     if (!clientName.trim()) {
       toast.error("Client name is required");
       return false;
@@ -80,7 +85,7 @@ const NewOrder: React.FC = () => {
     setProducts(newProducts);
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!isFormValid()) {
@@ -89,48 +94,43 @@ const NewOrder: React.FC = () => {
     
     setLoading(true);
     
-    // Generate order number
-    const orderPrefix = "ORD";
-    const timestamp = new Date().getTime().toString().slice(-6);
-    const orderNumber = `${orderPrefix}-${timestamp}`;
-    
-    // Create product status entries
-    const productStatus = products.map(product => ({
-      id: uuidv4(),
-      name: product.name,
-      status: "processing" as const,
-    }));
-    
-    // Create new order - Always assigned to Sales department first
-    const newOrder = {
-      id: uuidv4(),
-      orderNumber,
-      clientName,
-      amount: parseFloat(amount),
-      paidAmount: 0,
-      pendingAmount: parseFloat(amount),
-      items: products.map(p => p.name), // Keep items for backward compatibility
-      createdAt: new Date().toISOString(),
-      status: "In Progress" as const,
-      currentDepartment: "Sales" as const, // Always start with Sales department
-      paymentStatus: "Not Paid" as const,
-      statusHistory: [],
-      productStatus,
-      deliveryAddress,
-      contactNumber,
-      gstNumber: gstNumber || undefined,
-      expectedDeliveryDate: expectedDeliveryDate?.toISOString(),
-    };
-    
-    // Add order
-    addOrder(newOrder);
-    
-    toast.success("Order created successfully");
-    
-    // Navigate to dashboard
-    navigate("/");
-    
-    setLoading(false);
+    try {
+      // Create product status entries
+      const productStatus = products.map(product => ({
+        id: uuidv4(),
+        name: product.name,
+        status: "processing" as const,
+      }));
+      
+      // Create new order - Always assigned to Sales department first
+      const newOrder = {
+        id: uuidv4(),
+        orderNumber,
+        clientName,
+        amount: parseFloat(amount),
+        paidAmount: 0,
+        pendingAmount: parseFloat(amount),
+        items: products.map(p => p.name),
+        createdAt: new Date().toISOString(),
+        status: "In Progress" as const,
+        currentDepartment: "Sales" as const,
+        paymentStatus: "Not Paid" as const,
+        statusHistory: [],
+        productStatus,
+        deliveryAddress,
+        contactNumber,
+        gstNumber: gstNumber || undefined,
+        expectedDeliveryDate: expectedDeliveryDate ? new Date(expectedDeliveryDate).toISOString() : undefined,
+      };
+      
+      // Add order using OrderContext
+      await addOrder(newOrder);
+    } catch (error) {
+      toast.error("Failed to create order");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
   
   return (
@@ -155,6 +155,17 @@ const NewOrder: React.FC = () => {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="orderNumber">Order Number *</Label>
+                <Input
+                  id="orderNumber"
+                  placeholder="Enter order number"
+                  value={orderNumber}
+                  onChange={(e) => setOrderNumber(e.target.value)}
+                  required
+                />
+              </div>
+              
               <div>
                 <Label htmlFor="clientName">Client Name *</Label>
                 <Input
@@ -245,11 +256,7 @@ const NewOrder: React.FC = () => {
                 
                 <div>
                   <Label htmlFor="expectedDeliveryDate">Expected Delivery Date</Label>
-                  <DatePicker 
-                    date={expectedDeliveryDate} 
-                    setDate={setExpectedDeliveryDate} 
-                    className="w-full"
-                  />
+                  <ModernDatePicker date={expectedDeliveryDate} setDate={setExpectedDeliveryDate} required={false} />
                 </div>
                 
                 <div className="md:col-span-2">

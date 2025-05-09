@@ -1,4 +1,3 @@
-
 export type User = {
   id: string;
   name: string;
@@ -65,7 +64,7 @@ export type DeliveryType = "Normal" | "Express";
 
 export type StatusType = "processing" | "completed" | "issue";
 
-export type Order = {
+export interface Order {
   id: string;
   orderNumber: string;
   clientName: string;
@@ -74,11 +73,23 @@ export type Order = {
   pendingAmount: number;
   items: string[];
   createdAt: string;
+  lastUpdated: string;
   status: OrderStatus;
   currentDepartment: Department;
   paymentStatus: PaymentStatus;
   statusHistory: StatusUpdate[];
+  paymentHistory: PaymentRecord[];
+  timeline?: {
+    [key: string]: {
+      timestamp: string;
+      remarks: string;
+      updatedBy: string;
+    };
+  };
   sheetSyncId?: string;
+  pendingApprovalFrom?: Department;
+  approvalReason?: string;
+  productStatus?: ProductStatus[];
   
   // Department specific status fields
   designStatus?: DesignStatus;
@@ -91,12 +102,6 @@ export type Order = {
   // Production related fields
   productionStages?: ProductionStageStatus[];
   
-  // Product status 
-  productStatus?: ProductStatus[];
-  
-  // Payment records
-  paymentHistory?: PaymentRecord[];
-  
   // Address information
   deliveryAddress?: string;
   contactNumber?: string;
@@ -104,17 +109,13 @@ export type Order = {
   // Dispatch details
   dispatchDetails?: DispatchDetails;
   
-  // Approval tracking
-  pendingApprovalFrom?: Department;
-  approvalReason?: string;
-  
   // Timeline tracking
   expectedCompletionDate?: string;
   
   // Verification details
   verifiedBy?: string;
   verifiedAt?: string;
-};
+}
 
 export type ProductionStageStatus = {
   stage: ProductionStage;
@@ -150,18 +151,24 @@ export type DispatchDetails = {
   verifiedBy: string;
 };
 
-export type StatusUpdate = {
-  id?: string;
-  orderId?: string;
-  timestamp?: string;
+export interface StatusUpdate {
+  id: string;
+  orderId: string;
+  timestamp: string;
   department: Department;
-  status: string;
-  remarks?: string;
-  updatedBy?: string;
-  editableUntil?: string;
+  status: OrderStatus;
+  remarks: string;
+  updatedBy: string;
   estimatedTime?: string;
   selectedProduct?: string;
-};
+  editableUntil: string;
+  metadata?: {
+    updatedAt: string;
+    updatedBy: string;
+    department: Department;
+    role: Role;
+  };
+}
 
 export type GoogleSheetConfig = {
   sheetId: string;
@@ -198,12 +205,15 @@ export type Notification = {
   id: string;
   title: string;
   message: string;
-  timestamp: string;
   isRead: boolean;
   type: NotificationType;
   orderId?: string;
   forDepartments: Department[];
   forRoles?: Role[];
+  priority: 'high' | 'medium' | 'low';
+  category: string;
+  createdAt: string;
+  userId?: string;
 };
 
 export type NotificationType = 
@@ -214,4 +224,6 @@ export type NotificationType =
   | "order_completed"
   | "order_issue"
   | "payment_received"
-  | "payment_required";
+  | "payment_required"
+  | "order_created"
+  | "order_status_update";

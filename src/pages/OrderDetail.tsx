@@ -30,11 +30,21 @@ import ApprovalForm from "@/components/ApprovalForm";
 import OrderFinancialDetails from "@/components/OrderFinancialDetails";
 import EnhancedPaymentForm from "@/components/EnhancedPaymentForm";
 import FinancialSummaryCard from "@/components/FinancialSummaryCard";
+import { doc, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import ForwardToDepartmentForm from "@/components/ForwardToDepartmentForm";
+
+function formatDateSafe(dateString) {
+  const date = new Date(dateString);
+  return !isNaN(date.getTime())
+    ? date.toLocaleDateString("en-IN", { year: "numeric", month: "short", day: "numeric" })
+    : "N/A";
+}
 
 const OrderDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { orders, updateOrder, addStatusUpdate, currentUser } = useOrders();
+  const { orders, updateOrder, addStatusUpdate, currentUser, markReadyForDispatch } = useOrders();
   const order = orders.find((o) => o.id === id);
   
   // Form state
@@ -50,27 +60,31 @@ const OrderDetail: React.FC = () => {
   const [productStatus, setProductStatus] = useState<StatusType>("processing");
   const [activeTab, setActiveTab] = useState<string>("details");
   const [needsApproval, setNeedsApproval] = useState<boolean>(false);
+  const [statusHistory, setStatusHistory] = useState(order?.statusHistory || []);
 
   // Check if user can view financial data
-  const canViewFinancial = canViewFinancialData(currentUser.department, currentUser.role);
+  const canViewFinancial = canViewFinancialData(currentUser?.department, currentUser?.role);
   
   // Check if user is from the current department or an admin
-  const isCurrentDepartmentOrAdmin = currentUser.department === order?.currentDepartment || currentUser.role === 'Admin';
+  const isCurrentDepartmentOrAdmin = !!order && !!currentUser && (currentUser.department === order.currentDepartment || currentUser.role === 'Admin');
   
   // Check if user can update production status (only Production department or Admin)
-  const canUpdateProductionStatus = currentUser.department === 'Production' || currentUser.role === 'Admin';
+  const canUpdateProductionStatus = currentUser?.department === 'Production' || currentUser?.role === 'Admin';
   
   // Check if user can update design status (only Design department or Admin)
-  const canUpdateDesignStatus = currentUser.department === 'Design' || currentUser.role === 'Admin';
+  const canUpdateDesignStatus = currentUser?.department === 'Design' || currentUser?.role === 'Admin';
   
   // Check if user can update prepress status (only Prepress department or Admin)
-  const canUpdatePrepressStatus = currentUser.department === 'Prepress' || currentUser.role === 'Admin';
+  const canUpdatePrepressStatus = currentUser?.department === 'Prepress' || currentUser?.role === 'Admin';
   
   // Check if user can view delivery information
   const canViewDeliveryInfo = order ? canViewAddressDetails(currentUser, order) : false;
   
   // Check if this order needs approval from Sales
-  const canApproveOrder = (currentUser.department === 'Sales' || currentUser.role === 'Admin');
+  const canApproveOrder = (currentUser?.department === 'Sales' || currentUser?.role === 'Admin');
+
+  const isCurrentDepartmentUser = !!order && !!currentUser && currentUser.department === order.currentDepartment;
+  const canShowStatusUpdateForm = isCurrentDepartmentUser || (currentUser && currentUser.role === "Admin");
 
   useEffect(() => {
     if (order) {
@@ -79,13 +93,24 @@ const OrderDetail: React.FC = () => {
       setTotalAmount(order.amount.toString());
       setPaidAmount(order.paidAmount?.toString() || "0");
       setNeedsApproval(orderNeedsApproval(order));
-      
-      // Select first product by default
       if (order.productStatus && order.productStatus.length > 0) {
         setSelectedProduct(order.productStatus[0].id);
       }
     }
-  }, [order]);
+    // eslint-disable-next-line
+  }, [order?.id]);
+
+  // Real-time Firestore listener for statusHistory
+  useEffect(() => {
+    if (!order?.id) return;
+    const orderRef = doc(db, "orders", order.id);
+    const unsubscribe = onSnapshot(orderRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setStatusHistory(docSnap.data().statusHistory || []);
+      }
+    });
+    return () => unsubscribe();
+  }, [order?.id]);
 
   if (!order) {
     return (
@@ -102,6 +127,10 @@ const OrderDetail: React.FC = () => {
         </Card>
       </div>
     );
+  }
+
+  if (!currentUser) {
+    return <div>Loading...</div>;
   }
 
   // Check if the status update is within the editable time frame (1 hour)
@@ -163,8 +192,6 @@ const OrderDetail: React.FC = () => {
 
     // Reset remarks after submitting
     setRemarks("");
-    
-    toast.success("Order updated successfully");
   };
 
   const handlePaymentSubmit = (e: React.FormEvent) => {
@@ -211,7 +238,7 @@ const OrderDetail: React.FC = () => {
     addStatusUpdate(order.id, {
       orderId: order.id,
       department: 'Sales',
-      status: `Payment Received: ${paymentStatus}`,
+      status: order.status,
       remarks: `Payment of ${newPaymentAmount} received via ${paymentMethod}. ${paymentRemarks}`,
     });
     
@@ -298,7 +325,7 @@ const OrderDetail: React.FC = () => {
               </div>
               <div className="flex flex-col md:flex-row md:justify-between md:items-center">
                 <span className="font-medium">Order Date:</span>
-                <span className="md:text-right">{format(new Date(order.createdAt), 'MMM dd, yyyy')}</span>
+                <span className="md:text-right">{formatDateSafe(order.createdAt)}</span>
               </div>
               <div className="flex flex-col md:flex-row md:justify-between md:items-center">
                 <span className="font-medium">Items:</span>
@@ -374,7 +401,7 @@ const OrderDetail: React.FC = () => {
           )}
           
           {/* Only show status update section for Sales/Admin */}
-          {isCurrentDepartmentOrAdmin && (currentUser.department === "Sales" || currentUser.role === "Admin") && (
+          {canShowStatusUpdateForm && currentUser.department !== "Design" && (
             <Card className="glass-card">
               <CardHeader className="border-b border-border/30">
                 <CardTitle className="flex items-center">
@@ -487,143 +514,66 @@ const OrderDetail: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="workflow" className="space-y-6 pt-4">
-          {/* Department-Specific Status Update Forms */}
-          {isCurrentDepartmentOrAdmin && currentUser.department !== 'Sales' && (
-            <ProductStatusUpdateForm 
-              order={order} 
-              department={currentUser.department}
-            />
+          {/* Department-Specific Workflow Actions */}
+          {currentUser.role === 'Admin' && (
+            <>
+              {/* Admin sees all forms for debugging/override */}
+              <ProductStatusUpdateForm order={order} department={order.currentDepartment} />
+              <DepartmentStatusForm order={order} department={order.currentDepartment} />
+              <ForwardOrderForm order={order} />
+              <ProductionStageForm order={order} />
+            </>
           )}
-        
-          {isCurrentDepartmentOrAdmin && order.currentDepartment !== 'Production' && (
-            <ForwardOrderForm order={order} />
-          )}
-          
-          {canUpdateDesignStatus && order.currentDepartment === 'Design' && (
-            <DepartmentStatusForm order={order} department="Design" />
-          )}
-          
-          {canUpdatePrepressStatus && order.currentDepartment === 'Prepress' && (
-            <DepartmentStatusForm order={order} department="Prepress" />
-          )}
-          
-          {canUpdateProductionStatus && order.currentDepartment === 'Production' && (
-            <ProductionStageForm order={order} />
-          )}
-          
-          {/* Display Current Department Status */}
-          <Card className="glass-card">
-            <CardHeader className="border-b border-border/30">
-              <CardTitle className="flex items-center">
-                <Tag className="h-5 w-5 mr-2" /> 
-                Workflow Status
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-6">
-              {order.currentDepartment === 'Design' && (
-                <>
-                  <div className="flex flex-col md:flex-row md:justify-between md:items-center">
-                    <span className="font-medium">Design Status:</span>
-                    <span className="md:text-right">
-                      <StatusBadge status={order.designStatus || 'Working on it'} />
-                    </span>
-                  </div>
-                  {order.designTimeline && (
-                    <div className="flex flex-col md:flex-row md:justify-between md:items-center">
-                      <span className="font-medium">Design Timeline:</span>
-                      <span className="md:text-right">{format(new Date(order.designTimeline), 'MMM dd, yyyy')}</span>
-                    </div>
-                  )}
-                  {order.designRemarks && (
-                    <div className="mt-2">
-                      <span className="font-medium">Design Remarks:</span>
-                      <p className="text-muted-foreground mt-1">{order.designRemarks}</p>
-                    </div>
-                  )}
-                </>
+          {/* Sales Team: Only see approval forms, payment confirmation, dispatch approval */}
+          {currentUser.department === 'Sales' && currentUser.role !== 'Admin' && (
+            <>
+              {order.status === 'Pending Approval' && (
+                <ApprovalForm order={order} />
               )}
-              
-              {order.currentDepartment === 'Prepress' && (
-                <>
-                  <div className="flex flex-col md:flex-row md:justify-between md:items-center">
-                    <span className="font-medium">Prepress Status:</span>
-                    <span className="md:text-right">
-                      <StatusBadge status={order.prepressStatus || 'Pending'} />
-                    </span>
-                  </div>
-                  {order.prepressRemarks && (
-                    <div className="mt-2">
-                      <span className="font-medium">Prepress Remarks:</span>
-                      <p className="text-muted-foreground mt-1">{order.prepressRemarks}</p>
-                    </div>
-                  )}
-                </>
+              {/* Payment confirmation and dispatch approval UI can be added here if needed */}
+            </>
+          )}
+          {/* Design Team: Only see send for approval to Sales and forward to Prepress */}
+          {currentUser.department === 'Design' && currentUser.role !== 'Admin' && order.currentDepartment === 'Design' && (
+            <>
+              <DepartmentStatusForm order={order} department="Design" />
+              {/* Only show Forward to Prepress if not already forwarded */}
+              {order.designStatus !== 'Forwarded to Prepress' && (
+                <ForwardToDepartmentForm order={order} targetDepartment="Prepress" />
               )}
-              
-              {order.currentDepartment === 'Production' && order.productionStages && order.productionStages.length > 0 && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Production Stages</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {order.productionStages.map((stage, index) => (
-                      <div
-                        key={index}
-                        className="p-3 border rounded-md flex flex-col space-y-2"
-                      >
-                        <div className="flex justify-between items-center">
-                          <span className="font-medium">{stage.stage}</span>
-                          <span>
-                            {stage.status === 'completed' && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Completed
-                              </span>
-                            )}
-                            {stage.status === 'processing' && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
-                                <Clock className="h-3 w-3 mr-1" />
-                                Processing
-                              </span>
-                            )}
-                            {stage.status === 'issue' && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
-                                <AlertCircle className="h-3 w-3 mr-1" />
-                                Issue
-                              </span>
-                            )}
-                          </span>
-                        </div>
-                        {stage.timeline && (
-                          <div className="text-sm">
-                            <span className="text-muted-foreground">Timeline:</span>{" "}
-                            {format(new Date(stage.timeline), 'MMM dd, yyyy')}
-                          </div>
-                        )}
-                        {stage.remarks && (
-                          <div className="text-sm">
-                            <span className="text-muted-foreground">Remarks:</span>{" "}
-                            {stage.remarks}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
+            </>
+          )}
+          {/* Prepress Team: Only see send for approval to Sales and (after approval) forward to Production */}
+          {currentUser.department === 'Prepress' && currentUser.role !== 'Admin' && order.currentDepartment === 'Prepress' && (
+            <>
+              <DepartmentStatusForm order={order} department="Prepress" />
+              {/* Only show Forward to Production if approved by Sales */}
+              {order.prepressStatus === 'Working on it' && (
+                <ForwardToDepartmentForm order={order} targetDepartment="Production" />
               )}
-              
-              {!['Design', 'Prepress', 'Production'].includes(order.currentDepartment) && (
-                <div className="text-center py-4 text-muted-foreground">
-                  No specific workflow status for Sales department
-                </div>
+            </>
+          )}
+          {/* Production Team: Only see status update, ready to dispatch, delivery/tracking after ready */}
+          {currentUser.department === 'Production' && currentUser.role !== 'Admin' && order.currentDepartment === 'Production' && (
+            <>
+              <ProductionStageForm order={order} />
+              {/* Ready to Dispatch button enabled only if paymentStatus === 'Paid' */}
+              {order.paymentStatus === 'Paid' && order.status !== 'Ready to Dispatch' && (
+                <Button onClick={() => markReadyForDispatch(order.id)}>
+                  Mark Ready to Dispatch
+                </Button>
               )}
-            </CardContent>
-          </Card>
+              {/* Delivery/tracking details UI after ready to dispatch can be added here */}
+            </>
+          )}
         </TabsContent>
         
         <TabsContent value="timeline" className="space-y-6 pt-4">
           <OrderTimeline 
-            statusHistory={order.statusHistory} 
+            statusHistory={statusHistory} 
             currentUser={currentUser}
             canEditStatusUpdate={canEditStatusUpdate}
+            order={order}
           />
         </TabsContent>
         

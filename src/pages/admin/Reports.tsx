@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOrders } from "@/contexts/OrderContext";
 import {
@@ -27,9 +27,18 @@ const Reports: React.FC = () => {
   const navigate = useNavigate();
   const { orders, currentUser } = useOrders();
 
-  // Check if current user is admin
-  if (currentUser?.role !== "Admin") {
-    navigate("/");
+  // Redirect non-admin users
+  useEffect(() => {
+    if (currentUser && currentUser.role !== "Admin") {
+      navigate("/");
+    }
+  }, [currentUser, navigate]);
+
+  // Show loading until currentUser is loaded
+  if (!currentUser) {
+    return <div>Loading...</div>;
+  }
+  if (currentUser.role !== "Admin") {
     return null;
   }
 
@@ -40,7 +49,7 @@ const Reports: React.FC = () => {
   const pendingAmount = useMemo(() => orders.reduce((sum, order) => sum + order.pendingAmount, 0), [orders]);
   const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
-  // Calculate status counts - Fixed to include all required OrderStatus values
+  // Calculate status counts
   const statusCounts = useMemo(() => {
     const counts: Record<OrderStatus, number> = {
       "In Progress": 0,
@@ -54,44 +63,37 @@ const Reports: React.FC = () => {
       "New": 0,
       "Verified": 0
     };
-    
     orders.forEach(order => {
       counts[order.status as OrderStatus] = (counts[order.status as OrderStatus] || 0) + 1;
     });
-    
     return counts;
   }, [orders]);
-  
-  // Calculate payment status - Fixed to match the PaymentStatus type
+
+  // Calculate payment status
   const paymentStatusCounts = useMemo(() => {
     const counts: Record<PaymentStatus, number> = {
       "Not Paid": 0,
       "Partial": 0,
-      "Partially Paid": 0, // Added the missing type
+      "Partially Paid": 0,
       "Paid": 0
     };
-    
     orders.forEach(order => {
       counts[order.paymentStatus]++;
     });
-    
     return counts;
   }, [orders]);
 
   // Calculate department workload
   const departmentWorkload = useMemo(() => {
-    
     const counts: Record<string, number> = {
       "Sales": 0,
       "Production": 0,
       "Design": 0,
       "Prepress": 0
     };
-    
     orders.forEach(order => {
       counts[order.currentDepartment]++;
     });
-    
     return counts;
   }, [orders]);
 
@@ -115,7 +117,6 @@ const Reports: React.FC = () => {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Total Orders</CardDescription>
@@ -143,7 +144,6 @@ const Reports: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="overview">
@@ -173,7 +173,6 @@ const Reports: React.FC = () => {
                 <RevenueChart orders={orders} height={350} />
               </CardContent>
             </Card>
-            
             {/* Order Status Distribution */}
             <Card>
               <CardHeader>
@@ -184,7 +183,6 @@ const Reports: React.FC = () => {
                 <OrderStatusPieChart data={statusCounts} />
               </CardContent>
             </Card>
-            
             {/* Payment Status */}
             <Card>
               <CardHeader>
@@ -197,7 +195,6 @@ const Reports: React.FC = () => {
             </Card>
           </div>
         </TabsContent>
-
         {/* Orders Tab */}
         <TabsContent value="orders">
           <Card>
@@ -210,7 +207,6 @@ const Reports: React.FC = () => {
             </CardContent>
           </Card>
         </TabsContent>
-
         {/* Departments Tab */}
         <TabsContent value="departments">
           <Card>
