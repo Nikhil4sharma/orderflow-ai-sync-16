@@ -1,8 +1,10 @@
+
 import React, { useState } from "react";
 import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { Trash2 } from "lucide-react";
 
 const DeleteAllOrdersButton: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -26,10 +28,11 @@ const DeleteAllOrdersButton: React.FC = () => {
   };
 
   return (
-    <Button variant="destructive" onClick={handleDeleteAll} disabled={loading}>
+    <Button variant="destructive" onClick={handleDeleteAll} disabled={loading} className="flex items-center gap-2">
+      <Trash2 className="h-4 w-4" />
       {loading ? "Deleting..." : "Delete All Orders"}
     </Button>
   );
 };
 
-export default DeleteAllOrdersButton; 
+export default DeleteAllOrdersButton;

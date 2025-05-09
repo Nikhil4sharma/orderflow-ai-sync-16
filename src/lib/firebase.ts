@@ -1,28 +1,25 @@
+
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-import { getDoc } from "firebase/firestore";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+import { getStorage } from "firebase/storage";
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDdQ0Yj5l2rY8l6kI6KKOtfZ7TywmHxVRk",
-  authDomain: "orderflow-ai-7d21a.firebaseapp.com",
-  projectId: "orderflow-ai-7d21a",
-  storageBucket: "orderflow-ai-7d21a.firebasestorage.app",
-  messagingSenderId: "448089792367",
-  appId: "1:448089792367:web:88bfef85237e5b64d2929a",
-  measurementId: "G-2KJM201KHJ"
+  apiKey: "AIzaSyDC3S5wFRHRCQLajwNh0_2splXUnEuF3ns",
+  authDomain: "orderflow-printing.firebaseapp.com",
+  projectId: "orderflow-printing",
+  storageBucket: "orderflow-printing.firebasestorage.app",
+  messagingSenderId: "1068388384656",
+  appId: "1:1068388384656:web:0226f5859741be162d3d15",
+  measurementId: "G-CV27WCCEEX"
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-export const db = getFirestore(app);
-export const auth = getAuth(app);
+const db = getFirestore(app);
+const auth = getAuth(app);
+const storage = getStorage(app);
 
-export default app;
+export { app, db, auth, storage };

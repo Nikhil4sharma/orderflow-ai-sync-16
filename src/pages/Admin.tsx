@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { Card, CardDescription } from "@/components/ui/card";
@@ -14,8 +13,10 @@ import {
   Bell,
   Package,
   FileCheck,
-  UserCog
+  UserCog,
+  Trash2
 } from "lucide-react";
+import DeleteAllOrdersButton from "@/components/admin/DeleteAllOrdersButton";
 
 const Admin = () => {
   // Define admin sections based on the requirements
@@ -107,6 +108,9 @@ const Admin = () => {
           <p className="text-muted-foreground mb-4">
             Complete system management and configuration
           </p>
+        </div>
+        <div className="flex gap-4 mt-4 md:mt-0">
+          <DeleteAllOrdersButton />
         </div>
       </div>
 
