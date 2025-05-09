@@ -1,5 +1,5 @@
-
-import { Order, PermissionKey, User } from "@/types";
+import { Order, User } from "@/types";
+import { PermissionKey } from "@/types/common";
 
 // Check if a user has a specific permission
 export const hasPermission = (user: User | null | undefined, permission: PermissionKey): boolean => {
@@ -20,7 +20,7 @@ export const canRequestApprovalFromSales = (user: User | null | undefined): bool
   
   // Only Design and Prepress can request approval from Sales
   if ((user.department === "Design" || user.department === "Prepress") && 
-      user.permissions.includes("request_approval")) {
+      user.permissions.includes("request_approval" as PermissionKey)) {
     return true;
   }
   

@@ -50,24 +50,26 @@ const Reports: React.FC = () => {
   const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
   // Calculate status counts
-  const statusCounts = useMemo(() => {
-    const counts: Record<OrderStatus, number> = {
+  const getOrderStatusCounts = () => {
+    const statusCounts: Record<OrderStatus, number> = {
       "In Progress": 0,
       "Completed": 0,
       "On Hold": 0,
       "Issue": 0,
+      "Verified": 0,
       "Dispatched": 0,
       "Ready to Dispatch": 0,
+      "New": 0,
       "Pending Approval": 0,
       "Pending Payment": 0,
-      "New": 0,
-      "Verified": 0
     };
+
     orders.forEach(order => {
-      counts[order.status as OrderStatus] = (counts[order.status as OrderStatus] || 0) + 1;
+      statusCounts[order.status] = (statusCounts[order.status] || 0) + 1;
     });
-    return counts;
-  }, [orders]);
+
+    return statusCounts;
+  };
 
   // Calculate payment status
   const paymentStatusCounts = useMemo(() => {
@@ -180,7 +182,7 @@ const Reports: React.FC = () => {
                 <CardDescription>Current order status breakdown</CardDescription>
               </CardHeader>
               <CardContent className="flex justify-center">
-                <OrderStatusPieChart data={statusCounts} />
+                <OrderStatusPieChart data={getOrderStatusCounts()} />
               </CardContent>
             </Card>
             {/* Payment Status */}

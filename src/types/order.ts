@@ -7,6 +7,8 @@ export interface ProductStatus {
   name: string;
   status: StatusType;
   remarks?: string;
+  estimatedCompletion?: string;
+  assignedDepartment?: Department;
 }
 
 export interface PaymentRecord {
@@ -40,6 +42,13 @@ export interface DispatchDetails {
   verifiedBy?: string;
 }
 
+export type ProductionStageStatus = {
+  stage: ProductionStage;
+  status: StatusType;
+  remarks?: string;
+  timeline?: string;
+};
+
 export interface Order {
   id: string;
   orderNumber: string;
@@ -53,12 +62,7 @@ export interface Order {
   createdAt: string;
   status: OrderStatus;
   currentDepartment: Department;
-  productionStages?: {
-    stage: ProductionStage;
-    status: StatusType;
-    timeline?: string;
-    remarks?: string;
-  }[];
+  productionStages?: ProductionStageStatus[];
   designStatus?: DesignStatus;
   designTimeline?: string;
   designRemarks?: string;
@@ -77,4 +81,9 @@ export interface Order {
   approvalReason?: string;
   verifiedBy?: string;
   verifiedAt?: string;
+  // Fields for address information
+  deliveryAddress?: string;
+  contactNumber?: string;
+  // Expected completion date
+  expectedCompletionDate?: string;
 }
