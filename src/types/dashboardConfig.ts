@@ -1,5 +1,5 @@
 
-import { Department } from './index';
+import { Department } from './common';
 
 // Define all possible dashboard elements that can be toggled
 export type DashboardElement = 
