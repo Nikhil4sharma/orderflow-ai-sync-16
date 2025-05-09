@@ -4,11 +4,10 @@ import { NavLink } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { User as UserIcon, X, FileText, Settings, LogOut } from "lucide-react";
 import ChhapaiLogo from "@/components/ChhapaiLogo";
 import { User } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogOut } from "lucide-react";
 import { NavItem } from "@/types/layout";
 
 interface SidebarNavProps {
@@ -90,7 +89,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({
                   )}
                   onClick={toggleMenu}
                 >
-                  <User className="w-5 h-5 mr-2" />
+                  <UserIcon className="w-5 h-5 mr-2" />
                   Manage Users
                 </NavLink>
               </li>
@@ -154,6 +153,3 @@ const SidebarNav: React.FC<SidebarNavProps> = ({
 };
 
 export default SidebarNav;
-
-// Add FileText and Settings imports
-import { User, FileText, Settings } from "lucide-react";
