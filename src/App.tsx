@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React, { useEffect } from "react";
 import {
   BrowserRouter as Router,
@@ -78,10 +79,21 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   if (loading) return <div>Loading...</div>;
   return !currentUser ? <>{children}</> : <Navigate to="/" />;
 };
+=======
+
+import React from "react";
+import { BrowserRouter as Router } from "react-router-dom";
+import { OrderProvider } from "./contexts/OrderContext";
+import { ThemeProvider } from "./components/theme-provider";
+import { Toaster } from "sonner";
+import "./App.css";
+import AppRoutes from "./components/routes/AppRoutes";
+>>>>>>> origin/main
 
 function App() {
   return (
     <ThemeProvider defaultTheme="system" storageKey="app-theme">
+<<<<<<< HEAD
       <AuthProvider>
         <NotificationProvider>
           <Router>
@@ -126,6 +138,14 @@ function App() {
           </Router>
         </NotificationProvider>
       </AuthProvider>
+=======
+      <OrderProvider>
+        <Router>
+          <AppRoutes />
+        </Router>
+        <Toaster position="top-center" richColors closeButton />
+      </OrderProvider>
+>>>>>>> origin/main
     </ThemeProvider>
   );
 }

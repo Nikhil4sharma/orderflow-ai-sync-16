@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import StatusBadge from "@/components/StatusBadge";
 import { useNavigate } from "react-router-dom";
-import { FileText, Search, PlusCircle, Filter } from "lucide-react";
+import { FileText, Search, PlusCircle, Filter, Calendar, CreditCard } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { OrderStatus } from "@/types";
+import { OrderStatus, Department, PaymentStatus } from "@/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import OrdersList from "@/components/OrdersList";
 
 // Custom tab logic: if order.status is 'Pending Approval' or remarks/status indicate 'Pending Feedback from Sales Team', show in Pending Approval tab
@@ -30,11 +31,11 @@ const Orders: React.FC = () => {
   
   const [searchText, setSearchText] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus | null>(null);
+  const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
+  const [selectedPayment, setSelectedPayment] = useState<PaymentStatus | null>(null);
+  const [activeView, setActiveView] = useState<"all" | "assigned">("all");
   const [sortBy, setSortBy] = useState<string>("date-desc");
-  const [departmentFilter, setDepartmentFilter] = useState<string>("All");
-  const [minAmount, setMinAmount] = useState<string>("");
-  const [maxAmount, setMaxAmount] = useState<string>("");
-
+  
   // Filter orders based on department access and search text
   let filteredOrders = orders.filter(order => {
     // Department-based access control
@@ -43,21 +44,27 @@ const Orders: React.FC = () => {
         !["Sales"].includes(currentUser?.department || "")) {
       return false;
     }
-    // Department filter
-    if (departmentFilter !== "All" && order.currentDepartment !== departmentFilter) {
+    
+    // View filter
+    if (activeView === "assigned" && order.currentDepartment !== currentUser?.department) {
       return false;
     }
+    
     // Status filter
     if (selectedStatus && order.status !== selectedStatus) {
       return false;
     }
-    // Amount filter
-    if (minAmount && order.amount < parseFloat(minAmount)) {
+    
+    // Department filter
+    if (selectedDepartment && order.currentDepartment !== selectedDepartment) {
       return false;
     }
-    if (maxAmount && order.amount > parseFloat(maxAmount)) {
+    
+    // Payment filter
+    if (selectedPayment && order.paymentStatus !== selectedPayment) {
       return false;
     }
+    
     // Search text filter
     if (searchText) {
       const searchLower = searchText.toLowerCase();
@@ -93,16 +100,30 @@ const Orders: React.FC = () => {
   // Get counts for each status
   const getStatusCount = (status: OrderStatus | "All"): number => {
     if (status === "All") {
-      return orders.length;
+      return filteredOrders.length;
     }
-    return orders.filter(order => order.status === status).length;
+    return filteredOrders.filter(order => order.status === status).length;
   };
 
   // Create filter tabs - defined statuses plus "All" special case for filtering
   const statuses: (OrderStatus | "All")[] = ["All", "In Progress", "Pending Approval", "Issue", "Ready to Dispatch", "Completed"];
-  const departments = ["All", "Sales", "Production", "Design", "Prepress", "Admin"];
-
+  
+  // Department options
+  const departments: Department[] = ["Sales", "Design", "Prepress", "Production"];
+  
+  // Payment statuses
+  const paymentStatuses: PaymentStatus[] = ["Not Paid", "Partial", "Paid", "Partially Paid"];
+  
+  // Clear all filters
+  const clearFilters = () => {
+    setSelectedStatus(null);
+    setSelectedDepartment(null);
+    setSelectedPayment(null);
+    setSearchText("");
+  };
+  
   if (!currentUser) return null;
+
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
@@ -111,6 +132,18 @@ const Orders: React.FC = () => {
           <p className="text-muted-foreground">View and manage all orders</p>
         </div>
         <div className="flex gap-2 mt-4 md:mt-0">
+          <Tabs 
+            defaultValue="all" 
+            value={activeView}
+            onValueChange={(value) => setActiveView(value as "all" | "assigned")}
+            className="mr-2"
+          >
+            <TabsList>
+              <TabsTrigger value="all">All Orders</TabsTrigger>
+              <TabsTrigger value="assigned">Assigned to Me</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          
           <Button 
             variant="outline"
             className="flex items-center"
@@ -120,7 +153,70 @@ const Orders: React.FC = () => {
           </Button>
         </div>
       </div>
-      <OrdersList orders={orders} currentUser={currentUser} getTabStatus={getTabStatus} />
+      
+      <div className="mb-6">
+        <div className="flex flex-col sm:flex-row gap-4 mb-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Search orders..."
+              className="pl-9"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+            />
+          </div>
+          
+          <div className="flex flex-wrap gap-2">
+            {/* Department filter */}
+            <Select 
+              value={selectedDepartment || ""} 
+              onValueChange={(val) => setSelectedDepartment(val as Department || null)}
+            >
+              <SelectTrigger className="w-[140px] h-9">
+                <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
+                <span className="text-sm">Department</span>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Departments</SelectItem>
+                {departments.map((dept) => (
+                  <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {/* Payment filter */}
+            <Select 
+              value={selectedPayment || ""} 
+              onValueChange={(val) => setSelectedPayment(val as PaymentStatus || null)}
+            >
+              <SelectTrigger className="w-[140px] h-9">
+                <CreditCard className="h-4 w-4 mr-2 text-muted-foreground" />
+                <span className="text-sm">Payment</span>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Payments</SelectItem>
+                {paymentStatuses.map((status) => (
+                  <SelectItem key={status} value={status}>{status}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {/* Clear filters button */}
+            {(selectedStatus || selectedDepartment || selectedPayment || searchText) && (
+              <Button
+                variant="ghost" 
+                size="sm" 
+                onClick={clearFilters}
+                className="h-9"
+              >
+                Clear Filters
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <OrdersList orders={filteredOrders} currentUser={currentUser} getTabStatus={getTabStatus} />
     </div>
   );
 };
