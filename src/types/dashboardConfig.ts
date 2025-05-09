@@ -10,7 +10,12 @@ export type DashboardElement =
   | 'taskList'
   | 'salesMetrics'
   | 'productionTimeline'
-  | 'deliverySchedule';
+  | 'deliverySchedule'
+  | 'designTasks'
+  | 'prepressQueue'
+  | 'productionQueue'
+  | 'approvalRequests'
+  | 'paymentOverview';
 
 // Configuration for each department
 export interface DepartmentDashboardConfig {
@@ -36,7 +41,9 @@ export const DEFAULT_DASHBOARD_CONFIG: DashboardConfiguration = {
         'recentOrders',
         'statusSummary',
         'salesMetrics',
-        'deliverySchedule'
+        'deliverySchedule',
+        'paymentOverview',
+        'approvalRequests'
       ]
     },
     Design: {
@@ -45,7 +52,8 @@ export const DEFAULT_DASHBOARD_CONFIG: DashboardConfiguration = {
         'orderApprovals',
         'recentOrders',
         'statusSummary',
-        'taskList'
+        'taskList',
+        'designTasks'
       ]
     },
     Prepress: {
@@ -54,7 +62,9 @@ export const DEFAULT_DASHBOARD_CONFIG: DashboardConfiguration = {
         'orderApprovals',
         'recentOrders',
         'statusSummary',
-        'taskList'
+        'taskList',
+        'prepressQueue',
+        'approvalRequests'
       ]
     },
     Production: {
@@ -64,7 +74,8 @@ export const DEFAULT_DASHBOARD_CONFIG: DashboardConfiguration = {
         'recentOrders',
         'statusSummary',
         'productionTimeline',
-        'taskList'
+        'taskList',
+        'productionQueue'
       ]
     },
     Admin: {
@@ -77,7 +88,9 @@ export const DEFAULT_DASHBOARD_CONFIG: DashboardConfiguration = {
         'taskList',
         'salesMetrics',
         'productionTimeline',
-        'deliverySchedule'
+        'deliverySchedule',
+        'paymentOverview',
+        'approvalRequests'
       ]
     }
   }

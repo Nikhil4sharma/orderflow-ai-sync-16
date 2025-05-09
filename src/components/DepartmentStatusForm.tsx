@@ -195,7 +195,7 @@ const DepartmentStatusForm: React.FC<DepartmentStatusFormProps> = ({ order, depa
         </form>
       </CardContent>
       <CardFooter className="bg-muted/30 border-t border-border/50 flex flex-col items-start pt-4">
-        <Alert variant="outline" className="mb-4 text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-900">
+        <Alert variant="default" className="mb-4 text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-900">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle className="text-sm font-medium">Important</AlertTitle>
           <AlertDescription className="text-xs">

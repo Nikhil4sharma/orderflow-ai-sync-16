@@ -95,6 +95,51 @@ function App() {
               <Route index element={<Dashboard />} />
             </Route>
             
+            {/* Department-specific dashboards */}
+            <Route
+              path="/design"
+              element={
+                <DepartmentRoute department="Design">
+                  <Layout />
+                </DepartmentRoute>
+              }
+            >
+              <Route index element={<Dashboard />} />
+            </Route>
+            
+            <Route
+              path="/prepress"
+              element={
+                <DepartmentRoute department="Prepress">
+                  <Layout />
+                </DepartmentRoute>
+              }
+            >
+              <Route index element={<Dashboard />} />
+            </Route>
+            
+            <Route
+              path="/production"
+              element={
+                <DepartmentRoute department="Production">
+                  <Layout />
+                </DepartmentRoute>
+              }
+            >
+              <Route index element={<Dashboard />} />
+            </Route>
+            
+            <Route
+              path="/sales"
+              element={
+                <DepartmentRoute department="Sales">
+                  <Layout />
+                </DepartmentRoute>
+              }
+            >
+              <Route index element={<Dashboard />} />
+            </Route>
+            
             <Route
               path="/orders/:id"
               element={
@@ -161,6 +206,7 @@ function App() {
               <Route index element={<Admin />} />
             </Route>
             
+            {/* Admin routes */}
             <Route
               path="/admin/users"
               element={

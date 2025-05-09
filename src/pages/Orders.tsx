@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import StatusBadge from "@/components/StatusBadge";
 import { useNavigate } from "react-router-dom";
-import { FileText, Search, PlusCircle, Filter } from "lucide-react";
+import { FileText, Search, PlusCircle, Filter, Calendar, CreditCard } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { OrderStatus } from "@/types";
+import { OrderStatus, Department, PaymentStatus } from "@/types";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Orders: React.FC = () => {
   const { orders, currentUser } = useOrders();
@@ -15,6 +17,9 @@ const Orders: React.FC = () => {
   
   const [searchText, setSearchText] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus | null>(null);
+  const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
+  const [selectedPayment, setSelectedPayment] = useState<PaymentStatus | null>(null);
+  const [activeView, setActiveView] = useState<"all" | "assigned">("all");
   
   // Filter orders based on department access and search text
   const filteredOrders = orders.filter(order => {
@@ -25,8 +30,23 @@ const Orders: React.FC = () => {
       return false;
     }
     
+    // View filter
+    if (activeView === "assigned" && order.currentDepartment !== currentUser?.department) {
+      return false;
+    }
+    
     // Status filter
     if (selectedStatus && order.status !== selectedStatus) {
+      return false;
+    }
+    
+    // Department filter
+    if (selectedDepartment && order.currentDepartment !== selectedDepartment) {
+      return false;
+    }
+    
+    // Payment filter
+    if (selectedPayment && order.paymentStatus !== selectedPayment) {
       return false;
     }
     
@@ -46,13 +66,27 @@ const Orders: React.FC = () => {
   // Get counts for each status
   const getStatusCount = (status: OrderStatus | "All"): number => {
     if (status === "All") {
-      return orders.length;
+      return filteredOrders.length;
     }
-    return orders.filter(order => order.status === status).length;
+    return filteredOrders.filter(order => order.status === status).length;
   };
   
   // Create filter tabs - defined statuses plus "All" special case for filtering
   const statuses: (OrderStatus | "All")[] = ["All", "In Progress", "Pending Approval", "Issue", "Ready to Dispatch", "Completed"];
+  
+  // Department options
+  const departments: Department[] = ["Sales", "Design", "Prepress", "Production"];
+  
+  // Payment statuses
+  const paymentStatuses: PaymentStatus[] = ["Not Paid", "Partial", "Paid", "Partially Paid"];
+  
+  // Clear all filters
+  const clearFilters = () => {
+    setSelectedStatus(null);
+    setSelectedDepartment(null);
+    setSelectedPayment(null);
+    setSearchText("");
+  };
   
   return (
     <div className="container mx-auto px-4 py-6">
@@ -63,6 +97,18 @@ const Orders: React.FC = () => {
         </div>
         
         <div className="flex gap-2 mt-4 md:mt-0">
+          <Tabs 
+            defaultValue="all" 
+            value={activeView}
+            onValueChange={(value) => setActiveView(value as "all" | "assigned")}
+            className="mr-2"
+          >
+            <TabsList>
+              <TabsTrigger value="all">All Orders</TabsTrigger>
+              <TabsTrigger value="assigned">Assigned to Me</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          
           <Button 
             variant="outline"
             className="flex items-center"
@@ -84,9 +130,53 @@ const Orders: React.FC = () => {
               onChange={(e) => setSearchText(e.target.value)}
             />
           </div>
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm hidden sm:inline">Filter:</span>
+          
+          <div className="flex flex-wrap gap-2">
+            {/* Department filter */}
+            <Select 
+              value={selectedDepartment || ""} 
+              onValueChange={(val) => setSelectedDepartment(val as Department || null)}
+            >
+              <SelectTrigger className="w-[140px] h-9">
+                <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
+                <span className="text-sm">Department</span>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Departments</SelectItem>
+                {departments.map((dept) => (
+                  <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {/* Payment filter */}
+            <Select 
+              value={selectedPayment || ""} 
+              onValueChange={(val) => setSelectedPayment(val as PaymentStatus || null)}
+            >
+              <SelectTrigger className="w-[140px] h-9">
+                <CreditCard className="h-4 w-4 mr-2 text-muted-foreground" />
+                <span className="text-sm">Payment</span>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Payments</SelectItem>
+                {paymentStatuses.map((status) => (
+                  <SelectItem key={status} value={status}>{status}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {/* Clear filters button */}
+            {(selectedStatus || selectedDepartment || selectedPayment || searchText) && (
+              <Button
+                variant="ghost" 
+                size="sm" 
+                onClick={clearFilters}
+                className="h-9"
+              >
+                Clear Filters
+              </Button>
+            )}
           </div>
         </div>
         
@@ -119,14 +209,21 @@ const Orders: React.FC = () => {
             <FileText className="h-16 w-16 text-muted-foreground/50 mb-4" />
             <h3 className="text-lg font-medium">No orders found</h3>
             <p className="text-muted-foreground text-center mt-2">
-              {searchText ? "Try a different search term or filter" : "There are no orders to display"}
+              {searchText || selectedStatus || selectedDepartment || selectedPayment ? 
+                "Try a different search term or filter" : 
+                "There are no orders to display"}
             </p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredOrders.map((order) => (
-            <Card key={order.id} className="w-full hover:shadow-md transition-shadow">
+            <Card key={order.id} className="w-full hover:shadow-md transition-shadow border-l-4" style={{
+              borderLeftColor: order.currentDepartment === 'Design' ? '#3b82f6' : 
+                             order.currentDepartment === 'Prepress' ? '#8b5cf6' : 
+                             order.currentDepartment === 'Production' ? '#f59e0b' : 
+                             order.currentDepartment === 'Sales' ? '#10b981' : '#6b7280'
+            }}>
               <CardContent className="p-4">
                 <div className="flex justify-between items-start mb-2">
                   <div>
@@ -144,6 +241,18 @@ const Orders: React.FC = () => {
                   <div>
                     <span className="text-muted-foreground">Amount</span>
                     <p>₹{order.amount.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Payment</span>
+                    <p className={
+                      order.paymentStatus === 'Paid' ? 'text-green-600' :
+                      order.paymentStatus === 'Not Paid' ? 'text-red-600' :
+                      'text-amber-600'
+                    }>{order.paymentStatus}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Created</span>
+                    <p>{new Date(order.createdAt).toLocaleDateString()}</p>
                   </div>
                 </div>
                 
