@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUsers } from "@/contexts/UserContext";
 import { LogIn, UserRound, Mail, Lock, Info } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import ChhapaiLogo from "@/components/ChhapaiLogo";
@@ -31,7 +32,7 @@ const LoginForm: React.FC = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { signIn } = useAuth();
+  const { signIn } = useUsers();
   const isMobile = useIsMobile();
 
   // Check if we should pre-fill with a demo account
@@ -62,7 +63,7 @@ const LoginForm: React.FC = () => {
       await signIn(email, password);
       navigate("/dashboard");
     } catch (error) {
-      toast.error("Invalid email or password");
+      // Error is handled in the signIn function
     } finally {
       setIsLoading(false);
     }
@@ -85,7 +86,7 @@ const LoginForm: React.FC = () => {
         </p>
       </CardHeader>
       
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4 px-6">
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input
@@ -122,7 +123,31 @@ const LoginForm: React.FC = () => {
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading ? "Logging in..." : "Login"}
         </Button>
+
+        <div className="mt-4">
+          <p className="text-sm text-center text-muted-foreground">Demo accounts:</p>
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            {demoAccounts.map((account) => (
+              <Button
+                key={account.role}
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-xs"
+                onClick={() => useDemoAccount(account)}
+              >
+                {account.role}
+              </Button>
+            ))}
+          </div>
+        </div>
       </form>
+      
+      <CardFooter className="flex justify-center pt-4 pb-6">
+        <p className="text-xs text-muted-foreground">
+          &copy; {new Date().getFullYear()} Chhapai Order Management
+        </p>
+      </CardFooter>
     </Card>
   );
 };

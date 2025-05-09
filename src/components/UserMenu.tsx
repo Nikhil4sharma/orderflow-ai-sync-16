@@ -1,7 +1,6 @@
 
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { useOrders } from "@/contexts/OrderContext";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -14,15 +13,19 @@ import {
 import { User, LogOut, Shield } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
+import { useUsers } from "@/contexts/UserContext";
 
 const UserMenu: React.FC = () => {
   const navigate = useNavigate();
-  const { currentUser, logout } = useOrders();
+  const { currentUser, logout } = useUsers();
   
-  const handleLogout = () => {
-    logout();
-    toast.success("Logged out successfully");
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/login");
+    } catch (error) {
+      console.error("Error during logout:", error);
+    }
   };
   
   const getUserInitials = () => {

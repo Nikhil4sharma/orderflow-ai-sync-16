@@ -1,22 +1,30 @@
+
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUsers } from "@/contexts/UserContext";
 import LoginForm from "@/components/auth/LoginForm";
 import { motion } from "framer-motion";
 import ChhapaiLogo from "@/components/ChhapaiLogo";
 
 export default function Login() {
   const navigate = useNavigate();
-  const { currentUser, loading } = useAuth();
+  const { currentUser, loading, isAuthenticated } = useUsers();
 
   useEffect(() => {
-    if (currentUser) {
+    if (isAuthenticated) {
       navigate("/dashboard");
     }
-  }, [currentUser, navigate]);
+  }, [isAuthenticated, navigate]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <ChhapaiLogo size="lg" className="mb-4 mx-auto" />
+          <p className="text-muted-foreground animate-pulse">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   return (

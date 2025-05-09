@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
-import { useOrders } from "@/contexts/OrderContext";
 import { Home, FileText, PlusCircle, BarChart, Settings, User, NotebookPen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -9,9 +8,12 @@ import { toast } from "sonner";
 import { NavItem } from "@/types/layout";
 import Header from "./Header";
 import SidebarNav from "./SidebarNav";
+import { useUsers } from "@/contexts/UserContext";
+import { useOrders } from "@/contexts/OrderContext";
 
 const Layout: React.FC = () => {
-  const { currentUser, logout, orders } = useOrders();
+  const { currentUser, logout } = useUsers();
+  const { orders } = useOrders();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const isMobile = useIsMobile();
@@ -89,7 +91,7 @@ const Layout: React.FC = () => {
   };
 
   const handleLogout = () => {
-    logout(); // Use the logout function from the OrderContext
+    logout(); // Use the logout function from the UserContext
     toast.success("You have been logged out successfully");
   };
 

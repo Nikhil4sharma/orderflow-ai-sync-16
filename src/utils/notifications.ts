@@ -1,6 +1,10 @@
-import { addDoc, collection } from 'firebase/firestore';
+
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Notification, NotificationPriority, NotificationCategory } from '@/types';
+import { Notification, Department, NotificationType } from '@/types';
+
+type NotificationPriority = 'high' | 'medium' | 'low';
+type NotificationCategory = 'order' | 'status' | 'payment' | 'user' | 'system';
 
 export const createNotification = async ({
   title,
@@ -9,7 +13,8 @@ export const createNotification = async ({
   category = 'system',
   orderId,
   userId,
-  department,
+  forDepartments,
+  forRoles,
   data = {}
 }: {
   title: string;
@@ -18,7 +23,8 @@ export const createNotification = async ({
   category?: NotificationCategory;
   orderId?: string;
   userId?: string;
-  department?: string;
+  forDepartments: Department[];
+  forRoles?: string[];
   data?: Record<string, any>;
 }) => {
   try {
@@ -29,38 +35,42 @@ export const createNotification = async ({
       category,
       orderId,
       userId,
-      department,
-      read: false,
-      createdAt: new Date().toISOString(),
+      forDepartments,
+      forRoles,
+      isRead: false,
+      timestamp: new Date().toISOString(),
+      type: category as NotificationType,
       data
     };
 
     await addDoc(collection(db, 'notifications'), notification);
+    return true;
   } catch (error) {
     console.error('Error creating notification:', error);
+    return false;
   }
 };
 
 // Common notification templates
-export const notifyOrderCreated = (orderId: string, orderNumber: string, department: string) => {
+export const notifyOrderCreated = (orderId: string, orderNumber: string, department: Department) => {
   return createNotification({
     title: 'New Order Created',
     message: `Order #${orderNumber} has been created and assigned to ${department}`,
     priority: 'high',
     category: 'order',
     orderId,
-    department
+    forDepartments: [department, 'Admin']
   });
 };
 
-export const notifyOrderStatusChanged = (orderId: string, orderNumber: string, newStatus: string, department: string) => {
+export const notifyOrderStatusChanged = (orderId: string, orderNumber: string, newStatus: string, department: Department) => {
   return createNotification({
     title: 'Order Status Updated',
     message: `Order #${orderNumber} status has been changed to ${newStatus}`,
     priority: 'medium',
     category: 'status',
     orderId,
-    department
+    forDepartments: [department, 'Admin', 'Sales']
   });
 };
 
@@ -70,18 +80,19 @@ export const notifyPaymentReceived = (orderId: string, orderNumber: string, amou
     message: `Payment of ₹${amount} received for Order #${orderNumber}`,
     priority: 'high',
     category: 'payment',
-    orderId
+    orderId,
+    forDepartments: ['Admin', 'Sales']
   });
 };
 
-export const notifyUserCreated = (userId: string, userName: string, department: string) => {
+export const notifyUserCreated = (userId: string, userName: string, department: Department) => {
   return createNotification({
     title: 'New User Added',
     message: `${userName} has been added to ${department} department`,
     priority: 'medium',
     category: 'user',
     userId,
-    department
+    forDepartments: ['Admin']
   });
 };
 
@@ -90,6 +101,7 @@ export const notifySystemAlert = (message: string, priority: NotificationPriorit
     title: 'System Alert',
     message,
     priority,
-    category: 'system'
+    category: 'system',
+    forDepartments: ['Admin']
   });
-}; 
+};

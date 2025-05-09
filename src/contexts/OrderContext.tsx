@@ -1,11 +1,21 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { collection, onSnapshot, addDoc, updateDoc, doc, deleteDoc, query, orderBy } from 'firebase/firestore';
+import { 
+  collection, 
+  onSnapshot, 
+  addDoc, 
+  updateDoc, 
+  doc, 
+  deleteDoc, 
+  query, 
+  orderBy 
+} from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Order, StatusUpdate, Department, User } from '@/types';
+import { Order, StatusUpdate, Department } from '@/types';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { nanoid } from 'nanoid';
-import { User as FirebaseUser } from 'firebase/auth';
+import { useUsers } from './UserContext';
 
 type OrderContextType = {
   orders: Order[];
@@ -15,8 +25,6 @@ type OrderContextType = {
   updateOrder: (order: Order) => Promise<void>;
   deleteOrder: (id: string) => Promise<void>;
   addStatusUpdate: (orderId: string, statusUpdate: Partial<StatusUpdate>) => Promise<void>;
-  currentUser: User | null;
-  setCurrentUser: (user: User | null) => void;
   markReadyForDispatch: (orderId: string) => Promise<void>;
   deleteAllOrders: () => Promise<void>;
   addMultipleOrders: (orders: Order[]) => Promise<void>;
@@ -30,8 +38,6 @@ const OrderContext = createContext<OrderContextType>({
   updateOrder: async () => {},
   deleteOrder: async () => {},
   addStatusUpdate: async () => {},
-  currentUser: null,
-  setCurrentUser: () => {},
   markReadyForDispatch: async () => {},
   deleteAllOrders: async () => {},
   addMultipleOrders: async () => {},
@@ -43,7 +49,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const { currentUser } = useUsers();
 
   // Load orders from Firestore on mount
   useEffect(() => {
@@ -58,6 +64,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setLoading(false);
       },
       (err) => {
+        console.error("Error getting orders:", err);
         setError(err.message);
         setLoading(false);
       }
@@ -77,6 +84,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       console.error("Error adding order:", err);
       setError("Failed to create order");
       toast.error("Failed to create order");
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -88,17 +96,12 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setLoading(true);
       // Update order in Firestore
       await updateDoc(doc(db, 'orders', order.id), order);
-      
-      // Optimistically update the order in the local state
-      setOrders(prevOrders =>
-        prevOrders.map(o => (o.id === order.id ? order : o))
-      );
-      
       toast.success("Order updated successfully");
     } catch (err) {
       console.error("Error updating order:", err);
       setError("Failed to update order");
       toast.error("Failed to update order");
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -115,6 +118,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       console.error("Error deleting order:", err);
       setError("Failed to delete order");
       toast.error("Failed to delete order");
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -127,19 +131,33 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       
       const updateId = nanoid();
       const timestamp = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
-      const statusUpdateWithDefaults = {
+      const editableUntil = format(new Date(Date.now() + 30 * 60000), 'yyyy-MM-dd HH:mm:ss'); // 30 minutes from now
+      
+      const statusUpdateWithDefaults: StatusUpdate = {
         id: updateId,
-        orderId: orderId,
-        timestamp: timestamp,
-        ...statusUpdate,
+        orderId,
+        timestamp,
+        editableUntil,
+        department: statusUpdate.department || (currentUser?.department as Department),
+        status: statusUpdate.status || "In Progress",
+        remarks: statusUpdate.remarks || "",
+        updatedBy: statusUpdate.updatedBy || currentUser?.name || "Unknown",
+        ...statusUpdate
       };
       
       // Get the order document
       const orderRef = doc(db, 'orders', orderId);
+      const targetOrder = orders.find(o => o.id === orderId);
+      
+      if (!targetOrder) {
+        throw new Error("Order not found");
+      }
       
       // Atomically add a new status update to the "statusHistory" array field.
       await updateDoc(orderRef, {
-        statusHistory: [...orders.find(o => o.id === orderId)?.statusHistory || [], statusUpdateWithDefaults]
+        statusHistory: [...targetOrder.statusHistory || [], statusUpdateWithDefaults],
+        status: statusUpdate.status || targetOrder.status,
+        currentDepartment: statusUpdate.department || targetOrder.currentDepartment
       });
       
       toast.success("Status updated successfully");
@@ -147,6 +165,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       console.error("Error adding status update:", err);
       setError("Failed to add status update");
       toast.error("Failed to add status update");
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -157,39 +176,51 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       setLoading(true);
       
-      // Update order in Firestore
-      await updateDoc(doc(db, 'orders', orderId), { status: "Ready to Dispatch" });
+      const orderRef = doc(db, 'orders', orderId);
+      const targetOrder = orders.find(o => o.id === orderId);
+      
+      if (!targetOrder) {
+        throw new Error("Order not found");
+      }
+      
+      // Update order status in Firestore
+      await updateDoc(orderRef, { 
+        status: "Ready to Dispatch",
+        lastUpdated: format(new Date(), 'yyyy-MM-dd HH:mm:ss')
+      });
+      
+      // Add status update
+      await addStatusUpdate(orderId, {
+        status: "Ready to Dispatch",
+        remarks: "Order is ready for dispatch"
+      });
       
       toast.success("Order marked as Ready for Dispatch");
     } catch (err) {
       console.error("Error marking order as Ready for Dispatch:", err);
       setError("Failed to mark order as Ready for Dispatch");
       toast.error("Failed to mark order as Ready for Dispatch");
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  // Delete all orders - new function for Admin
+  // Delete all orders - for Admin only
   const deleteAllOrders = async (): Promise<void> => {
     try {
       setLoading(true);
-      // Confirm with user
-      if (!window.confirm("Are you sure you want to delete ALL orders? This action cannot be undone!")) {
-        return;
-      }
       
       // Delete all orders from Firestore
-      for (const order of orders) {
-        await deleteDoc(doc(db, 'orders', order.id));
-      }
+      const deletePromises = orders.map(order => deleteDoc(doc(db, 'orders', order.id)));
+      await Promise.all(deletePromises);
       
-      setOrders([]);
       toast.success("All orders have been deleted");
     } catch (err) {
       console.error("Error deleting all orders:", err);
       setError("Failed to delete all orders");
       toast.error("Failed to delete all orders");
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -200,17 +231,15 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       setLoading(true);
       
-      for (const order of newOrders) {
-        // Add order to Firestore
-        await addDoc(collection(db, 'orders'), order);
-      }
+      const addPromises = newOrders.map(order => addDoc(collection(db, 'orders'), order));
+      await Promise.all(addPromises);
       
-      // Refresh orders list (will happen via snapshot listener)
       toast.success(`Successfully added ${newOrders.length} orders`);
     } catch (err) {
       console.error("Error adding multiple orders:", err);
       setError("Failed to add orders");
       toast.error("Failed to import orders");
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -226,8 +255,6 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updateOrder,
         deleteOrder,
         addStatusUpdate,
-        currentUser,
-        setCurrentUser,
         markReadyForDispatch,
         deleteAllOrders,
         addMultipleOrders

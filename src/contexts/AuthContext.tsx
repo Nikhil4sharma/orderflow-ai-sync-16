@@ -1,60 +1,20 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { 
-  User,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged
-} from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 
-interface AuthContextType {
-  currentUser: User | null;
-  loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-}
+import React, { createContext, useContext, useEffect } from 'react';
+import { useUsers } from './UserContext';
+import { useNavigate } from 'react-router-dom';
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
+// This is now a wrapper around UserContext for backward compatibility
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      setLoading(false);
-    });
-
-    return unsubscribe;
-  }, []);
-
-  const signIn = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
-  };
-
-  const logout = async () => {
-    await signOut(auth);
-  };
-
-  const value = {
-    currentUser,
-    loading,
-    signIn,
-    logout
-  };
-
-  return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
-    </AuthContext.Provider>
-  );
+  return <>{children}</>;
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-} 
+  const { currentUser, firebaseUser, loading, signIn, logout, isAuthenticated } = useUsers();
+  return {
+    currentUser: firebaseUser,
+    loading,
+    signIn,
+    logout,
+    isAuthenticated
+  };
+}

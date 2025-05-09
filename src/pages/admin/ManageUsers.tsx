@@ -1,6 +1,6 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useOrders } from "@/contexts/OrderContext";
 import {
   Card,
   CardContent,
@@ -19,36 +19,53 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowLeft, User, UserPlus, PenLine, Trash } from "lucide-react";
-import { Department, User as UserType, Role } from "@/types";
+import { ArrowLeft, UserRound, UserPlus, PenLine, Trash } from "lucide-react";
+import { Department, User, Role } from "@/types";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useUsers } from "@/contexts/UserContext";
+import { notifyUserCreated } from "@/utils/notifications";
 
 const ManageUsers: React.FC = () => {
   const navigate = useNavigate();
-  const { users, addUser, removeUser, currentUser } = useOrders();
+  const { users, addUser, removeUser, currentUser } = useUsers();
   
   // New user form state
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [department, setDepartment] = useState<Department>("Sales");
-  const [role, setRole] = useState<Role>("User");
+  const [role, setRole] = useState<Role>("Staff");
   
+  // Delete user confirmation dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // Check if current user is admin
-  if (currentUser.role !== "Admin") {
+  if (currentUser?.role !== "Admin") {
     toast.error("Access denied. Admin privileges required.");
-    navigate("/");
+    navigate("/dashboard");
     return null;
   }
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
     // Validation
     if (!name || !email || !password) {
       toast.error("Please fill all required fields");
+      setIsSubmitting(false);
       return;
     }
     
@@ -56,6 +73,7 @@ const ManageUsers: React.FC = () => {
     const emailExists = users.some(user => user.email === email);
     if (emailExists) {
       toast.error("Email is already in use");
+      setIsSubmitting(false);
       return;
     }
 
@@ -65,7 +83,7 @@ const ManageUsers: React.FC = () => {
       const uid = userCredential.user.uid;
 
       // 2. Add user profile to Firestore
-      const newUser: UserType = {
+      const newUser: User = {
         id: uid,
         name,
         email,
@@ -73,19 +91,23 @@ const ManageUsers: React.FC = () => {
         role,
         permissions: []
       };
+      
       await setDoc(doc(db, "users", uid), newUser);
 
       // 3. Add to local state (without password)
-      addUser({ ...newUser });
+      await addUser({ ...newUser });
+      
+      // 4. Create notification
+      await notifyUserCreated(uid, name, department);
 
-      // 4. Reset form
+      // 5. Reset form
       setName("");
       setEmail("");
       setPassword("");
       setDepartment("Sales");
-      setRole("User");
+      setRole("Staff");
 
-      toast.success("User created and synced with Firebase successfully");
+      toast.success("User created successfully");
     } catch (error: any) {
       if (error.code === "auth/email-already-in-use") {
         toast.error("Email is already registered in Firebase");
@@ -94,19 +116,40 @@ const ManageUsers: React.FC = () => {
       } else {
         toast.error("Failed to create user: " + (error.message || error));
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleDeleteUser = (userId: string) => {
+  const openDeleteDialog = (userId: string) => {
+    setUserToDelete(userId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+    
     // Don't allow deleting yourself
-    if (userId === currentUser.id) {
+    if (userToDelete === currentUser?.id) {
       toast.error("You cannot delete your own account");
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
       return;
     }
 
-    // Remove the user
-    removeUser(userId);
-    toast.success("User deleted successfully");
+    setIsSubmitting(true);
+    try {
+      // Remove the user
+      await removeUser(userToDelete);
+      toast.success("User deleted successfully");
+    } catch (error) {
+      toast.error("Failed to delete user");
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
+    }
   };
 
   return (
@@ -122,7 +165,7 @@ const ManageUsers: React.FC = () => {
       <Card className="glass-card mb-6">
         <CardHeader>
           <CardTitle className="flex items-center">
-            <User className="h-5 w-5 mr-2" />
+            <UserRound className="h-5 w-5 mr-2" />
             Manage Users
           </CardTitle>
           <CardDescription>
@@ -191,6 +234,7 @@ const ManageUsers: React.FC = () => {
                       <SelectItem value="Production">Production</SelectItem>
                       <SelectItem value="Design">Design</SelectItem>
                       <SelectItem value="Prepress">Prepress</SelectItem>
+                      <SelectItem value="Admin">Admin</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -207,14 +251,14 @@ const ManageUsers: React.FC = () => {
                     <SelectContent>
                       <SelectItem value="Admin">Admin</SelectItem>
                       <SelectItem value="Manager">Manager</SelectItem>
-                      <SelectItem value="User">User</SelectItem>
+                      <SelectItem value="Staff">Staff</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 
-                <Button type="submit" className="w-full">
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
                   <UserPlus className="h-4 w-4 mr-2" />
-                  Create User
+                  {isSubmitting ? "Creating..." : "Create User"}
                 </Button>
               </form>
             </CardContent>
@@ -256,8 +300,8 @@ const ManageUsers: React.FC = () => {
                             <Button 
                               variant="ghost" 
                               size="sm"
-                              onClick={() => handleDeleteUser(user.id)}
-                              disabled={user.id === currentUser.id}
+                              onClick={() => openDeleteDialog(user.id)}
+                              disabled={user.id === currentUser?.id}
                             >
                               <Trash className="h-4 w-4 text-destructive" />
                             </Button>
@@ -272,6 +316,25 @@ const ManageUsers: React.FC = () => {
           </Card>
         </div>
       </div>
+      
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete User</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this user? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteUser} disabled={isSubmitting}>
+              {isSubmitting ? "Deleting..." : "Delete User"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
