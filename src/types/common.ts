@@ -13,7 +13,27 @@ export type OrderStatus =
   | 'Ready to Dispatch'
   | 'New'
   | 'Pending Approval'
-  | 'Pending Payment';
+  | 'Pending Payment'
+  | 'Design Approved'
+  | 'Prepress Approved'
+  | 'Design Rejected'
+  | 'Prepress Rejected'
+  | 'Approved'
+  | 'Rejected'
+  | 'Payment Verified'
+  | 'Partial Payment Received'
+  | 'Payment Recorded: Not Paid'
+  | 'Payment Recorded: Partial'
+  | 'Payment Recorded: Paid'
+  | 'Forwarded to Prepress'
+  | 'Forwarded to Sales'
+  | 'Forwarded to Design'
+  | 'Forwarded to Production'
+  | 'Forwarded to Admin'
+  | 'Approval Requested'
+  | 'Product Status: processing'
+  | 'Product Status: completed'
+  | 'Product Status: issue';
 
 export type StatusType = 'completed' | 'processing' | 'issue';
 

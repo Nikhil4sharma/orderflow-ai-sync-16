@@ -20,6 +20,10 @@ import DesignTasks from "@/pages/DesignTasks";
 import PrivateRoute from "./PrivateRoute";
 import AdminRoute from "./AdminRoute";
 import DepartmentRoute from "./DepartmentRoute";
+import SalesDashboard from "@/pages/SalesDashboard";
+import DesignDashboard from "@/pages/DesignDashboard";
+import PrepressDashboard from "@/pages/PrepressDashboard";
+import ProductionDashboard from "@/pages/ProductionDashboard";
 
 const AppRoutes = () => {
   return (
@@ -50,7 +54,7 @@ const AppRoutes = () => {
           </DepartmentRoute>
         }
       >
-        <Route index element={<Dashboard />} />
+        <Route index element={<DesignDashboard />} />
       </Route>
       
       <Route
@@ -61,7 +65,7 @@ const AppRoutes = () => {
           </DepartmentRoute>
         }
       >
-        <Route index element={<Dashboard />} />
+        <Route index element={<PrepressDashboard />} />
       </Route>
       
       <Route
@@ -72,7 +76,7 @@ const AppRoutes = () => {
           </DepartmentRoute>
         }
       >
-        <Route index element={<Dashboard />} />
+        <Route index element={<ProductionDashboard />} />
       </Route>
       
       <Route
@@ -83,7 +87,7 @@ const AppRoutes = () => {
           </DepartmentRoute>
         }
       >
-        <Route index element={<Dashboard />} />
+        <Route index element={<SalesDashboard />} />
       </Route>
       
       <Route
