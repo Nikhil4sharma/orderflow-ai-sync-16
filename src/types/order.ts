@@ -86,4 +86,6 @@ export interface Order {
   contactNumber?: string;
   // Expected completion date
   expectedCompletionDate?: string;
+  // For department field compatibility
+  department?: Department;
 }

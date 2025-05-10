@@ -65,6 +65,8 @@ export default function Login() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="w-full max-w-md space-y-8"
+          id="login-container"
+          data-testid="login-container"
         >
           {/* Mobile Logo - only shown on mobile */}
           <div className="md:hidden text-center mb-6">

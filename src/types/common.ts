@@ -82,3 +82,16 @@ export type PermissionKey =
   | "mark_ready_dispatch"
   | "verify_payment"
   | "view_delivery_details";
+
+// Add OrderFilters type
+export type OrderFilters = {
+  department?: Department;
+  status?: OrderStatus;
+  paymentStatus?: string;
+  dateRange?: any;
+  amountRange?: {
+    min?: number;
+    max?: number;
+  };
+  searchTerm?: string;
+};

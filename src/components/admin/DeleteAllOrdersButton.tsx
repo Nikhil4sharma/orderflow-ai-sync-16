@@ -61,6 +61,8 @@ const DeleteAllOrdersButton: React.FC = () => {
         variant="destructive" 
         onClick={() => setIsDialogOpen(true)} 
         className="flex items-center gap-2"
+        id="delete-all-orders-btn"
+        data-testid="delete-all-orders"
       >
         <Trash2 className="h-4 w-4" />
         Delete All Orders
@@ -83,6 +85,8 @@ const DeleteAllOrdersButton: React.FC = () => {
               variant="destructive" 
               onClick={handleDeleteAll} 
               disabled={loading}
+              id="confirm-delete-all-orders-btn"
+              data-testid="confirm-delete-all-orders"
             >
               {loading ? "Deleting..." : "Yes, Delete All Orders"}
             </Button>

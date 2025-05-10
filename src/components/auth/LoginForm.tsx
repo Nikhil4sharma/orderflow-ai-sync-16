@@ -75,7 +75,7 @@ const LoginForm: React.FC = () => {
   };
 
   return (
-    <Card className="border-border/40 shadow-lg animate-fade-in hover:shadow-xl transition-all">
+    <Card className="border-border/40 shadow-lg animate-fade-in hover:shadow-xl transition-all" id="login-form" data-testid="login-form">
       <CardHeader className="space-y-1 text-center pb-6">
         <CardTitle className="text-2xl md:text-3xl font-bold flex items-center justify-center gap-2">
           <UserRound className="h-6 w-6 text-primary" />
@@ -86,7 +86,7 @@ const LoginForm: React.FC = () => {
         </p>
       </CardHeader>
       
-      <form onSubmit={handleSubmit} className="space-y-4 px-6">
+      <form onSubmit={handleSubmit} className="space-y-4 px-6" id="login-form-element" data-testid="login-form-element">
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input
@@ -96,6 +96,7 @@ const LoginForm: React.FC = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            data-testid="email-input"
           />
         </div>
 
@@ -108,6 +109,7 @@ const LoginForm: React.FC = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            data-testid="password-input"
           />
         </div>
 
@@ -116,11 +118,18 @@ const LoginForm: React.FC = () => {
             id="remember"
             checked={rememberMe}
             onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+            data-testid="remember-me-checkbox"
           />
           <Label htmlFor="remember">Remember me</Label>
         </div>
 
-        <Button type="submit" className="w-full" disabled={isLoading}>
+        <Button 
+          type="submit" 
+          className="w-full" 
+          disabled={isLoading}
+          id="login-button"
+          data-testid="login-button"
+        >
           {isLoading ? "Logging in..." : "Login"}
         </Button>
 
@@ -135,6 +144,8 @@ const LoginForm: React.FC = () => {
                 size="sm"
                 className="text-xs"
                 onClick={() => useDemoAccount(account)}
+                id={`demo-account-${account.role.toLowerCase()}`}
+                data-testid={`demo-account-${account.role.toLowerCase()}`}
               >
                 {account.role}
               </Button>

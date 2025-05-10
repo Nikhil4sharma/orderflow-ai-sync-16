@@ -121,6 +121,8 @@ const Admin = () => {
             to={section.path}
             key={section.title}
             className="block transition-all duration-300"
+            id={`admin-section-${section.title.toLowerCase().replace(/\s+/g, '-')}`}
+            data-testid={`admin-section-${section.title.toLowerCase().replace(/\s+/g, '-')}`}
           >
             <Card className="hover:bg-accent hover:shadow-md hover:-translate-y-1 transition-all duration-200 h-full p-6 border-l-4 border-l-transparent hover:border-l-primary">
               <div className="flex items-start space-x-4">
