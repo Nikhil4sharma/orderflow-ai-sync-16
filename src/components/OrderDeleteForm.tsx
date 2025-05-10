@@ -1,10 +1,12 @@
+
 import { notifyOrderStatusChanged } from '@/utils/notifications';
 import React from 'react';
+import { Department } from '@/types/common';
 
 interface Order {
   id: string;
   orderNumber: string;
-  department: string;
+  currentDepartment: Department;
 }
 
 interface OrderDeleteFormProps {
@@ -16,10 +18,9 @@ const OrderDeleteForm: React.FC<OrderDeleteFormProps> = ({ order, onDelete }) =>
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     try {
-      await notifyOrderStatusChanged(order.id, order.orderNumber, 'Deleted', order.department);
+      await notifyOrderStatusChanged(order.id, order.orderNumber, 'Deleted', order.currentDepartment);
       if (onDelete) onDelete();
     } catch (error) {
-      // Error handle karo, toast ya console
       console.error('Delete error:', error);
     }
   };
@@ -32,4 +33,4 @@ const OrderDeleteForm: React.FC<OrderDeleteFormProps> = ({ order, onDelete }) =>
   );
 };
 
-export default OrderDeleteForm; 
+export default OrderDeleteForm;

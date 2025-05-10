@@ -13,7 +13,8 @@ import {
   signInWithEmailAndPassword
 } from 'firebase/auth';
 import { db, auth } from '@/lib/firebase';
-import { User, Order } from '@/types';
+import { User } from '@/types/user';
+import { Order } from '@/types/order';
 import { nanoid } from 'nanoid';
 import { format } from 'date-fns';
 
