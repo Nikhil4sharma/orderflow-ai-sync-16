@@ -45,7 +45,7 @@ const ApprovalResponseForm: React.FC<ApprovalResponseFormProps> = ({ order }) =>
     // Add status update to timeline
     addStatusUpdate(order.id, {
       department: "Sales",
-      status: responseType === "approve" ? "Approved" : "Rejected",
+      status: responseType === "approve" ? "Approved" as OrderStatus : "Rejected" as OrderStatus,
       remarks: remarks
     });
     

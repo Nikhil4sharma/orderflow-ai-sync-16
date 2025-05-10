@@ -27,7 +27,7 @@ export interface StatusUpdate {
   remarks?: string;
   timestamp: string;
   updatedBy: string;
-  editableUntil?: string; 
+  editableUntil?: string; // Making this optional
   selectedProduct?: string;
   estimatedTime?: string;
 }

@@ -1,4 +1,5 @@
-import { Department, Order, OrderStatus, PaymentStatus } from '@/types/common';
+import { Department } from "@/types/common";
+import { Order } from "@/types/order"; // Fix the import path
 import { ProductionStageStatus } from '@/types/order';
 import { format, subDays, addDays } from 'date-fns';
 import { nanoid } from 'nanoid';

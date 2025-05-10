@@ -7,7 +7,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Department, Order, ProductStatus, StatusType } from "@/types";
+import { Department, Order, ProductStatus, StatusType, OrderStatus } from "@/types";
 import { Clock, CheckCircle, AlertCircle, Save, Calendar } from "lucide-react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format, addDays } from "date-fns";
@@ -71,11 +71,12 @@ const ProductStatusUpdateForm: React.FC<ProductStatusUpdateFormProps> = ({
     
     updateOrder(updatedOrder);
     
-    // Add status update to timeline
+    // Add status update to timeline with proper OrderStatus type
+    const productStatus = `Product Status: ${status}` as OrderStatus;
     addStatusUpdate(order.id, {
       orderId: order.id,
       department: department,
-      status: `Product Status: ${status}`,
+      status: productStatus,
       remarks: remarks,
       updatedBy: currentUser?.name || "Unknown",
       estimatedTime: estimatedDate ? format(estimatedDate, 'MMM dd, yyyy') : undefined,

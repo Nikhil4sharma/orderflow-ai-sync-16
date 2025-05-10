@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { useOrders } from '@/contexts/OrderContext';
-import { Order } from '@/types';
+import { Order, OrderStatus } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -51,7 +50,7 @@ const ApprovalForm: React.FC<ApprovalFormProps> = ({
       // Design approval
       addStatusUpdate(order.id, {
         department: 'Sales',
-        status: 'Design Approved',
+        status: 'Design Approved' as OrderStatus,
         remarks: feedback,
         estimatedTime
       });
@@ -63,7 +62,7 @@ const ApprovalForm: React.FC<ApprovalFormProps> = ({
       // Prepress approval
       addStatusUpdate(order.id, {
         department: 'Sales',
-        status: 'Prepress Approved',
+        status: 'Prepress Approved' as OrderStatus,
         remarks: feedback,
         estimatedTime
       });
@@ -93,7 +92,7 @@ const ApprovalForm: React.FC<ApprovalFormProps> = ({
       // Design rejection
       addStatusUpdate(order.id, {
         department: 'Sales',
-        status: 'Design Rejected',
+        status: 'Design Rejected' as OrderStatus,
         remarks: feedback
       });
       
@@ -104,7 +103,7 @@ const ApprovalForm: React.FC<ApprovalFormProps> = ({
       // Prepress rejection
       addStatusUpdate(order.id, {
         department: 'Sales',
-        status: 'Prepress Rejected',
+        status: 'Prepress Rejected' as OrderStatus,
         remarks: feedback
       });
       

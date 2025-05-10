@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from "react";
 import { Outlet, useLocation, Link, NavLink } from "react-router-dom";
-import { useOrders } from "@/contexts/OrderContext";
+import { useOrders, useUsers } from "@/contexts/OrderContext";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut, Menu, Settings, User, Home, FileText, PlusCircle, BarChart, X, NotebookPen } from "lucide-react";
@@ -23,6 +22,7 @@ import NotificationsDropdown from "./NotificationsDropdown";
 
 const Layout: React.FC = () => {
   const { currentUser, logout, orders } = useOrders();
+  const { users } = useUsers();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const isMobile = useIsMobile();

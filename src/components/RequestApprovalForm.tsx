@@ -38,7 +38,7 @@ const RequestApprovalForm: React.FC<RequestApprovalFormProps> = ({ order }) => {
     // Add status update to timeline
     addStatusUpdate(order.id, {
       department: currentUser?.department || "Design",
-      status: "Approval Requested",
+      status: "Approval Requested" as OrderStatus,
       remarks: approvalReason
     });
     

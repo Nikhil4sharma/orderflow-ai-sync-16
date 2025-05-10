@@ -51,10 +51,11 @@ const ForwardToDepartmentForm: React.FC<ForwardToDepartmentFormProps> = ({ order
     
     updateOrder(updatedOrder);
     
-    // Add status update
+    // Add status update with proper OrderStatus type
+    const forwardStatus = `Forwarded to ${targetDepartment}` as OrderStatus;
     addStatusUpdate(order.id, {
       department: currentUser.department,
-      status: `Forwarded to ${targetDepartment}`,
+      status: forwardStatus,
       remarks: remarks,
       estimatedTime: estimatedTime
     });

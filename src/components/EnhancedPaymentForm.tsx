@@ -9,8 +9,9 @@ import { CreditCard, IndianRupee, Calendar } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
 import { useOrders } from "@/contexts/OrderContext";
-import { Order, PaymentStatus } from "@/types";
+import { Order, PaymentStatus, OrderStatus } from "@/types";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { nanoid } from "nanoid";
 
 interface EnhancedPaymentFormProps {
   order: Order;
@@ -55,7 +56,7 @@ const EnhancedPaymentForm: React.FC<EnhancedPaymentFormProps> = ({ order, onPaym
     
     // Add the payment to the order
     const newPayment = {
-      id: Math.random().toString(36).substring(2, 9),
+      id: nanoid(),
       amount,
       date: paymentDate.toISOString(),
       method: paymentMethod,
@@ -85,10 +86,11 @@ const EnhancedPaymentForm: React.FC<EnhancedPaymentFormProps> = ({ order, onPaym
     
     updateOrder(updatedOrder);
     
-    // Add status update
+    // Add status update with correct OrderStatus type
+    const statusMessage = `Payment Recorded: ${paymentStatus}` as OrderStatus;
     addStatusUpdate(order.id, {
       department: "Sales",
-      status: `Payment Recorded: ${paymentStatus}`,
+      status: statusMessage,
       remarks: `Payment of ${amount.toLocaleString('en-IN')} received via ${paymentMethod}. ${remarks}`
     });
     

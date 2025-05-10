@@ -13,6 +13,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { canVerifyPayment } from "@/lib/permissions";
 import { Progress } from "@/components/ui/progress";
 import { formatIndianRupees } from "@/lib/utils";
+import { nanoid } from "nanoid";
 
 interface PaymentVerificationFormProps {
   order: Order;
@@ -40,8 +41,9 @@ const PaymentVerificationForm: React.FC<PaymentVerificationFormProps> = ({ order
       return;
     }
     
-    // Add the payment to the order
+    // Add the payment to the order with an ID
     addPayment(order.id, {
+      id: nanoid(),
       amount,
       date: new Date().toISOString(),
       method,
