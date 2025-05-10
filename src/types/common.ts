@@ -40,7 +40,8 @@ export type OrderStatus =
   | 'Reopened'
   | 'Restored'
   | 'Deleted'
-  | 'Archived';
+  | 'Archived'
+  | 'Cancelled';
 
 export type StatusType = 'completed' | 'processing' | 'issue';
 
@@ -101,6 +102,16 @@ export type OrderFilters = {
     max?: number;
   };
   searchTerm?: string;
+};
+
+export type User = {
+  id: string;
+  name: string;
+  email: string;
+  password?: string;
+  department: Department;
+  role: Role;
+  permissions: PermissionKey[];
 };
 
 export type Order = {

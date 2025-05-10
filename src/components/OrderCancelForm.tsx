@@ -32,7 +32,7 @@ const OrderCancelForm: React.FC<OrderCancelFormProps> = ({ order }) => {
       await updateOrder(updatedOrder);
 
       // Notify about status change
-      await notifyOrderStatusChanged(order.id, order.orderNumber, 'Cancelled', order.currentDepartment);
+      await notifyOrderStatusChanged(order.id, order.orderNumber, "On Hold" as OrderStatus, order.currentDepartment);
 
       toast.success("Order has been cancelled successfully");
       setIsDialogOpen(false);

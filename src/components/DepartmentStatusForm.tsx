@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useOrders } from "@/contexts/OrderContext";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Department, DesignStatus, Order, PrepressStatus, OrderStatus } from "@/types";
+import { Department, DesignStatus, Order, OrderStatus, PrepressStatus } from "@/types";
 import { Clock, AlertCircle } from "lucide-react";
 import TimeEstimationInput from "./TimeEstimationInput";
 import { Badge } from "@/components/ui/badge";
@@ -108,7 +109,7 @@ const DepartmentStatusForm: React.FC<DepartmentStatusFormProps> = ({ order, depa
     addStatusUpdate(order.id, {
       orderId: order.id,
       department: department,
-      status: status,
+      status: status as OrderStatus,
       remarks: remarks,
       estimatedTime: estimatedTime
     });

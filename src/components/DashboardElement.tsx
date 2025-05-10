@@ -41,7 +41,7 @@ const DashboardElement = ({
   }
 
   return (
-    <CanAccess permission={permission}>
+    <CanAccess permission={permission as any}>
       <Card className={cn("overflow-hidden", className)}>
         <CardHeader className="space-y-1">
           <CardTitle className="text-lg font-medium">{title}</CardTitle>
