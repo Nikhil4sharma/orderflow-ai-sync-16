@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useOrders } from "@/contexts/OrderContext";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { XCircle } from "lucide-react";
-import { Order, OrderStatus } from "@/types";
+import { Order, OrderStatus } from "@/types/common";
 import { notifyOrderStatusChanged } from '@/utils/notifications';
 
 interface OrderCancelFormProps {
@@ -26,7 +27,7 @@ const OrderCancelForm: React.FC<OrderCancelFormProps> = ({ order }) => {
   const handleCancelOrder = async () => {
     setLoading(true);
     try {
-      // Update the order status to "Cancelled"
+      // Update the order status to "On Hold"
       const updatedOrder = { ...order, status: "On Hold" as OrderStatus };
       await updateOrder(updatedOrder);
 

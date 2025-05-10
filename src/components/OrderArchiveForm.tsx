@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useOrders } from "@/contexts/OrderContext";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import {
 import { Archive } from "lucide-react";
 import { toast } from "sonner";
 import { notifyOrderStatusChanged } from '@/utils/notifications';
+import { OrderStatus } from "@/types/common";
 
 interface OrderArchiveFormProps {
   orderId: string;
@@ -28,11 +30,15 @@ const OrderArchiveForm: React.FC<OrderArchiveFormProps> = ({ orderId }) => {
     return <p>Order not found</p>;
   }
 
-  const handleSubmit = async (order) => {
+  const handleSubmit = async () => {
     setIsLoading(true);
     try {
-      const updatedOrder = { ...order, status: "Completed" };
+      const updatedOrder = { ...order, status: "Archived" as OrderStatus };
       await updateOrder(updatedOrder);
+      
+      // Notify about status change
+      await notifyOrderStatusChanged(order.id, order.orderNumber, 'Archived', order.currentDepartment);
+      
       toast.success("Order archived successfully");
       setIsDialogOpen(false);
     } catch (error) {
@@ -41,9 +47,6 @@ const OrderArchiveForm: React.FC<OrderArchiveFormProps> = ({ orderId }) => {
     } finally {
       setIsLoading(false);
     }
-    
-    // Notify about status change
-    await notifyOrderStatusChanged(order.id, order.orderNumber, 'Archived', order.currentDepartment);
   };
 
   return (
@@ -73,7 +76,7 @@ const OrderArchiveForm: React.FC<OrderArchiveFormProps> = ({ orderId }) => {
             <Button
               type="submit"
               disabled={isLoading}
-              onClick={() => handleSubmit(order)}
+              onClick={handleSubmit}
             >
               {isLoading ? "Archiving..." : "Archive"}
             </Button>

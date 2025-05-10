@@ -1,5 +1,5 @@
 
-import { Department } from "@/types/common";
+import { Department, OrderStatus } from "@/types/common";
 import { toast } from "sonner";
 import { nanoid } from "nanoid";
 import { format } from "date-fns";
@@ -9,8 +9,8 @@ import { db } from "@/lib/firebase";
 export const notifyOrderStatusChanged = async (
   orderId: string,
   orderNumber: string,
-  newStatus: string,
-  department: Department | string
+  newStatus: OrderStatus,
+  department: Department
 ): Promise<void> => {
   try {
     // Log to console and show toast notification
@@ -73,6 +73,43 @@ export const notifyPaymentReceived = async (
     return Promise.resolve();
   } catch (error) {
     console.error("Failed to send payment notification:", error);
+    toast.error("Failed to send notification");
+    return Promise.reject(error);
+  }
+};
+
+// Add user created notification function
+export const notifyUserCreated = async (
+  userId: string,
+  userName: string,
+  userRole: string,
+  userDepartment: string
+): Promise<void> => {
+  try {
+    // Log to console and show toast notification
+    console.log(`New user ${userName} created as ${userRole} in ${userDepartment}`);
+    toast.success(`New user ${userName} created successfully`);
+    
+    // Create notification record in Firebase
+    const notificationData = {
+      id: nanoid(),
+      title: `New User Created`,
+      message: `${userName} has been added as ${userRole} in ${userDepartment}`,
+      timestamp: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
+      isRead: false,
+      type: 'user_created',
+      userId: userId,
+      forDepartments: ['Admin'],
+      priority: 'low',
+      category: 'user',
+      createdAt: new Date().toISOString()
+    };
+    
+    await addDoc(collection(db, 'notifications'), notificationData);
+    
+    return Promise.resolve();
+  } catch (error) {
+    console.error("Failed to send user creation notification:", error);
     toast.error("Failed to send notification");
     return Promise.reject(error);
   }

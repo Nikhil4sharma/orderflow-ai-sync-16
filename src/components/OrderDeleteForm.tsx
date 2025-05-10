@@ -1,7 +1,7 @@
 
 import { notifyOrderStatusChanged } from '@/utils/notifications';
 import React from 'react';
-import { Department } from '@/types/common';
+import { Department, OrderStatus } from '@/types/common';
 
 interface Order {
   id: string;
@@ -18,7 +18,7 @@ const OrderDeleteForm: React.FC<OrderDeleteFormProps> = ({ order, onDelete }) =>
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     try {
-      await notifyOrderStatusChanged(order.id, order.orderNumber, 'Deleted', order.currentDepartment);
+      await notifyOrderStatusChanged(order.id, order.orderNumber, 'Deleted' as OrderStatus, order.currentDepartment);
       if (onDelete) onDelete();
     } catch (error) {
       console.error('Delete error:', error);

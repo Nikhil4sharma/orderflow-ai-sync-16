@@ -1,4 +1,34 @@
-import { notifyOrderStatusChanged } from '@/utils/notifications';
 
-// Inside handleSubmit function, after importing order:
-await notifyOrderStatusChanged(order.id, order.orderNumber, 'Imported', order.department); 
+import React from 'react';
+import { Order } from '@/types/common';
+import { notifyOrderStatusChanged } from '@/utils/notifications';
+import { Button } from './ui/button';
+import { toast } from 'sonner';
+import { Upload } from 'lucide-react';
+
+interface OrderImportFormProps {
+  order: Order;
+  onImport?: () => void;
+}
+
+const OrderImportForm: React.FC<OrderImportFormProps> = ({ order, onImport }) => {
+  const handleImport = async () => {
+    try {
+      await notifyOrderStatusChanged(order.id, order.orderNumber, 'Imported', order.currentDepartment);
+      toast.success(`Order #${order.orderNumber} imported successfully`);
+      if (onImport) onImport();
+    } catch (error) {
+      console.error('Import error:', error);
+      toast.error('Failed to import order');
+    }
+  };
+
+  return (
+    <Button onClick={handleImport} variant="outline" className="flex items-center gap-2">
+      <Upload className="h-4 w-4" />
+      Import Order
+    </Button>
+  );
+};
+
+export default OrderImportForm;

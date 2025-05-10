@@ -11,23 +11,11 @@ import {
   orderBy 
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Order, StatusUpdate, Department, OrderStatus, User, PaymentRecord } from '@/types';
+import { Order, StatusUpdate, Department, OrderStatus, User, PaymentRecord, OrderFilters } from '@/types/common';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { nanoid } from 'nanoid';
-import { useUsers } from './UserContext';
-
-export type OrderFilters = {
-  department?: Department;
-  status?: OrderStatus;
-  paymentStatus?: string;
-  dateRange?: any;
-  amountRange?: {
-    min?: number;
-    max?: number;
-  };
-  searchTerm?: string;
-};
+import { useUsers as useUsersImport } from './UserContext';
 
 type OrderContextType = {
   orders: Order[];
@@ -49,6 +37,8 @@ type OrderContextType = {
   updateStatusUpdate: (orderId: string, updateId: string, newData: Partial<StatusUpdate>) => Promise<void>;
   undoStatusUpdate: (orderId: string, updateId: string) => Promise<void>;
   canUserSeeElement: (elementId: string) => boolean;
+  getOrder: (orderId: string) => Order | null;
+  logout: () => void;
 };
 
 const OrderContext = createContext<OrderContextType>({
@@ -71,15 +61,18 @@ const OrderContext = createContext<OrderContextType>({
   updateStatusUpdate: async () => {},
   undoStatusUpdate: async () => {},
   canUserSeeElement: () => true,
+  getOrder: () => null,
+  logout: () => {},
 });
 
 export const useOrders = () => useContext(OrderContext);
+export const useUsers = useUsersImport; // Re-export useUsers
 
 export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const { currentUser, hasPermission } = useUsers();
+  const { currentUser, hasPermission, logout } = useUsersImport();
 
   // Load orders from Firestore on mount
   useEffect(() => {
@@ -102,6 +95,11 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     return () => unsubscribe();
   }, []);
+
+  // Get a specific order by ID
+  const getOrder = (orderId: string): Order | null => {
+    return orders.find(order => order.id === orderId) || null;
+  };
 
   // Add a new order
   const addOrder = async (order: Order): Promise<void> => {
@@ -169,7 +167,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         timestamp,
         editableUntil,
         department: statusUpdate.department || (currentUser?.department as Department),
-        status: statusUpdate.status || "In Progress",
+        status: statusUpdate.status || "In Progress" as OrderStatus,
         remarks: statusUpdate.remarks || "",
         updatedBy: statusUpdate.updatedBy || currentUser?.name || "Unknown",
         ...statusUpdate
@@ -280,13 +278,13 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       
       // Update order status in Firestore
       await updateDoc(orderRef, { 
-        status: "Ready to Dispatch",
+        status: "Ready to Dispatch" as OrderStatus,
         lastUpdated: format(new Date(), 'yyyy-MM-dd HH:mm:ss')
       });
       
       // Add status update
       await addStatusUpdate(orderId, {
-        status: "Ready to Dispatch",
+        status: "Ready to Dispatch" as OrderStatus,
         remarks: "Order is ready for dispatch"
       });
       
@@ -314,14 +312,14 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
       
       await updateDoc(orderRef, {
-        status: "Verified",
+        status: "Verified" as OrderStatus,
         verifiedBy: currentUser?.name || "Unknown",
         verifiedAt: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
         ...verificationData
       });
       
       await addStatusUpdate(orderId, {
-        status: "Verified",
+        status: "Verified" as OrderStatus,
         remarks: `Order verified by ${currentUser?.name || "Unknown"}`
       });
       
@@ -369,10 +367,14 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       });
       
       // Add status update
+      const paymentStatusRecord = paymentStatus === "Paid" 
+        ? "Payment Recorded: Paid" as OrderStatus 
+        : paymentStatus === "Partial" 
+          ? "Payment Recorded: Partial" as OrderStatus 
+          : "Payment Recorded: Not Paid" as OrderStatus;
+          
       await addStatusUpdate(orderId, {
-        status: paymentStatus === "Paid" ? "Payment Recorded: Paid" : 
-               paymentStatus === "Partial" ? "Payment Recorded: Partial" : 
-               "Payment Recorded: Not Paid",
+        status: paymentStatusRecord,
         remarks: `Payment of ₹${payment.amount} recorded via ${payment.method}. ${payment.remarks || ''}`
       });
       
@@ -562,7 +564,9 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         addPayment,
         updateStatusUpdate,
         undoStatusUpdate,
-        canUserSeeElement
+        canUserSeeElement,
+        getOrder,
+        logout
       }}
     >
       {children}

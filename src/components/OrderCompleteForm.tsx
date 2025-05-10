@@ -1,31 +1,16 @@
+
 import React from "react";
 import { useOrders } from "@/contexts/OrderContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { CheckCircle } from "lucide-react";
-import { Order } from "@/types";
+import { Order, OrderStatus } from "@/types/common";
 import { notifyOrderStatusChanged } from '@/utils/notifications';
 
 interface OrderCompleteFormProps {
   order: Order;
   onComplete?: () => void;
 }
-
-export const handleSubmit = async (order) => {
-  if (!order) {
-    toast.error("Order is missing, cannot complete.");
-    return;
-  }
-  
-  // Mark order as completed
-  order.status = "Completed";
-  
-  // Update the order
-  // await updateOrder(order);
-  
-  // Notify about status change
-  await notifyOrderStatusChanged(order.id, order.orderNumber, 'Completed', order.currentDepartment);
-};
 
 const OrderCompleteForm: React.FC<OrderCompleteFormProps> = ({ order, onComplete }) => {
   const { updateOrder } = useOrders();
@@ -40,7 +25,7 @@ const OrderCompleteForm: React.FC<OrderCompleteFormProps> = ({ order, onComplete
       // Mark order as completed
       const updatedOrder = {
         ...order,
-        status: "Completed",
+        status: "Completed" as OrderStatus,
       };
       
       // Update the order

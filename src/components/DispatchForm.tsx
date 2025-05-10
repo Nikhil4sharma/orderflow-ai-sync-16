@@ -1,249 +1,205 @@
 
 import React, { useState } from "react";
-import { useOrders } from "@/contexts/OrderContext";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import { Package, Send, CheckCircle, AlertTriangle } from "lucide-react";
-import { Order, CourierPartner, DeliveryType, OrderStatus } from "@/types";
 import { Textarea } from "@/components/ui/textarea";
-import PermissionGated from "./PermissionGated";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
+import { Truck, Calendar, Package, Phone, MapPin } from "lucide-react";
+import { DatePicker } from "@/components/ui/date-picker";
+import { useOrders } from "@/contexts/OrderContext";
+import { Order, CourierPartner, DeliveryType, OrderStatus } from "@/types/common";
+import { notifyOrderStatusChanged } from "@/utils/notifications";
 
 interface DispatchFormProps {
   order: Order;
 }
 
-const DispatchForm: React.FC<DispatchFormProps> = ({ order }) => {
-  const { updateOrder, addStatusUpdate, verifyOrder, currentUser } = useOrders();
+export const DispatchForm: React.FC<DispatchFormProps> = ({ order }) => {
+  const { updateOrder, addStatusUpdate, currentUser } = useOrders();
   
-  const [address, setAddress] = useState(order.dispatchDetails?.address || "");
-  const [contactNumber, setContactNumber] = useState(order.dispatchDetails?.contactNumber || "");
-  const [courierPartner, setCourierPartner] = useState<CourierPartner | undefined>(
-    order.dispatchDetails?.courierPartner
-  );
-  const [deliveryType, setDeliveryType] = useState<DeliveryType | undefined>(
-    order.dispatchDetails?.deliveryType || "Normal"
-  );
-  const [trackingNumber, setTrackingNumber] = useState(
-    order.dispatchDetails?.trackingNumber || ""
-  );
-  const [remarks, setRemarks] = useState("");
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const [address, setAddress] = useState(order.deliveryAddress || '');
+  const [contactNumber, setContactNumber] = useState(order.contactNumber || '');
+  const [trackingNumber, setTrackingNumber] = useState('');
+  const [courierPartner, setCourierPartner] = useState<CourierPartner>('Shree Maruti');
+  const [deliveryType, setDeliveryType] = useState<DeliveryType>('Normal');
+  const [dispatchDate, setDispatchDate] = useState<Date | undefined>(new Date());
+  const [remarks, setRemarks] = useState('');
+  
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Validation
-    if (!address || !contactNumber || !courierPartner || !deliveryType) {
-      toast.error("Please fill all required fields");
+    
+    if (!address) {
+      toast.error("Please enter the delivery address");
       return;
     }
     
-    // Check if payment is complete
-    if (order.paymentStatus !== "Paid") {
-      toast.error("Full payment is required before dispatch");
+    if (!contactNumber) {
+      toast.error("Please enter a contact number");
       return;
     }
-
-    // Update order with dispatch details
-    const updatedOrder = {
-      ...order,
-      status: "Dispatched" as OrderStatus,
-      dispatchDetails: {
+    
+    if (!dispatchDate) {
+      toast.error("Please select a dispatch date");
+      return;
+    }
+    
+    try {
+      // Create dispatch details object
+      const dispatchDetails = {
         address,
         contactNumber,
         courierPartner,
         deliveryType,
         trackingNumber,
-        dispatchDate: new Date().toISOString(),
-        verifiedBy: currentUser?.name || "Unknown"
-      }
-    };
-
-    // Update the order
-    updateOrder(updatedOrder);
-
-    // Add status update
-    addStatusUpdate(order.id, {
-      department: "Sales",
-      status: "Dispatched",
-      remarks: `Order dispatched via ${courierPartner} (${deliveryType}). ${remarks ? 'Remarks: ' + remarks : ''}`,
-    });
-
-    toast.success("Order has been dispatched successfully");
-  };
-
-  const handleVerify = () => {
-    // Check if payment is complete
-    if (order.paymentStatus !== "Paid") {
-      toast.error("Full payment is required before verification");
-      return;
+        dispatchDate: dispatchDate.toISOString(),
+        verifiedBy: currentUser?.name || 'Unknown'
+      };
+      
+      // Update order with dispatch details
+      const updatedOrder = {
+        ...order,
+        status: "Dispatched" as OrderStatus,
+        dispatchDetails,
+        deliveryAddress: address,
+        contactNumber
+      };
+      
+      await updateOrder(updatedOrder);
+      
+      // Add status update
+      await addStatusUpdate(order.id, {
+        status: "Dispatched" as OrderStatus,
+        remarks: `Order dispatched via ${courierPartner} (${deliveryType}). ${remarks ? `Remarks: ${remarks}` : ''}`
+      });
+      
+      // Notify about dispatch
+      await notifyOrderStatusChanged(order.id, order.orderNumber, 'Dispatched', order.currentDepartment);
+      
+      toast.success("Order dispatched successfully!");
+    } catch (error) {
+      console.error('Error dispatching order:', error);
+      toast.error("Failed to dispatch order");
     }
-    
-    // Verify the order (changes status to "Verified")
-    verifyOrder(order.id);
-    toast.success("Order has been verified successfully");
   };
-
-  // Check if order is ready for dispatch
-  const isOrderReadyForDispatch = order.status === "Ready to Dispatch";
-  const canDispatchOrder = order.status === "Ready to Dispatch" && order.paymentStatus === "Paid";
-
+  
   return (
-    <PermissionGated requiredPermission="dispatch_orders">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Package className="h-5 w-5 mr-2" />
-            {canDispatchOrder ? "Dispatch Order" : "Verify and Dispatch Order"}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {order.paymentStatus !== "Paid" && (
-            <div className="mb-6 p-4 bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200 rounded-md flex items-start">
-              <AlertTriangle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium">Payment Required</p>
-                <p className="mt-1 text-sm">
-                  Full payment must be received before this order can be dispatched.
-                  Currently: {order.paidAmount.toLocaleString()} of {order.amount.toLocaleString()} received.
-                </p>
-              </div>
-            </div>
-          )}
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="address" className="flex items-center">
+            <MapPin className="h-4 w-4 mr-1 opacity-70" />
+            Delivery Address
+          </Label>
+          <Textarea
+            id="address"
+            placeholder="Enter complete delivery address"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            rows={3}
+            required
+          />
+        </div>
         
-          {isOrderReadyForDispatch && (
-            <div className="mb-6">
-              <p className="mb-4">
-                This order has been marked as ready for dispatch by the Production team. 
-                Please verify the order before dispatch.
-              </p>
-              <PermissionGated requiredPermission="verify_orders">
-                <Button 
-                  onClick={handleVerify} 
-                  className="w-full"
-                  disabled={order.paymentStatus !== "Paid"}
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Verify Order
-                </Button>
-              </PermissionGated>
-            </div>
-          )}
-
-          {canDispatchOrder && (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="address">Delivery Address*</Label>
-                <Textarea
-                  id="address"
-                  placeholder="Enter full delivery address"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  required
-                  rows={3}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="contact">Contact Number*</Label>
-                <Input
-                  id="contact"
-                  placeholder="e.g., +91 9876543210"
-                  value={contactNumber}
-                  onChange={(e) => setContactNumber(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="courier">Courier Partner*</Label>
-                  <Select
-                    value={courierPartner}
-                    onValueChange={(value) => setCourierPartner(value as CourierPartner)}
-                    required
-                  >
-                    <SelectTrigger id="courier">
-                      <SelectValue placeholder="Select courier" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Shree Maruti">Shree Maruti</SelectItem>
-                      <SelectItem value="DTDC">DTDC</SelectItem>
-                      <SelectItem value="FedEx">FedEx</SelectItem>
-                      <SelectItem value="DHL">DHL</SelectItem>
-                      <SelectItem value="BlueDart">BlueDart</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="delivery-type">Delivery Type*</Label>
-                  <Select
-                    value={deliveryType}
-                    onValueChange={(value) => setDeliveryType(value as DeliveryType)}
-                    required
-                  >
-                    <SelectTrigger id="delivery-type">
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Normal">Normal</SelectItem>
-                      <SelectItem value="Express">Express</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="tracking">Tracking Number</Label>
-                <Input
-                  id="tracking"
-                  placeholder="e.g., TN123456789"
-                  value={trackingNumber}
-                  onChange={(e) => setTrackingNumber(e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="dispatch-remarks">Remarks</Label>
-                <Textarea
-                  id="dispatch-remarks"
-                  placeholder="Any additional information about dispatch"
-                  value={remarks}
-                  onChange={(e) => setRemarks(e.target.value)}
-                  rows={2}
-                />
-              </div>
-
-              <Button 
-                type="submit" 
-                className="w-full"
-                disabled={order.paymentStatus !== "Paid"}
-              >
-                <Send className="h-4 w-4 mr-2" />
-                Dispatch Order
-              </Button>
-            </form>
-          )}
-        </CardContent>
-      </Card>
-    </PermissionGated>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="contactNumber" className="flex items-center">
+              <Phone className="h-4 w-4 mr-1 opacity-70" />
+              Contact Number
+            </Label>
+            <Input
+              id="contactNumber"
+              type="text"
+              placeholder="Enter contact number"
+              value={contactNumber}
+              onChange={(e) => setContactNumber(e.target.value)}
+              required
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="trackingNumber" className="flex items-center">
+              <Package className="h-4 w-4 mr-1 opacity-70" />
+              Tracking Number (Optional)
+            </Label>
+            <Input
+              id="trackingNumber"
+              type="text"
+              placeholder="Enter tracking number"
+              value={trackingNumber}
+              onChange={(e) => setTrackingNumber(e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="courierPartner">Courier Partner</Label>
+          <Select
+            value={courierPartner}
+            onValueChange={(value) => setCourierPartner(value as CourierPartner)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select courier partner" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Shree Maruti">Shree Maruti</SelectItem>
+              <SelectItem value="DTDC">DTDC</SelectItem>
+              <SelectItem value="FedEx">FedEx</SelectItem>
+              <SelectItem value="DHL">DHL</SelectItem>
+              <SelectItem value="BlueDart">BlueDart</SelectItem>
+              <SelectItem value="Other">Other</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="deliveryType">Delivery Type</Label>
+          <Select
+            value={deliveryType}
+            onValueChange={(value) => setDeliveryType(value as DeliveryType)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select delivery type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Normal">Normal</SelectItem>
+              <SelectItem value="Express">Express</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="dispatchDate" className="flex items-center">
+            <Calendar className="h-4 w-4 mr-1 opacity-70" />
+            Dispatch Date
+          </Label>
+          <DatePicker
+            date={dispatchDate}
+            setDate={setDispatchDate}
+            label="Dispatch Date"
+            required
+          />
+        </div>
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="remarks">Remarks (Optional)</Label>
+        <Textarea
+          id="remarks"
+          placeholder="Add any additional notes for dispatch"
+          value={remarks}
+          onChange={(e) => setRemarks(e.target.value)}
+          rows={2}
+        />
+      </div>
+      
+      <Button type="submit" className="w-full">
+        <Truck className="h-4 w-4 mr-2" />
+        Dispatch Order
+      </Button>
+    </form>
   );
 };
-
-export default DispatchForm;
