@@ -1,6 +1,6 @@
 
-import React, { useState } from "react";
-import { useOrders } from "@/contexts/OrderContext";
+import React, { useState, useEffect } from "react";
+import { useOrders } from '@/contexts/OrderContext';
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -23,11 +23,22 @@ const OrderArchiveForm: React.FC<OrderArchiveFormProps> = ({ orderId }) => {
   const { getOrder, updateOrder } = useOrders();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
-  const order = getOrder(orderId);
+  const [order, setOrder] = useState<Order | null>(null);
+  
+  // Fetch order data when component mounts
+  useEffect(() => {
+    const fetchOrder = async () => {
+      const fetchedOrder = await getOrder(orderId);
+      if (fetchedOrder) {
+        setOrder(fetchedOrder);
+      }
+    };
+    
+    fetchOrder();
+  }, [orderId, getOrder]);
 
   if (!order) {
-    return <p>Order not found</p>;
+    return <p>Loading order...</p>;
   }
 
   const handleSubmit = async () => {
@@ -37,7 +48,12 @@ const OrderArchiveForm: React.FC<OrderArchiveFormProps> = ({ orderId }) => {
       await updateOrder(updatedOrder);
       
       // Notify about status change using type assertion
-      await notifyOrderStatusChanged(order.id, order.orderNumber, "On Hold" as OrderStatus, order.currentDepartment);
+      await notifyOrderStatusChanged(
+        order.id, 
+        order.orderNumber, 
+        "On Hold" as OrderStatus, 
+        order.currentDepartment
+      );
       
       toast.success("Order archived successfully");
       setIsDialogOpen(false);

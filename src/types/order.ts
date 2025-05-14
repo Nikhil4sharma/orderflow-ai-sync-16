@@ -1,4 +1,3 @@
-
 import { Department, OrderStatus, PaymentStatus, StatusType, CourierPartner, DeliveryType } from './common';
 import { ProductionStage, DesignStatus, PrepressStatus } from './department';
 
@@ -95,4 +94,15 @@ export interface Order {
   expectedCompletionDate?: string;
   // For department field compatibility
   department?: Department;
+}
+
+export interface OrderFilters {
+  status?: string[];
+  department?: string[];
+  dateRange?: {
+    from: Date | null;
+    to: Date | null;
+  };
+  searchTerm?: string;
+  paymentStatus?: string[];
 }

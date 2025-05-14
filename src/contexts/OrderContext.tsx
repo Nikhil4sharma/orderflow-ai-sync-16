@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { collection, getDocs, getDoc, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -6,17 +7,22 @@ import {
   OrderStatus, 
   Department, 
   StatusUpdate, 
-  OrderFilters 
+  PaymentRecord
 } from '@/types';
 import { toast } from 'sonner';
+import { useUsers } from '@/contexts/UserContext';
+
+// Import OrderFilters from types/order.ts
+import { OrderFilters } from '@/types/order';
 
 // Define the shape of the context
 export interface OrderContextType {
   orders: Order[];
   loading: boolean;
+  currentUser: any; // Add currentUser property
   addOrder: (order: Omit<Order, 'id'>) => Promise<string | undefined>;
   getOrder: (id: string) => Promise<Order | undefined>;
-  updateOrder: (id: string, updates: Partial<Order>) => Promise<void>;
+  updateOrder: (order: Order) => Promise<void>;
   deleteOrder: (id: string) => Promise<void>;
   updateOrderStatus: (
     orderId: string,
@@ -32,12 +38,26 @@ export interface OrderContextType {
   getSortedOrders: (orders: Order[], sortBy: string, sortDirection: 'asc' | 'desc') => Order[];
   markReadyForDispatch: (orderId: string) => Promise<void>;
   canUserSeeElement: (elementId: string) => boolean;
+  // Add missing methods and properties
+  addStatusUpdate: (orderId: string, statusData: {
+    department: Department;
+    status: OrderStatus;
+    remarks: string;
+    estimatedTime?: string;
+    selectedProduct?: string;
+    orderId?: string;
+  }) => Promise<void>;
+  updateStatusUpdate: (orderId: string, updateId: string, updates: Partial<StatusUpdate>) => Promise<void>;
+  undoStatusUpdate: (orderId: string, updateId: string) => Promise<void>;
+  hasPermission: (permission: string) => boolean;
+  addPayment: (orderId: string, payment: Omit<PaymentRecord, 'id'>) => Promise<void>;
 }
 
 // Create the context
 const OrderContext = createContext<OrderContextType>({
   orders: [],
   loading: true,
+  currentUser: null, // Default value for currentUser
   addOrder: async () => { return undefined },
   getOrder: async () => { return undefined },
   updateOrder: async () => {},
@@ -47,6 +67,12 @@ const OrderContext = createContext<OrderContextType>({
   getSortedOrders: () => [],
   markReadyForDispatch: async () => {},
   canUserSeeElement: () => true,
+  // Add default implementations for new methods
+  addStatusUpdate: async () => {},
+  updateStatusUpdate: async () => {},
+  undoStatusUpdate: async () => {},
+  hasPermission: () => false,
+  addPayment: async () => {},
 });
 
 // Provider component
@@ -54,6 +80,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { currentUser } = useUsers(); // Get currentUser from UserContext
 
   // Fetch orders from Firestore
   useEffect(() => {
@@ -72,7 +99,8 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             currentDepartment: data.currentDepartment as Department,
             // Add missing properties if they don't exist in the data
             lastUpdated: data.lastUpdated || new Date().toISOString(),
-            paymentHistory: data.paymentHistory || []
+            paymentHistory: data.paymentHistory || [],
+            statusHistory: data.statusHistory || []
           } as Order;
         });
         setOrders(ordersList);
@@ -128,13 +156,14 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   // Function to update an order
-  const updateOrder = async (id: string, updates: Partial<Order>): Promise<void> => {
+  const updateOrder = async (updatedOrder: Order): Promise<void> => {
     try {
+      const { id, ...orderData } = updatedOrder;
       const orderDoc = doc(db, 'orders', id);
-      await updateDoc(orderDoc, updates);
+      await updateDoc(orderDoc, orderData);
       // Update local state
       setOrders(prevOrders =>
-        prevOrders.map(order => (order.id === id ? { ...order, ...updates } : order))
+        prevOrders.map(order => (order.id === id ? updatedOrder : order))
       );
       toast.success("Order updated successfully!");
     } catch (error) {
@@ -200,25 +229,191 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         department: statusData.department,
         status: statusData.status,
         remarks: statusData.remarks,
-        updatedBy: "Current User", // Replace with actual user
+        updatedBy: currentUser?.name || "Unknown User",
         editableUntil: new Date(Date.now() + 15 * 60000).toISOString(), // 15 minutes from now
         estimatedTime: statusData.estimatedTime,
         selectedProduct: statusData.selectedProduct
       };
   
       // Add the status update to the order's status history
-      const updatedPaymentHistory = [...orderData.statusHistory || [], statusUpdate];
-      await updateDoc(orderRef, { statusHistory: updatedPaymentHistory });
+      const updatedStatusHistory = [...(orderData.statusHistory || []), statusUpdate];
+      await updateDoc(orderRef, { statusHistory: updatedStatusHistory });
   
-      // Optionally, update the local state with the new status history
+      // Update the local state with the new status history
       setOrders(prevOrders =>
         prevOrders.map(order =>
-          order.id === orderId ? { ...order, statusHistory: updatedPaymentHistory } : order
+          order.id === orderId ? { ...order, statusHistory: updatedStatusHistory } : order
         )
       );
     } catch (error) {
       console.error("Error updating order status:", error);
       throw error;
+    }
+  };
+
+  // New function to add a status update
+  const addStatusUpdate = async (orderId: string, statusData: {
+    department: Department;
+    status: OrderStatus;
+    remarks: string;
+    estimatedTime?: string;
+    selectedProduct?: string;
+    orderId?: string;
+  }) => {
+    try {
+      const orderRef = doc(db, 'orders', orderId);
+      const orderSnapshot = await getDoc(orderRef);
+
+      if (!orderSnapshot.exists()) {
+        throw new Error("Order not found");
+      }
+
+      const orderData = orderSnapshot.data() as Order;
+
+      // Create a status update record
+      const statusUpdate: StatusUpdate = {
+        id: Date.now().toString(),
+        orderId,
+        timestamp: new Date().toISOString(),
+        department: statusData.department,
+        status: statusData.status,
+        remarks: statusData.remarks,
+        updatedBy: currentUser?.name || "Unknown User",
+        editableUntil: new Date(Date.now() + 15 * 60000).toISOString(), // 15 minutes from now
+        estimatedTime: statusData.estimatedTime,
+        selectedProduct: statusData.selectedProduct
+      };
+
+      // Add the status update to the order's status history
+      const updatedStatusHistory = [...(orderData.statusHistory || []), statusUpdate];
+      await updateDoc(orderRef, { statusHistory: updatedStatusHistory });
+
+      // Update the local state with the new status history
+      setOrders(prevOrders =>
+        prevOrders.map(order =>
+          order.id === orderId ? { ...order, statusHistory: updatedStatusHistory } : order
+        )
+      );
+
+      toast.success("Status update added successfully");
+    } catch (error) {
+      console.error("Error adding status update:", error);
+      toast.error("Failed to add status update");
+    }
+  };
+
+  // Function to update a status update
+  const updateStatusUpdate = async (orderId: string, updateId: string, updates: Partial<StatusUpdate>) => {
+    try {
+      const orderRef = doc(db, 'orders', orderId);
+      const orderSnapshot = await getDoc(orderRef);
+
+      if (!orderSnapshot.exists()) {
+        throw new Error("Order not found");
+      }
+
+      const orderData = orderSnapshot.data() as Order;
+      const statusHistory = orderData.statusHistory || [];
+      
+      // Find and update the status update
+      const updatedStatusHistory = statusHistory.map(update => 
+        update.id === updateId ? { ...update, ...updates } : update
+      );
+
+      // Update the order in Firestore
+      await updateDoc(orderRef, { statusHistory: updatedStatusHistory });
+
+      // Update the local state
+      setOrders(prevOrders =>
+        prevOrders.map(order =>
+          order.id === orderId ? { ...order, statusHistory: updatedStatusHistory } : order
+        )
+      );
+
+      toast.success("Status update modified successfully");
+    } catch (error) {
+      console.error("Error updating status update:", error);
+      toast.error("Failed to update status");
+    }
+  };
+
+  // Function to undo a status update
+  const undoStatusUpdate = async (orderId: string, updateId: string) => {
+    try {
+      const orderRef = doc(db, 'orders', orderId);
+      const orderSnapshot = await getDoc(orderRef);
+
+      if (!orderSnapshot.exists()) {
+        throw new Error("Order not found");
+      }
+
+      const orderData = orderSnapshot.data() as Order;
+      const statusHistory = orderData.statusHistory || [];
+      
+      // Remove the status update
+      const updatedStatusHistory = statusHistory.filter(update => update.id !== updateId);
+
+      // Update the order in Firestore
+      await updateDoc(orderRef, { statusHistory: updatedStatusHistory });
+
+      // Update the local state
+      setOrders(prevOrders =>
+        prevOrders.map(order =>
+          order.id === orderId ? { ...order, statusHistory: updatedStatusHistory } : order
+        )
+      );
+
+      toast.success("Status update removed successfully");
+    } catch (error) {
+      console.error("Error removing status update:", error);
+      toast.error("Failed to remove status update");
+    }
+  };
+
+  // Function to add a payment record
+  const addPayment = async (orderId: string, payment: Omit<PaymentRecord, 'id'>) => {
+    try {
+      const orderRef = doc(db, 'orders', orderId);
+      const orderSnapshot = await getDoc(orderRef);
+
+      if (!orderSnapshot.exists()) {
+        throw new Error("Order not found");
+      }
+
+      const orderData = orderSnapshot.data() as Order;
+      
+      // Create a payment record
+      const paymentRecord: PaymentRecord = {
+        id: Date.now().toString(),
+        ...payment
+      };
+
+      // Add the payment to the order's payment history
+      const updatedPaymentHistory = [...(orderData.paymentHistory || []), paymentRecord];
+      
+      // Calculate new payment totals
+      const totalPaid = updatedPaymentHistory.reduce((sum, p) => sum + p.amount, 0);
+      const updates = {
+        paymentHistory: updatedPaymentHistory,
+        paidAmount: totalPaid,
+        pendingAmount: orderData.amount - totalPaid,
+        paymentStatus: totalPaid >= orderData.amount ? 'Paid' : totalPaid > 0 ? 'Partial' : 'Pending'
+      };
+
+      // Update the order in Firestore
+      await updateDoc(orderRef, updates);
+
+      // Update the local state
+      setOrders(prevOrders =>
+        prevOrders.map(order =>
+          order.id === orderId ? { ...order, ...updates } : order
+        )
+      );
+
+      toast.success("Payment added successfully");
+    } catch (error) {
+      console.error("Error adding payment:", error);
+      toast.error("Failed to add payment");
     }
   };
 
@@ -253,10 +448,10 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         }
       }
   
-      if (filters.searchTerm && !order.orderName.toLowerCase().includes(filters.searchTerm.toLowerCase())) {
+      if (filters.searchTerm && !order.orderName?.toLowerCase().includes(filters.searchTerm.toLowerCase())) {
         return false;
       }
-      return true; // Replace with actual filtering logic
+      return true;
     });
   };
 
@@ -266,14 +461,14 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     sortBy: string, 
     sortDirection: 'asc' | 'desc'
   ): Order[] => {
-    const sortedOrders = [...ordersToSort]; // Create a copy to avoid mutating the original array
+    const sortedOrders = [...ordersToSort];
   
     sortedOrders.sort((a, b) => {
       const aValue = a[sortBy as keyof Order];
       const bValue = b[sortBy as keyof Order];
   
       if (aValue === undefined || bValue === undefined) {
-        return 0; // Handle undefined values gracefully
+        return 0;
       }
   
       let comparison = 0;
@@ -285,14 +480,13 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       } else if (aValue instanceof Date && bValue instanceof Date) {
         comparison = aValue.getTime() - bValue.getTime();
       } else {
-        // If the types are not directly comparable, attempt to convert to string
         comparison = String(aValue).localeCompare(String(bValue));
       }
   
       return sortDirection === 'asc' ? comparison : -comparison;
     });
   
-    return sortedOrders; // Replace with actual sorting logic
+    return sortedOrders;
   };
 
   // Function to mark order as ready for dispatch
@@ -300,11 +494,11 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     try {
       const orderRef = doc(db, 'orders', orderId);
       await updateDoc(orderRef, {
-        status: 'Ready to Dispatch',
+        status: 'Ready to Dispatch' as OrderStatus,
       });
       setOrders(prevOrders =>
         prevOrders.map(order =>
-          order.id === orderId ? { ...order, status: 'Ready to Dispatch' } : order
+          order.id === orderId ? { ...order, status: 'Ready to Dispatch' as OrderStatus } : order
         )
       );
       toast.success('Order marked as Ready for Dispatch!');
@@ -316,15 +510,20 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   // Function to check if user can see a dashboard element
   const canUserSeeElement = (elementId: string): boolean => {
-    // Implement your logic here to determine if the user can see the element
-    // based on the elementId and the user's role or permissions.
+    // Implement logic to determine if the user can see the element
     return true; // Default implementation
+  };
+
+  // Function to check if user has a specific permission
+  const hasPermission = (permission: string): boolean => {
+    return currentUser?.permissions?.includes(permission) || false;
   };
 
   return (
     <OrderContext.Provider value={{
       orders,
       loading,
+      currentUser, // Pass the currentUser
       addOrder,
       getOrder,
       updateOrder,
@@ -333,7 +532,12 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       getFilteredOrders,
       getSortedOrders,
       markReadyForDispatch,
-      canUserSeeElement
+      canUserSeeElement,
+      addStatusUpdate,
+      updateStatusUpdate,
+      undoStatusUpdate,
+      hasPermission,
+      addPayment
     }}>
       {children}
     </OrderContext.Provider>
