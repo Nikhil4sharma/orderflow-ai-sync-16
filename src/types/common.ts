@@ -95,8 +95,11 @@ export type PermissionKey =
 export type OrderFilters = {
   department?: Department;
   status?: OrderStatus;
-  paymentStatus?: string;
-  dateRange?: any;
+  paymentStatus?: PaymentStatus;
+  dateRange?: {
+    from: Date;
+    to: Date;
+  };
   amountRange?: {
     min?: number;
     max?: number;

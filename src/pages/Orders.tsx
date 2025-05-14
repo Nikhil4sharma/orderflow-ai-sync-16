@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useOrders } from "@/contexts/OrderContext";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import OrdersList from "@/components/OrdersList";
 
 // Custom tab logic: if order.status is 'Pending Approval' or remarks/status indicate 'Pending Feedback from Sales Team', show in Pending Approval tab
-const getTabStatus = (order) => {
+const getTabStatus = (order: any) => {
   if (
     order.status === "Pending Approval" ||
     order.remarks === "Pending Feedback from Sales Team" ||
@@ -216,7 +217,7 @@ const Orders: React.FC = () => {
         </div>
       </div>
 
-      <OrdersList orders={filteredOrders} currentUser={currentUser} getTabStatus={getTabStatus} />
+      <OrdersList orders={filteredOrders} getTabStatus={getTabStatus} />
     </div>
   );
 };

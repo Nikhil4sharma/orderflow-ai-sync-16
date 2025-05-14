@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Order } from '@/types';
+import { Order, OrderStatus } from '@/types';
 import { notifyOrderStatusChanged } from '@/utils/notifications';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
@@ -15,7 +15,7 @@ const OrderExportForm: React.FC<OrderExportFormProps> = ({ order, onExport }) =>
   const handleExport = async () => {
     try {
       // Add export functionality here
-      await notifyOrderStatusChanged(order.id, order.orderNumber, 'In Progress', order.currentDepartment);
+      await notifyOrderStatusChanged(order.id, order.orderNumber, 'In Progress' as OrderStatus, order.currentDepartment);
       toast.success(`Order #${order.orderNumber} exported successfully`);
       if (onExport) onExport();
     } catch (error) {

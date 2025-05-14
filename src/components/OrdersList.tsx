@@ -81,17 +81,17 @@ const OrdersList: React.FC<OrdersListProps> = ({
     return orders.filter((order) => {
       switch (activeFilter) {
         case "new":
-          return order.status === "New" || 
-                (department === "Production" && order.status === "In Progress");
+          return order.status === "New";
         case "pendingDesign":
-          return order.status === "In Progress" || 
-                (order.currentDepartment === "Design" && order.status === "In Progress");
+          return order.currentDepartment === "Design" && order.status === "In Progress";
         case "pendingPrepress":
           return order.currentDepartment === "Prepress" && order.status === "In Progress";
         case "designApproved":
-          return order.status === "Design Approved" || order.status === "Approved";
+          return order.status === "Design Approved" || 
+                order.status === "Approved";
         case "prepressApproved":
-          return order.status === "Prepress Approved" || order.status === "Approved";
+          return order.status === "Prepress Approved" || 
+                order.status === "Approved";
         case "inProgress":
           return order.status === "In Progress";
         case "completed":
@@ -104,7 +104,7 @@ const OrdersList: React.FC<OrdersListProps> = ({
           return true;
       }
     });
-  }, [orders, activeFilter, showFilters, getTabStatus, department]);
+  }, [orders, activeFilter, showFilters, getTabStatus]);
 
   const handleTabChange = useCallback(
     (value: string) => {

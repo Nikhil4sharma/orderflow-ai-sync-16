@@ -4,7 +4,7 @@ import { useOrders } from "@/contexts/OrderContext";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { CheckCircle } from "lucide-react";
-import { Order } from "@/types";
+import { Order, OrderStatus } from "@/types";
 import { notifyOrderStatusChanged } from '@/utils/notifications';
 
 interface OrderCompleteFormProps {
@@ -25,14 +25,14 @@ const OrderCompleteForm: React.FC<OrderCompleteFormProps> = ({ order, onComplete
       // Mark order as completed
       const updatedOrder = {
         ...order,
-        status: "Completed",
+        status: "Completed" as OrderStatus,
       };
       
       // Update the order
       await updateOrder(updatedOrder);
       
       // Notify about status change
-      await notifyOrderStatusChanged(order.id, order.orderNumber, 'Completed', order.currentDepartment);
+      await notifyOrderStatusChanged(order.id, order.orderNumber, 'Completed' as OrderStatus, order.currentDepartment);
       
       toast.success("Order marked as completed!");
       

@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useUsers } from "@/contexts/UserContext";
 import { toast } from "sonner";
 import { demoLogin } from "@/utils/orderWorkflow";
+import { Department, User } from "@/types";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -24,9 +25,13 @@ const Login = () => {
       // For development mode, use the demo login (simulated authentication)
       const result = await demoLogin(email, password);
       
-      // Set the user in the context
+      // Set the user in the context with type assertion for department
       if (login && result.user) {
-        login(result.user);
+        const typedUser: User = {
+          ...result.user,
+          department: result.user.department as Department
+        };
+        login(typedUser);
         
         // Show success toast
         toast.success(`Welcome, ${result.user.name}!`, {

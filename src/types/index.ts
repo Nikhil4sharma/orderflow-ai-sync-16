@@ -19,14 +19,10 @@ export type {
   PaymentRecord,
   DispatchDetails,
   StatusUpdate,
-} from './common';
-
-// Re-export ProductionStage, DesignStatus and PrepressStatus
-export {
-  ProductionStage,
-} from './department';
-
-export {
   DesignStatus,
   PrepressStatus,
+  ProductionStatus
 } from './common';
+
+// Export ProductionStage from department.ts
+export type { ProductionStage } from './department';

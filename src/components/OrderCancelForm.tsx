@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { XCircle } from "lucide-react";
-import { Order } from "@/types";
+import { Order, OrderStatus } from "@/types";
 import { notifyOrderStatusChanged } from '@/utils/notifications';
 
 interface OrderCancelFormProps {
@@ -28,11 +28,11 @@ const OrderCancelForm: React.FC<OrderCancelFormProps> = ({ order }) => {
     setLoading(true);
     try {
       // Update the order status to "On Hold"
-      const updatedOrder = { ...order, status: "On Hold" };
+      const updatedOrder = { ...order, status: "On Hold" as OrderStatus };
       await updateOrder(updatedOrder);
 
       // Notify about status change
-      await notifyOrderStatusChanged(order.id, order.orderNumber, "On Hold", order.currentDepartment);
+      await notifyOrderStatusChanged(order.id, order.orderNumber, "On Hold" as OrderStatus, order.currentDepartment);
 
       toast.success("Order has been cancelled successfully");
       setIsDialogOpen(false);

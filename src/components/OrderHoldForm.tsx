@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Order } from '@/types';
+import { Order, OrderStatus } from '@/types';
 import { notifyOrderStatusChanged } from '@/utils/notifications';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
@@ -14,7 +14,7 @@ interface OrderHoldFormProps {
 const OrderHoldForm: React.FC<OrderHoldFormProps> = ({ order, onHold }) => {
   const handleHold = async () => {
     try {
-      await notifyOrderStatusChanged(order.id, order.orderNumber, 'On Hold', order.currentDepartment);
+      await notifyOrderStatusChanged(order.id, order.orderNumber, 'On Hold' as OrderStatus, order.currentDepartment);
       toast.success(`Order #${order.orderNumber} placed on hold`);
       if (onHold) onHold();
     } catch (error) {

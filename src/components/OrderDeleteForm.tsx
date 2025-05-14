@@ -1,7 +1,7 @@
 
 import { notifyOrderStatusChanged } from '@/utils/notifications';
 import React from 'react';
-import { Department, Order } from '@/types';
+import { Department, Order, OrderStatus } from '@/types';
 import { Button } from '@/components/ui/button'; 
 import { toast } from 'sonner';
 import { Trash } from 'lucide-react';
@@ -15,7 +15,7 @@ const OrderDeleteForm: React.FC<OrderDeleteFormProps> = ({ order, onDelete }) =>
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     try {
-      await notifyOrderStatusChanged(order.id, order.orderNumber, 'On Hold', order.currentDepartment);
+      await notifyOrderStatusChanged(order.id, order.orderNumber, 'On Hold' as OrderStatus, order.currentDepartment);
       if (onDelete) onDelete();
       toast.success(`Order #${order.orderNumber} deleted successfully`);
     } catch (error) {

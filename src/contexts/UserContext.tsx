@@ -8,13 +8,24 @@ interface UserContextType {
   login: (user: User) => void;
   logout: () => void;
   hasPermission: (permission: PermissionKey) => boolean;
+  // Add the missing properties
+  isAuthenticated: boolean;
+  loading: boolean;
+  firebaseUser: User | null;
+  signIn: (user: User) => void;
+  users?: User[];
 }
 
 const UserContext = createContext<UserContextType>({
   currentUser: null,
   login: () => {},
   logout: () => {},
-  hasPermission: () => false
+  hasPermission: () => false,
+  // Add default values for the missing properties
+  isAuthenticated: false,
+  loading: false,
+  firebaseUser: null,
+  signIn: () => {}
 });
 
 export const useUsers = () => useContext(UserContext);
@@ -25,6 +36,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const storedUser = localStorage.getItem("currentUser");
     return storedUser ? JSON.parse(storedUser) : null;
   });
+  const [loading, setLoading] = useState<boolean>(false);
 
   // Save user to local storage whenever it changes
   useEffect(() => {
@@ -47,8 +59,22 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return checkPermission(currentUser, permission);
   };
 
+  // For backward compatibility
+  const signIn = login;
+  const firebaseUser = currentUser;
+  const isAuthenticated = !!currentUser;
+
   return (
-    <UserContext.Provider value={{ currentUser, login, logout, hasPermission }}>
+    <UserContext.Provider value={{ 
+      currentUser, 
+      login, 
+      logout, 
+      hasPermission,
+      isAuthenticated,
+      loading,
+      firebaseUser,
+      signIn
+    }}>
       {children}
     </UserContext.Provider>
   );
