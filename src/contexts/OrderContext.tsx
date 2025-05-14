@@ -7,7 +7,9 @@ import {
   OrderStatus, 
   Department, 
   StatusUpdate, 
-  PaymentRecord
+  PaymentRecord,
+  PaymentStatus,
+  PermissionKey
 } from '@/types';
 import { toast } from 'sonner';
 import { useUsers } from '@/contexts/UserContext';
@@ -97,6 +99,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             id: doc.id,
             status: data.status as OrderStatus,
             currentDepartment: data.currentDepartment as Department,
+            paymentStatus: data.paymentStatus as PaymentStatus,
             // Add missing properties if they don't exist in the data
             lastUpdated: data.lastUpdated || new Date().toISOString(),
             paymentHistory: data.paymentHistory || [],
@@ -143,6 +146,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           ...data,
           status: data.status as OrderStatus,
           currentDepartment: data.currentDepartment as Department,
+          paymentStatus: data.paymentStatus as PaymentStatus,
         } as Order;
       } else {
         toast.error(`Order with ID ${id} not found`);
@@ -393,11 +397,17 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       
       // Calculate new payment totals
       const totalPaid = updatedPaymentHistory.reduce((sum, p) => sum + p.amount, 0);
+      const paymentStatus = totalPaid >= orderData.amount 
+        ? 'Paid' as PaymentStatus 
+        : totalPaid > 0 
+        ? 'Partial' as PaymentStatus 
+        : 'Pending' as PaymentStatus;
+
       const updates = {
         paymentHistory: updatedPaymentHistory,
         paidAmount: totalPaid,
         pendingAmount: orderData.amount - totalPaid,
-        paymentStatus: totalPaid >= orderData.amount ? 'Paid' : totalPaid > 0 ? 'Partial' : 'Pending'
+        paymentStatus
       };
 
       // Update the order in Firestore
@@ -435,20 +445,23 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       }
   
       if (filters.dateRange) {
-        const orderDate = new Date(order.orderDate);
+        const orderDate = order.createdAt ? new Date(order.createdAt) : null;
         const fromDate = filters.dateRange.from;
         const toDate = filters.dateRange.to;
   
-        if (fromDate && orderDate < fromDate) {
+        if (fromDate && orderDate && orderDate < fromDate) {
           return false;
         }
   
-        if (toDate && orderDate > toDate) {
+        if (toDate && orderDate && orderDate > toDate) {
           return false;
         }
       }
   
-      if (filters.searchTerm && !order.orderName?.toLowerCase().includes(filters.searchTerm.toLowerCase())) {
+      if (filters.searchTerm && !(
+        order.clientName?.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        order.orderNumber?.toLowerCase().includes(filters.searchTerm.toLowerCase())
+      )) {
         return false;
       }
       return true;
@@ -515,7 +528,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   // Function to check if user has a specific permission
-  const hasPermission = (permission: string): boolean => {
+  const hasPermission = (permission: PermissionKey): boolean => {
     return currentUser?.permissions?.includes(permission) || false;
   };
 

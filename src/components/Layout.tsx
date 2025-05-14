@@ -35,7 +35,7 @@ const Layout: React.FC = () => {
         handleLogout={handleLogout} 
       />
       <div className="flex-1 flex flex-col">
-        <Header toggleMenu={toggleMenu} user={currentUser} />
+        <Header toggleMenu={toggleMenu} currentUser={currentUser} />
         <main className="flex-1 p-6">
           <Outlet />
         </main>

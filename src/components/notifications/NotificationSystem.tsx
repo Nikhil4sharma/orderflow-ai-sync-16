@@ -5,6 +5,7 @@ import { Bell, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Notification } from '@/types/notification';
 import { Badge } from '@/components/ui/badge';
+import { NotificationType } from '@/types';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,7 +24,7 @@ const mockNotifications: Notification[] = [
     message: 'Design for order #ORD-2023-001 needs your approval',
     timestamp: new Date().toISOString(),
     isRead: false,
-    type: 'approval_request',
+    type: 'approval_request' as NotificationType,
     orderId: 'ORD-2023-001',
     forDepartments: ['Sales'],
     priority: 'high',
@@ -35,7 +36,7 @@ const mockNotifications: Notification[] = [
     message: 'Payment of ₹15,000 received for order #ORD-2023-002',
     timestamp: new Date(Date.now() - 3600000).toISOString(),
     isRead: false,
-    type: 'payment_received',
+    type: 'payment_received' as NotificationType,
     orderId: 'ORD-2023-002',
     forDepartments: ['Sales', 'Production'],
     priority: 'medium',
@@ -47,7 +48,7 @@ const mockNotifications: Notification[] = [
     message: 'Order #ORD-2023-003 is ready for dispatch',
     timestamp: new Date(Date.now() - 86400000).toISOString(),
     isRead: true,
-    type: 'ready_for_dispatch',
+    type: 'ready_for_dispatch' as NotificationType,
     orderId: 'ORD-2023-003',
     forDepartments: ['Sales', 'Production'],
     priority: 'medium',

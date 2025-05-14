@@ -1,3 +1,4 @@
+
 export type Department = 
   | 'Sales' 
   | 'Design' 
@@ -6,7 +7,7 @@ export type Department =
   | 'Dispatch' 
   | 'Admin';
 
-export type Role = 'User' | 'Admin';
+export type Role = 'User' | 'Admin' | 'Manager' | 'Staff';
 
 export type OrderStatus = 
   | 'New Order'
@@ -18,19 +19,47 @@ export type OrderStatus =
   | 'Dispatched'
   | 'Delivered'
   | 'Cancelled'
-  | 'On Hold';
+  | 'On Hold'
+  | 'Completed'
+  | 'Verified'
+  | 'Design Approved'
+  | 'Prepress Approved'
+  | 'Approved'
+  | 'Payment Verified'
+  | 'Payment Recorded: Paid'
+  | 'Paid'
+  | 'In Progress'
+  | 'New'
+  | 'Pending Approval'
+  | 'Pending Payment'
+  | 'Payment Recorded: Partial'
+  | 'Issue';
 
 export type StatusType = 'success' | 'info' | 'warning' | 'error';
 
 export type ProductStatus = 'Pending' | 'In Production' | 'Completed';
 
-export type PaymentStatus = 'Pending' | 'Partial' | 'Paid' | 'Refunded';
+export type PaymentStatus = 'Pending' | 'Partial' | 'Paid' | 'Refunded' | 'Not Paid' | 'Partially Paid';
 
-export type CourierPartner = 'Blue Dart' | 'Delhivery' | 'DTDC' | 'Ekart' | 'Xpressbees' | 'Others';
+export type CourierPartner = 'Blue Dart' | 'Delhivery' | 'DTDC' | 'Ekart' | 'Xpressbees' | 'Others' | 'Shree Maruti' | 'FedEx' | 'DHL' | 'BlueDart' | 'Other';
 
 export type DeliveryType = 'Normal' | 'Express';
 
-export type NotificationType = 'Order' | 'Payment' | 'Delivery' | 'System';
+export type NotificationType = 
+  | 'Order' 
+  | 'Payment' 
+  | 'Delivery' 
+  | 'System'
+  | 'status_update'
+  | 'approval_request'
+  | 'feedback_request'
+  | 'ready_for_dispatch'
+  | 'order_completed'
+  | 'order_issue'
+  | 'payment_received'
+  | 'payment_required'
+  | 'order_created'
+  | 'order_status_update';
 
 export interface GoogleSheetConfig {
   spreadsheetId: string;
@@ -59,7 +88,28 @@ export type PermissionKey =
   | 'departments.edit'
   | 'departments.delete'
   | 'settings.view'
-  | 'settings.edit';
+  | 'settings.edit'
+  | 'view_orders' 
+  | 'create_orders' 
+  | 'update_orders'
+  | 'delete_orders'
+  | 'view_users'
+  | 'manage_users'
+  | 'manage_departments'
+  | 'update_order_status'
+  | 'verify_orders'
+  | 'dispatch_orders'
+  | 'view_reports'
+  | 'export_data'
+  | 'view_analytics'
+  | 'manage_settings'
+  | 'view_address_details'
+  | 'request_approval'
+  | 'provide_approval'
+  | 'forward_to_department'
+  | 'mark_ready_dispatch'
+  | 'verify_payment'
+  | 'view_delivery_details';
 
 export interface OrderFilters {
   status?: string[];
@@ -86,36 +136,57 @@ export interface User {
 export interface Order {
   id: string;
   orderNumber: string;
-  customerName: string;
-  customerEmail: string;
-  customerPhone: string;
-  shippingAddress: string;
-  billingAddress: string;
-  orderDate: string;
-  deliveryDate: string;
-  items: OrderItem[];
-  totalAmount: number;
-  discount: number;
-  tax: number;
-  shippingCost: number;
-  paymentMethod: string;
-  paymentStatus: PaymentStatus;
-  paymentHistory: PaymentRecord[];
-  courierPartner: CourierPartner;
-  trackingNumber: string;
-  deliveryType: DeliveryType;
+  clientName: string;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  shippingAddress?: string;
+  billingAddress?: string;
+  orderDate?: string;
+  deliveryDate?: string;
+  amount: number;
+  discount?: number;
+  tax?: number;
+  shippingCost?: number;
+  paymentMethod?: string;
+  items: string[] | OrderItem[];
+  totalAmount?: number;
+  paidAmount: number;
+  pendingAmount: number;
+  productStatus?: ProductStatus[];
+  paymentHistory?: PaymentRecord[];
+  createdAt: string;
+  lastUpdated: string;
   status: OrderStatus;
   currentDepartment: Department;
-  productionStageStatus?: ProductionStageStatus[];
-  designStatus?: string;
-  prepressStatus?: string;
-  remarks: string;
-  createdAt: string;
-  updatedAt: string;
-  lastUpdated: string;
-  createdBy: string;
-  updatedBy: string;
+  productionStages?: ProductionStageStatus[];
+  designStatus?: DesignStatus;
+  designTimeline?: string;
+  designRemarks?: string;
+  prepressStatus?: PrepressStatus;
+  prepressRemarks?: string;
+  statusHistory: StatusUpdate[];
+  paymentStatus: PaymentStatus;
+  lastPaymentDate?: string;
+  // Fields for dispatch
   dispatchDetails?: DispatchDetails;
+  // Fields for Google Sheet integration
+  sheetSyncId?: string;
+  lastSyncedAt?: string;
+  // Fields for approval
+  pendingApprovalFrom?: Department;
+  approvalReason?: string;
+  verifiedBy?: string;
+  verifiedAt?: string;
+  // Fields for address information
+  deliveryAddress?: string;
+  contactNumber?: string;
+  // Expected completion date
+  expectedCompletionDate?: string;
+  // For department field compatibility
+  department?: Department;
+  // Used in filters
+  orderName?: string;
 }
 
 export interface OrderItem {
@@ -137,29 +208,44 @@ export interface ProductionStageStatus {
 
 export interface PaymentRecord {
   id: string;
-  paymentDate: string;
-  paymentMethod: string;
   amount: number;
-  transactionId: string;
-  notes: string;
-}
-
-export interface DispatchDetails {
-  dispatchedBy: string;
-  dispatchDate: string;
-  expectedDeliveryDate: string;
-  notes: string;
+  date: string;
+  method: string;
+  remarks?: string;
+  paymentDate?: string;
+  paymentMethod?: string;
+  transactionId?: string;
+  notes?: string;
 }
 
 export interface StatusUpdate {
   id: string;
   orderId: string;
-  timestamp: string;
   department: Department;
   status: OrderStatus;
-  remarks: string;
+  remarks?: string;
+  timestamp: string;
   updatedBy: string;
-  editableUntil: string;
   estimatedTime?: string;
   selectedProduct?: string;
+  editableUntil?: string;
+  metadata?: {
+    updatedAt: string;
+    updatedBy: string;
+    department: string;
+    role: string;
+  };
+}
+
+export interface DispatchDetails {
+  address?: string;
+  contactNumber?: string;
+  courierPartner?: CourierPartner;
+  deliveryType?: DeliveryType;
+  trackingNumber?: string;
+  dispatchDate?: string;
+  verifiedBy?: string;
+  dispatchedBy?: string;
+  expectedDeliveryDate?: string;
+  notes?: string;
 }

@@ -27,3 +27,12 @@ export type {
   DesignStatus,
   PrepressStatus
 } from './department';
+
+// Export types from order.ts
+export type { OrderFilters as OrderFilters } from './order';
+
+// Export types from notification.ts
+export type { Notification } from './notification';
+
+// Export types from user.ts
+export type { PermissionKey as UserPermissionKey } from './user';

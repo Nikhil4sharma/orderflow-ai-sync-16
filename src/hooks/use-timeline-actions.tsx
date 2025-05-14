@@ -1,279 +1,165 @@
 
-import React, { useCallback } from 'react';
+import { useState } from 'react';
 import { useOrders } from '@/contexts/OrderContext';
+import { StatusUpdate, Department, OrderStatus, PermissionKey } from '@/types';
 import { toast } from 'sonner';
-import { StatusUpdate, Order, Department } from '@/types';
-import { format, parseISO, formatDistanceToNow } from 'date-fns';
-import { nanoid } from 'nanoid';
-import { notifyOrderStatusChanged } from '@/utils/notifications';
-import { 
-  Clipboard, 
-  FileText, 
-  ShoppingBag,
-  Palette, 
-  Printer, 
-  Package,
-  Settings
+import {
+  Calendar,
+  Check,
+  Clock,
+  Edit,
+  FileSpreadsheet,
+  Forward,
+  MoreVertical,
+  PenSquare,
+  Trash,
+  Truck,
+  Undo,
 } from 'lucide-react';
 
+export interface TimelineAction {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  action: (statusUpdate: StatusUpdate) => void;
+  showFor: PermissionKey[];
+  condition?: (statusUpdate: StatusUpdate) => boolean;
+  department?: Department[];
+}
+
 export function useTimelineActions() {
-  const { currentUser, orders, undoStatusUpdate, updateStatusUpdate, updateOrder } = useOrders();
+  const { updateStatusUpdate, undoStatusUpdate, updateOrder, currentUser } = useOrders();
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [currentStatusUpdate, setCurrentStatusUpdate] = useState<StatusUpdate | null>(null);
 
-  // Format date for timeline display
-  const formatDate = (dateString: string) => {
-    try {
-      const date = parseISO(dateString);
-      return formatDistanceToNow(date, { addSuffix: true });
-    } catch (e) {
-      return dateString;
-    }
-  };
-
-  // Check if update is recent (within last hour)
-  const isRecentUpdate = (update: StatusUpdate): boolean => {
+  const canEditUpdate = (update: StatusUpdate): boolean => {
+    if (!update.editableUntil) return false;
+    
+    // Check if the edit period has expired
+    const editDeadline = new Date(update.editableUntil);
     const now = new Date();
+    
+    if (now > editDeadline) return false;
+    
+    // Check if user is the one who created this update
+    return update.updatedBy === currentUser?.name;
+  };
+  
+  const canUndoUpdate = (update: StatusUpdate): boolean => {
+    // Can only undo your own updates and only if they're recent
+    if (!update.timestamp) return false;
+    
     const updateTime = new Date(update.timestamp);
-    const diffMs = now.getTime() - updateTime.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    return diffMins <= 60;
-  };
-  
-  // Check if user can undo an update
-  const canUndoUpdate = (update: StatusUpdate, currentUser: any): boolean => {
-    // Admin can undo any time
-    if (currentUser?.role === 'Admin') {
-      return true;
-    }
+    const now = new Date();
+    const hoursSinceUpdate = (now.getTime() - updateTime.getTime()) / (1000 * 60 * 60);
     
-    // Users can undo their own updates for 5 minutes
-    if (update.updatedBy === currentUser?.name) {
-      const now = new Date();
-      const updateTime = new Date(update.timestamp);
-      const diffMs = now.getTime() - updateTime.getTime();
-      const diffMins = Math.floor(diffMs / 60000);
-      return diffMins <= 5;
-    }
+    // Can only undo updates within the last 24 hours
+    return hoursSinceUpdate <= 24 && update.updatedBy === currentUser?.name;
+  };
+
+  const handleEdit = (statusUpdate: StatusUpdate) => {
+    setCurrentStatusUpdate(statusUpdate);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveEdit = (updatedDetails: Partial<StatusUpdate>) => {
+    if (!currentStatusUpdate) return;
     
-    return false;
-  };
-  
-  // Check if user can edit a status update
-  const canUserEditStatusUpdate = (update: StatusUpdate, currentUser: any): boolean => {
-    // Admin can edit anytime
-    if (currentUser?.role === 'Admin') {
-      return true;
-    }
-    
-    // Users can edit their own updates within the editable window
-    if (update.updatedBy === currentUser?.name && update.editableUntil) {
-      const now = new Date();
-      const editableUntil = new Date(update.editableUntil);
-      return now <= editableUntil;
-    }
-    
-    return false;
-  };
-  
-  // Handle edit status action (stub - this would be connected to your edit modal)
-  const handleEditStatus = (update: StatusUpdate) => {
-    // This function would open your edit modal with the update data
-    // This is a stub implementation
-    console.log('Edit status:', update);
-  };
-  
-  // Handle undo update action
-  const handleUndoUpdate = async (update: StatusUpdate) => {
-    try {
-      await undoStatusUpdate(update.id);
-    } catch (error) {
-      console.error('Error undoing update:', error);
-      toast.error('Failed to undo update');
-    }
-  };
-  
-  // Get department-specific styles for UI
-  const getDepartmentStyles = (department: string) => {
-    switch (department) {
-      case 'Sales':
-        return 'bg-blue-500';
-      case 'Design':
-        return 'bg-purple-500';
-      case 'Prepress':
-        return 'bg-amber-500';
-      case 'Production':
-        return 'bg-green-500';
-      case 'Admin':
-        return 'bg-gray-500';
-      default:
-        return 'bg-slate-500';
-    }
-  };
-  
-  // Get department-specific icon
-  const getDepartmentIcon = (department: string) => {
-    switch (department) {
-      case 'Sales':
-        return <ShoppingBag className="h-4 w-4 text-white" />;
-      case 'Design':
-        return <Palette className="h-4 w-4 text-white" />;
-      case 'Prepress':
-        return <FileText className="h-4 w-4 text-white" />;
-      case 'Production':
-        return <Printer className="h-4 w-4 text-white" />;
-      case 'Admin':
-        return <Settings className="h-4 w-4 text-white" />;
-      default:
-        return <Clipboard className="h-4 w-4 text-white" />;
-    }
+    updateStatusUpdate(currentStatusUpdate.orderId, currentStatusUpdate.id, updatedDetails);
+    setIsEditModalOpen(false);
+    setCurrentStatusUpdate(null);
+    toast.success('Status update edited successfully');
   };
 
-  const canEditStatusUpdate = (update: StatusUpdate): boolean => {
-    // Admin can edit any time
-    if (currentUser?.role === 'Admin') {
-      return true;
-    }
-
-    // Users can edit their own updates for 30 minutes
-    if (update.updatedBy === currentUser?.name) {
-      const now = new Date();
-      const updateTime = new Date(update.timestamp);
-      const diffMs = now.getTime() - updateTime.getTime();
-      const diffMins = Math.floor(diffMs / 60000);
-      return diffMins <= 30;
-    }
-
-    return false;
+  const handleUndo = (statusUpdate: StatusUpdate) => {
+    undoStatusUpdate(statusUpdate.orderId, statusUpdate.id);
+    toast.success('Status update removed');
   };
 
-  const removeStatusUpdate = async (orderId: string, updateId: string) => {
-    const order = orders.find(o => o.id === orderId);
-    if (!order) {
-      toast.error('Order not found');
-      return;
-    }
-
-    const updatedHistory = order.statusHistory.filter(update => update.id !== updateId);
-    
-    try {
-      await updateOrder({
-        ...order,
-        statusHistory: updatedHistory,
-      });
-      toast.success('Status update removed successfully');
-    } catch (error) {
-      console.error('Error removing status update:', error);
-      toast.error('Failed to remove status update');
-    }
+  const handleForward = (statusUpdate: StatusUpdate) => {
+    // Handle forwarding to another department
+    toast.info('Forward functionality not implemented yet');
   };
 
-  const editStatusUpdate = async (orderId: string, updateId: string, newData: Partial<StatusUpdate>) => {
-    const order = orders.find(o => o.id === orderId);
-    if (!order) {
-      toast.error('Order not found');
-      return;
-    }
-
-    // Ensure new data won't break type safety
-    const safeNewData = {
-      ...newData,
-      department: newData.department || undefined,
-      status: newData.status || undefined,
-    };
-
-    const updatedHistory = order.statusHistory.map(update => 
-      update.id === updateId
-        ? { 
-            ...update, 
-            ...safeNewData,
-            metadata: {
-              updatedAt: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
-              updatedBy: currentUser?.name || 'Unknown',
-              department: currentUser?.department || 'Unknown',
-              role: currentUser?.role || 'Unknown',
-            }
-          }
-        : update
-    );
-    
-    try {
-      await updateOrder({
-        ...order,
-        statusHistory: updatedHistory as StatusUpdate[],
-      });
-      
-      if (newData.status) {
-        await notifyOrderStatusChanged(
-          orderId, 
-          order.orderNumber, 
-          newData.status, 
-          currentUser?.department || ''
-        );
-      }
-      
-      toast.success('Status update edited successfully');
-    } catch (error) {
-      console.error('Error editing status update:', error);
-      toast.error('Failed to edit status update');
-    }
+  const handleExport = (statusUpdate: StatusUpdate) => {
+    // Export status update to PDF/Excel
+    toast.info('Export functionality not implemented yet');
   };
 
-  const addStatusUpdate = useCallback(async (order: Order, status: string, remarks?: string) => {
-    try {
-      // Find the order
-      const existingOrder = orders.find(o => o.id === order.id);
-      if (!existingOrder) {
-        toast.error('Order not found');
-        return;
-      }
+  const handleMarkCompleted = (statusUpdate: StatusUpdate) => {
+    // Mark the associated task as completed
+    updateStatusUpdate(statusUpdate.orderId, statusUpdate.id, {
+      status: 'Completed' as OrderStatus,
+    });
+    toast.success('Marked as completed');
+  };
 
-      // Create new status update
-      const newUpdate: StatusUpdate = {
-        id: Date.now().toString(),
-        orderId: order.id,
-        department: (currentUser?.department || 'Sales') as Department,
-        status: status as any, // Cast needed due to string parameter vs OrderStatus
-        remarks: remarks || '',
-        timestamp: new Date().toISOString(),
-        updatedBy: currentUser?.name || 'System',
-        editableUntil: new Date(Date.now() + 30 * 60000).toISOString() // 30 min
-      };
+  const handleActivateDispatch = (statusUpdate: StatusUpdate) => {
+    // Set order status to Ready to Dispatch
+    updateOrder({
+      ...currentStatusUpdate as any, // This will be replaced with proper order data in a real implementation
+      status: 'Ready to Dispatch' as OrderStatus,
+    });
+    toast.success('Order marked as Ready to Dispatch');
+  };
 
-      // Get existing status updates or empty array
-      const existingUpdates = existingOrder.statusHistory || [];
-      
-      // Add the new update
-      const updatedHistory = [...existingUpdates, newUpdate];
-      
-      // Create updated order with new status history
-      const updatedOrder = {
-        ...existingOrder,
-        statusHistory: updatedHistory,
-        lastUpdated: new Date().toISOString(),
-      };
-      
-      // Log the update for debugging
-      console.log('Adding status update:', newUpdate);
-      console.log('Updated order:', updatedOrder);
-      
-      toast.success('Status update added');
-    } catch (error) {
-      console.error('Error adding status update:', error);
-      toast.error('Failed to add status update');
-    }
-  }, [currentUser, orders]);
+  const timelineActions: TimelineAction[] = [
+    {
+      id: 'edit',
+      label: 'Edit Update',
+      icon: <Edit className="h-4 w-4" />,
+      action: handleEdit,
+      showFor: ['update_order_status'],
+      condition: canEditUpdate,
+    },
+    {
+      id: 'undo',
+      label: 'Remove Update',
+      icon: <Undo className="h-4 w-4" />,
+      action: handleUndo,
+      showFor: ['update_order_status'],
+      condition: canUndoUpdate,
+    },
+    {
+      id: 'forward',
+      label: 'Forward',
+      icon: <Forward className="h-4 w-4" />,
+      action: handleForward,
+      showFor: ['forward_to_department'],
+    },
+    {
+      id: 'export',
+      label: 'Export',
+      icon: <FileSpreadsheet className="h-4 w-4" />,
+      action: handleExport,
+      showFor: ['export_data'],
+    },
+    {
+      id: 'complete',
+      label: 'Mark Complete',
+      icon: <Check className="h-4 w-4" />,
+      action: handleMarkCompleted,
+      showFor: ['update_order_status'],
+      department: ['Production', 'Design', 'Prepress'],
+    },
+    {
+      id: 'dispatch',
+      label: 'Ready to Dispatch',
+      icon: <Truck className="h-4 w-4" />,
+      action: handleActivateDispatch,
+      showFor: ['mark_ready_dispatch'],
+      department: ['Production'],
+    },
+  ];
 
   return {
-    canEditStatusUpdate,
-    removeStatusUpdate,
-    editStatusUpdate,
-    addStatusUpdate,
-    formatDate,
-    isRecentUpdate,
+    timelineActions,
+    isEditModalOpen,
+    setIsEditModalOpen,
+    currentStatusUpdate,
+    setCurrentStatusUpdate,
+    handleSaveEdit,
+    canEditUpdate,
     canUndoUpdate,
-    canUserEditStatusUpdate,
-    handleEditStatus,
-    handleUndoUpdate,
-    getDepartmentStyles,
-    getDepartmentIcon
   };
 }
