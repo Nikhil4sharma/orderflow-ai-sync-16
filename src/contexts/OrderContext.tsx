@@ -11,7 +11,15 @@ import {
   orderBy 
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Order, StatusUpdate, Department, OrderStatus, OrderFilters, PaymentRecord, User } from '@/types';
+import { 
+  Order, 
+  StatusUpdate, 
+  Department, 
+  OrderStatus, 
+  OrderFilters, 
+  PaymentRecord, 
+  User 
+} from '@/types';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { nanoid } from 'nanoid';

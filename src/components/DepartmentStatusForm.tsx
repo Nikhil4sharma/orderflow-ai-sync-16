@@ -92,7 +92,7 @@ const DepartmentStatusForm: React.FC<DepartmentStatusFormProps> = ({ order, depa
         // For production, we'd typically update a specific stage
         break;
       default:
-        // General status update - use proper typing
+        // General status update with proper typing
         updatedOrder.status = status as OrderStatus;
     }
     

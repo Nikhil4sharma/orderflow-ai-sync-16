@@ -1,19 +1,21 @@
 
 import React from "react";
-import { StatusUpdate, User } from "@/types";
+import { StatusUpdate, User, OrderStatus } from "@/types";
 import { Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import TimelineItem from "./TimelineItem";
+import { notifyOrderStatusChanged } from "@/utils/notifications";
 
 interface OrderTimelineProps {
   statusHistory: StatusUpdate[];
   currentUser: User;
-  canEditStatusUpdate: (update: StatusUpdate) => boolean;
+  canEditStatusUpdate?: (update: StatusUpdate) => boolean;
 }
 
 const OrderTimeline: React.FC<OrderTimelineProps> = ({ 
   statusHistory, 
-  currentUser
+  currentUser,
+  canEditStatusUpdate
 }) => {
   // Sort updates by timestamp in descending order
   const sortedUpdates = statusHistory ? [...statusHistory].sort((a, b) => 

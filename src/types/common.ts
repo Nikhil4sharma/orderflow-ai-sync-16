@@ -1,4 +1,3 @@
-
 export type Department = 'Sales' | 'Production' | 'Design' | 'Prepress' | 'Admin';
 
 export type Role = 'Admin' | 'Manager' | 'Staff' | string;
@@ -41,7 +40,8 @@ export type OrderStatus =
   | 'Restored'
   | 'Deleted'
   | 'Archived'
-  | 'Cancelled';
+  | 'Cancelled'
+  | 'Forwarded to Production';
 
 export type StatusType = 'completed' | 'processing' | 'issue';
 

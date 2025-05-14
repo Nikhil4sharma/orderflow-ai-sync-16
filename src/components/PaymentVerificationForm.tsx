@@ -55,7 +55,7 @@ const PaymentVerificationForm: React.FC<PaymentVerificationFormProps> = ({ order
       // Add status update to timeline
       addStatusUpdate(order.id, {
         department: "Sales",
-        status: "Payment Verified",
+        status: "Payment Verified" as OrderStatus,
         remarks: `Full payment of ${formatIndianRupees(amount)} verified via ${method}. ${remarks}`
       });
       
@@ -64,7 +64,7 @@ const PaymentVerificationForm: React.FC<PaymentVerificationFormProps> = ({ order
       // Add status update for partial payment
       addStatusUpdate(order.id, {
         department: "Sales",
-        status: "Partial Payment Received",
+        status: "Partial Payment Received" as OrderStatus,
         remarks: `Payment of ${formatIndianRupees(amount)} received via ${method}. ${remarks}`
       });
       

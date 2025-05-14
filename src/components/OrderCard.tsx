@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Order } from "@/types";
@@ -51,7 +50,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
     }
   };
 
-  const handleStatusChange = async (newStatus: string) => {
+  const handleStatusChange = async (newStatus: OrderStatus) => {
     // Implement the logic to update the order status
     // After updating the status, notify the user
     await notifyOrderStatusChanged(order.id, order.orderNumber, newStatus, order.currentDepartment);
