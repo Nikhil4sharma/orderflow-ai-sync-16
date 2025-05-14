@@ -172,8 +172,11 @@ export const updateOrderStatus = async (
       // Add the status update to the order's statusHistory
       updatedOrder.statusHistory = [...(updatedOrder.statusHistory || []), statusUpdate];
       
+      // Convert the order object to a plain JavaScript object to avoid Firestore errors
+      const orderData = JSON.parse(JSON.stringify(updatedOrder));
+      
       // Update the order document in Firestore
-      await updateDoc(orderRef, updatedOrder);
+      await updateDoc(orderRef, orderData);
       
       // Notify about the status change
       await notifyOrderStatusChanged(order.id, order.orderNumber, newStatus, order.currentDepartment);

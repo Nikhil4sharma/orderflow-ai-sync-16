@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOrders } from "@/contexts/OrderContext";
@@ -112,6 +113,7 @@ const NewOrder: React.FC = () => {
         pendingAmount: parseFloat(amount),
         items: products.map(p => p.name),
         createdAt: new Date().toISOString(),
+        lastUpdated: new Date().toISOString(),
         status: "In Progress" as const,
         currentDepartment: "Sales" as const,
         paymentStatus: "Not Paid" as const,
@@ -121,6 +123,7 @@ const NewOrder: React.FC = () => {
         contactNumber,
         gstNumber: gstNumber || undefined,
         expectedDeliveryDate: expectedDeliveryDate ? new Date(expectedDeliveryDate).toISOString() : undefined,
+        paymentHistory: []
       };
       
       // Add order using OrderContext

@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { CreditCard, CheckCircle2, Ban, AlertTriangle, CreditCardIcon, IndianRupee } from "lucide-react";
-import { Order, OrderStatus } from "@/types/common";
+import { Order, OrderStatus } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";

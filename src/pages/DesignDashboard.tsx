@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useOrders } from '@/contexts/OrderContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +7,27 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Upload, Send, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 import { OrderStatus } from '@/types';
+
+// Update the getTabStatus function to handle status types correctly
+export const getTabStatus = (order: Order) => {
+  // Check if order is assigned to Design department and in progress
+  if (order.currentDepartment === "Design" && order.status === "In Progress") {
+    return "pendingDesign";
+  }
+  
+  // Check if design has been approved
+  if (order.status === "Design Approved") {
+    return "designApproved";
+  }
+  
+  // Check for general approval status
+  if (order.status === "Approved") {
+    return "designApproved";
+  }
+  
+  // Default case
+  return "all";
+};
 
 const DesignDashboard: React.FC = () => {
   const { orders, currentUser, addStatusUpdate } = useOrders();

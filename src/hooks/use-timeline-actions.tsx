@@ -1,124 +1,136 @@
 
-import { useState } from "react";
-import { StatusUpdate, User } from "@/types";
-import { toast } from "sonner";
-import { differenceInMinutes, differenceInHours, format } from "date-fns";
-import { useOrders } from "@/contexts/OrderContext";
-import { ClipboardCheck, CheckCircle, Tag } from "lucide-react";
+import React from 'react';
+import { useOrders } from '@/contexts/OrderContext';
+import { toast } from 'sonner';
+import { StatusUpdate, Order } from '@/types';
+import { format } from 'date-fns';
+import { nanoid } from 'nanoid';
+import { notifyOrderStatusChanged } from '@/utils/notifications';
 
 export function useTimelineActions() {
-  const { updateStatusUpdate, undoStatusUpdate } = useOrders();
-  const [selectedUpdate, setSelectedUpdate] = useState<StatusUpdate | null>(null);
-  
-  const formatDate = (dateString: string) => {
-    try {
-      return format(new Date(dateString), 'MMM dd, yyyy h:mm a');
-    } catch (error) {
-      return 'Invalid date';
+  const { orders, updateOrder, currentUser } = useOrders();
+
+  const canEditStatusUpdate = (update: StatusUpdate): boolean => {
+    // Admin can edit any time
+    if (currentUser?.role === 'Admin') {
+      return true;
     }
+
+    // Users can edit their own updates for 30 minutes
+    if (update.updatedBy === currentUser?.name) {
+      const now = new Date();
+      const updateTime = new Date(update.timestamp);
+      const diffMs = now.getTime() - updateTime.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      return diffMins <= 30;
+    }
+
+    return false;
   };
 
-  // Check if an update is undoable (within 5 minutes for all users)
-  const canUndoUpdate = (update: StatusUpdate, currentUser: User): boolean => {
-    if (!update.timestamp) return false;
-    
-    const createdAt = new Date(update.timestamp);
-    const now = new Date();
-    const minutesDiff = differenceInMinutes(now, createdAt);
-    
-    // Admin can undo any updates
-    if (currentUser.role === "Admin") return true;
-    
-    // Regular users can only undo their own updates within 5 minutes
-    return minutesDiff <= 5 && update.updatedBy === currentUser.name;
-  };
-
-  // Check if status update can be edited (1 hour for regular users, unlimited for admin)
-  const canUserEditStatusUpdate = (update: StatusUpdate, currentUser: User): boolean => {
-    // Admin can edit any updates
-    if (currentUser.role === "Admin") return true;
-    
-    // For other users, check the time limit (1 hour) and ownership
-    if (update.updatedBy !== currentUser.name) return false;
-    
-    const createdAt = new Date(update.timestamp);
-    const now = new Date();
-    const hoursDiff = differenceInHours(now, createdAt);
-    
-    return hoursDiff <= 1;
-  };
-
-  const handleEditStatus = (update: StatusUpdate) => {
-    // This would open a modal or form for editing
-    setSelectedUpdate(update);
-    // For now, we'll just show a toast. In a real implementation, you'd have a modal or inline edit form
-    toast.info("Edit functionality would be implemented here");
-    console.log("Editing status update:", update);
-  };
-
-  const handleUndoUpdate = (update: StatusUpdate) => {
-    if (!canUndoUpdate(update, { role: "Admin" } as User)) {
-      toast.error("This update can no longer be undone");
+  const removeStatusUpdate = async (orderId: string, updateId: string) => {
+    const order = orders.find(o => o.id === orderId);
+    if (!order) {
+      toast.error('Order not found');
       return;
     }
 
-    undoStatusUpdate(update.id);
-    toast.success("Status update has been undone");
-  };
-
-  // Get department-specific styles for visual differentiation
-  const getDepartmentStyles = (department: string) => {
-    switch (department) {
-      case "Design":
-        return "bg-blue-500";
-      case "Production":
-        return "bg-amber-500";
-      case "Prepress":
-        return "bg-purple-500";
-      case "Sales":
-        return "bg-green-500";
-      default:
-        return "bg-primary";
-    }
-  };
-  
-  // Get department-specific icon for visual differentiation
-  const getDepartmentIcon = (department: string) => {
-    switch (department) {
-      case "Design":
-        return <Tag className="h-5 w-5 text-white" />;
-      case "Production":
-        return <CheckCircle className="h-5 w-5 text-white" />;
-      case "Prepress":
-        return <ClipboardCheck className="h-5 w-5 text-white" />;
-      case "Sales":
-        return <ClipboardCheck className="h-5 w-5 text-white" />;
-      default:
-        return <ClipboardCheck className="h-5 w-5 text-white" />;
+    const updatedHistory = order.statusHistory.filter(update => update.id !== updateId);
+    
+    try {
+      await updateOrder({
+        ...order,
+        statusHistory: updatedHistory,
+      });
+      toast.success('Status update removed successfully');
+    } catch (error) {
+      console.error('Error removing status update:', error);
+      toast.error('Failed to remove status update');
     }
   };
 
-  // Calculate if an update is recent (less than 1 hour old)
-  const isRecentUpdate = (update: StatusUpdate): boolean => {
-    if (!update.timestamp) return false;
+  const editStatusUpdate = async (orderId: string, updateId: string, newData: Partial<StatusUpdate>) => {
+    const order = orders.find(o => o.id === orderId);
+    if (!order) {
+      toast.error('Order not found');
+      return;
+    }
+
+    const updatedHistory = order.statusHistory.map(update => 
+      update.id === updateId
+        ? { ...update, ...newData, metadata: {
+            updatedAt: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
+            updatedBy: currentUser?.name || 'Unknown',
+            department: currentUser?.department || 'Unknown',
+            role: currentUser?.role || 'Unknown',
+          }}
+        : update
+    );
     
-    const createdAt = new Date(update.timestamp);
-    const now = new Date();
-    const hoursDiff = differenceInHours(now, createdAt);
+    try {
+      await updateOrder({
+        ...order,
+        statusHistory: updatedHistory,
+      });
+      
+      await notifyOrderStatusChanged(
+        orderId, 
+        order.orderNumber, 
+        newData.status || '',
+        currentUser?.department || ''
+      );
+      
+      toast.success('Status update edited successfully');
+    } catch (error) {
+      console.error('Error editing status update:', error);
+      toast.error('Failed to edit status update');
+    }
+  };
+
+  const addStatusUpdate = async (order: Order, status: string, remarks: string = '') => {
+    if (!order) {
+      toast.error('Order not found');
+      return;
+    }
+
+    const newUpdate: StatusUpdate = {
+      id: nanoid(),
+      orderId: order.id,
+      timestamp: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
+      department: currentUser?.department || 'Unknown',
+      status: status,
+      remarks: remarks,
+      updatedBy: currentUser?.name || 'Unknown',
+      editableUntil: format(new Date(Date.now() + 30 * 60000), 'yyyy-MM-dd HH:mm:ss'),
+    };
+
+    const updatedHistory = [...(order.statusHistory || []), newUpdate];
     
-    return hoursDiff < 1;
+    try {
+      await updateOrder({
+        ...order,
+        statusHistory: updatedHistory,
+        status: status,
+      });
+      
+      await notifyOrderStatusChanged(
+        order.id,
+        order.orderNumber,
+        status,
+        currentUser?.department || ''
+      );
+      
+      toast.success('Status updated successfully');
+    } catch (error) {
+      console.error('Error adding status update:', error);
+      toast.error('Failed to update status');
+    }
   };
 
   return {
-    formatDate,
-    canUndoUpdate,
-    canUserEditStatusUpdate,
-    handleEditStatus,
-    handleUndoUpdate,
-    getDepartmentStyles,
-    getDepartmentIcon,
-    isRecentUpdate,
-    selectedUpdate,
-    setSelectedUpdate
+    canEditStatusUpdate,
+    removeStatusUpdate,
+    editStatusUpdate,
+    addStatusUpdate,
   };
 }

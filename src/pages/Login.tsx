@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useUsers } from "@/contexts/UserContext";
 import { toast } from "sonner";
 import { demoLogin } from "@/utils/orderWorkflow";
-import { Department, Role } from "@/types";
+import { Department, Role, PermissionKey } from "@/types";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -29,7 +30,8 @@ const Login = () => {
         login({
           ...result.user,
           department: result.user.department as Department,
-          role: result.user.role as Role
+          role: result.user.role as Role,
+          permissions: result.user.permissions as PermissionKey[]
         });
         
         // Show success toast

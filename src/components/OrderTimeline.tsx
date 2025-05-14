@@ -116,7 +116,7 @@ const OrderTimeline: React.FC<OrderTimelineProps> = ({
 
     await undoStatusUpdate(update.id);
     toast.success("Status update has been undone");
-    await notifyOrderStatusChanged(order.id, order.orderNumber, update.status, order.department);
+    await notifyOrderStatusChanged(order.id, order.orderNumber, update.status, order.currentDepartment);
   };
 
   // Get department-specific styles for visual differentiation

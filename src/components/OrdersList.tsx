@@ -1,3 +1,4 @@
+
 import React, { useCallback, useMemo } from "react";
 import { Department, Order, OrderStatus } from "@/types";
 import OrderCard from "./OrderCard";
@@ -86,11 +87,9 @@ const OrdersList: React.FC<OrdersListProps> = ({
         case "pendingPrepress":
           return order.currentDepartment === "Prepress" && order.status === "In Progress";
         case "designApproved":
-          return order.status === "Design Approved" || 
-                order.status === "Approved";
+          return order.status === "Design Approved";
         case "prepressApproved":
-          return order.status === "Prepress Approved" || 
-                order.status === "Approved";
+          return order.status === "Prepress Approved";
         case "inProgress":
           return order.status === "In Progress";
         case "completed":
