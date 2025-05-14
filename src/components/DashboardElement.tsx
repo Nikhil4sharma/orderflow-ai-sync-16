@@ -1,68 +1,43 @@
 
-import { CanAccess } from "@/components/CanAccess";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import React from "react";
+import CanAccess from "@/components/CanAccess";
 import { useOrders } from "@/contexts/OrderContext";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { AlertCircle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { PermissionKey } from "@/types";
 
 interface DashboardElementProps {
-  id: string;
   title: string;
   description?: string;
-  loading?: boolean;
-  error?: string | null;
-  permission?: string;
-  className?: string;
   children: React.ReactNode;
+  className?: string;
+  permission?: PermissionKey;
+  elementId?: string;
 }
 
-const DashboardElement = ({
-  id,
+const DashboardElement: React.FC<DashboardElementProps> = ({
   title,
   description,
-  loading = false,
-  error = null,
-  permission,
-  className,
   children,
-}: DashboardElementProps) => {
+  className,
+  permission,
+  elementId
+}) => {
   const { canUserSeeElement } = useOrders();
-  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Check if user can see this element
-  if (mounted && !canUserSeeElement(id)) {
+  // Check if the user can see this element based on their department/role
+  if (elementId && !canUserSeeElement(elementId)) {
     return null;
   }
 
   return (
-    <CanAccess permission={permission as any}>
+    <CanAccess permission={permission as PermissionKey}>
       <Card className={cn("overflow-hidden", className)}>
         <CardHeader className="space-y-1">
           <CardTitle className="text-lg font-medium">{title}</CardTitle>
           {description && <CardDescription>{description}</CardDescription>}
         </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="space-y-3">
-              <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-8 w-3/4" />
-              <Skeleton className="h-8 w-1/2" />
-            </div>
-          ) : error ? (
-            <div className="flex items-center p-4 text-sm text-red-500 border border-red-200 bg-red-50 rounded-md">
-              <AlertCircle className="h-4 w-4 mr-2" />
-              <p>{error}</p>
-            </div>
-          ) : (
-            children
-          )}
-        </CardContent>
+        <CardContent className="p-0">{children}</CardContent>
       </Card>
     </CanAccess>
   );

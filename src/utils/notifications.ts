@@ -1,11 +1,8 @@
 
-import { Department, OrderStatus } from "@/types/common";
+import { OrderStatus, Department } from "@/types";
 import { toast } from "sonner";
-import { nanoid } from "nanoid";
-import { format } from "date-fns";
-import { collection, addDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 
+// Function to notify about order status changes
 export const notifyOrderStatusChanged = async (
   orderId: string,
   orderNumber: string,
@@ -13,104 +10,83 @@ export const notifyOrderStatusChanged = async (
   department: Department
 ): Promise<void> => {
   try {
-    // Log to console and show toast notification
-    console.log(`Order ${orderNumber} status changed to ${newStatus}`);
-    toast.success(`Order ${orderNumber} status changed to ${newStatus}`);
+    // In a real app, this would send notifications to users via Firebase
+    // For now, we'll just show a toast notification
     
-    // Create notification record in Firebase
-    const notificationData = {
-      id: nanoid(),
-      title: `Order Status Update`,
-      message: `Order #${orderNumber} status changed to ${newStatus}`,
-      timestamp: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
-      isRead: false,
-      type: 'status_update',
-      orderId: orderId,
-      forDepartments: [department],
-      priority: 'medium',
-      category: 'status',
-      createdAt: new Date().toISOString()
-    };
+    let message = `Order ${orderNumber} status changed to ${newStatus}`;
+    let title = "Order Status Updated";
     
-    await addDoc(collection(db, 'notifications'), notificationData);
+    // Customize message based on status
+    switch(newStatus) {
+      case "Pending Design":
+        message = `Order ${orderNumber} has been assigned to Design team`;
+        title = "New Design Task";
+        break;
+      case "Pending Approval":
+      case "Approval Requested":
+        message = `Order ${orderNumber} needs approval from Sales team`;
+        title = "Approval Request";
+        break;
+      case "Design Approved":
+        message = `Design for order ${orderNumber} has been approved`;
+        title = "Design Approved";
+        break;
+      case "Design Rejected":
+        message = `Design for order ${orderNumber} has been rejected`;
+        title = "Design Rejected";
+        break;
+      case "Prepress Approved":
+        message = `Prepress for order ${orderNumber} has been approved`;
+        title = "Prepress Approved";
+        break;
+      case "Prepress Rejected":
+        message = `Prepress for order ${orderNumber} has been rejected`;
+        title = "Prepress Rejected";
+        break;
+      case "Pending Prepress":
+        message = `Order ${orderNumber} has been assigned to Prepress team`;
+        title = "New Prepress Task";
+        break;
+      case "Forwarded to Production":
+        message = `Order ${orderNumber} has been forwarded to Production`;
+        title = "New Production Task";
+        break;
+      case "Completed":
+        message = `Order ${orderNumber} has been completed`;
+        title = "Order Completed";
+        break;
+    }
+    
+    // Show toast notification
+    toast(title, {
+      description: message,
+      duration: 5000
+    });
+    
+    // In a real app, we would also:
+    // 1. Save the notification in Firestore
+    // 2. Use Firebase Cloud Messaging to send push notifications
+    // 3. Update notification counters
+    
+    console.log(`Notification: ${title} - ${message}`);
     
     return Promise.resolve();
   } catch (error) {
-    console.error("Failed to send notification:", error);
-    toast.error("Failed to send notification");
+    console.error("Error sending notification:", error);
     return Promise.reject(error);
   }
 };
 
-export const notifyPaymentReceived = async (
-  orderId: string,
-  orderNumber: string,
-  amount: number,
-  paymentMethod: string = "Unknown"
-): Promise<void> => {
-  try {
-    // Log to console and show toast notification
-    console.log(`Payment of ₹${amount} received for order ${orderNumber}`);
-    toast.success(`Payment of ₹${amount} received for order #${orderNumber}`);
-    
-    // Create notification record in Firebase
-    const notificationData = {
-      id: nanoid(),
-      title: `Payment Received`,
-      message: `Payment of ₹${amount} received for order #${orderNumber} via ${paymentMethod}`,
-      timestamp: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
-      isRead: false,
-      type: 'payment_received',
-      orderId: orderId,
-      forDepartments: ['Sales', 'Admin'],
-      priority: 'medium',
-      category: 'payment',
-      createdAt: new Date().toISOString()
-    };
-    
-    await addDoc(collection(db, 'notifications'), notificationData);
-    
-    return Promise.resolve();
-  } catch (error) {
-    console.error("Failed to send payment notification:", error);
-    toast.error("Failed to send notification");
-    return Promise.reject(error);
-  }
+// Function to get notification count by department
+export const getNotificationCount = async (department: Department): Promise<number> => {
+  // In a real app, this would query Firestore for unread notifications
+  // For demo purposes, we'll return a random number
+  return Math.floor(Math.random() * 5);
 };
 
-// Add user created notification function
-export const notifyUserCreated = async (
-  userId: string,
-  userName: string,
-  userRole: string,
-  userDepartment: string
-): Promise<void> => {
-  try {
-    // Log to console and show toast notification
-    console.log(`New user ${userName} created as ${userRole} in ${userDepartment}`);
-    toast.success(`New user ${userName} created successfully`);
-    
-    // Create notification record in Firebase
-    const notificationData = {
-      id: nanoid(),
-      title: `New User Created`,
-      message: `${userName} has been added as ${userRole} in ${userDepartment}`,
-      timestamp: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
-      isRead: false,
-      type: 'user_created',
-      userId: userId,
-      forDepartments: ['Admin'],
-      priority: 'low',
-      category: 'user',
-      createdAt: new Date().toISOString()
-    };
-    
-    await addDoc(collection(db, 'notifications'), notificationData);
-    
-    return Promise.resolve();
-  } catch (error) {
-    console.error("Failed to send user creation notification:", error);
-    toast.error("Failed to send notification");
-    return Promise.reject(error);
-  }
+// Function to mark notifications as read
+export const markNotificationsAsRead = async (department: Department): Promise<void> => {
+  // In a real app, this would update Firestore
+  console.log(`Marking notifications as read for ${department}`);
+  return Promise.resolve();
 };

@@ -41,7 +41,7 @@ export type OrderStatus =
   | 'Deleted'
   | 'Archived'
   | 'Cancelled'
-  | 'Forwarded to Production';
+  | 'Pending Design';
 
 export type StatusType = 'completed' | 'processing' | 'issue';
 

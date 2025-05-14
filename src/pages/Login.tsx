@@ -1,85 +1,121 @@
 
-import React, { useEffect } from "react";
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { useUsers } from "@/contexts/UserContext";
-import LoginForm from "@/components/auth/LoginForm";
-import { motion } from "framer-motion";
-import ChhapaiLogo from "@/components/ChhapaiLogo";
+import { toast } from "sonner";
+import { demoLogin } from "@/utils/orderWorkflow";
 
-export default function Login() {
+const Login = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { currentUser, loading, isAuthenticated } = useUsers();
+  const { login } = useUsers();
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate("/dashboard");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      // For development mode, use the demo login (simulated authentication)
+      const result = await demoLogin(email, password);
+      
+      // Set the user in the context
+      if (login && result.user) {
+        login(result.user);
+        
+        // Show success toast
+        toast.success(`Welcome, ${result.user.name}!`, {
+          description: `You are logged in as ${result.user.role} (${result.user.department})`,
+        });
+        
+        // Redirect based on department
+        switch (result.user.department) {
+          case "Sales":
+            navigate("/sales");
+            break;
+          case "Design":
+            navigate("/design");
+            break;
+          case "Prepress":
+            navigate("/prepress");
+            break;
+          case "Production":
+            navigate("/production");
+            break;
+          case "Admin":
+            navigate("/dashboard");
+            break;
+          default:
+            navigate("/dashboard");
+        }
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("Login failed", {
+        description: "Invalid email or password",
+      });
+    } finally {
+      setIsLoading(false);
     }
-  }, [isAuthenticated, navigate]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <ChhapaiLogo size="lg" className="mb-4 mx-auto" />
-          <p className="text-muted-foreground animate-pulse">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+  };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
-      {/* Brand section - visible on desktop */}
-      <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-primary/10 to-muted/20 flex-col items-center justify-center p-8 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSIjMjIyIiBmaWxsLW9wYWNpdHk9IjAuMDMiIGZpbGwtcnVsZT0iZXZlbm9kZCI+PGNpcmNsZSBjeD0iMyIgY3k9IjMiIHI9IjMiLz48Y2lyY2xlIGN4PSIxMyIgY3k9IjEzIiByPSIzIi8+PC9nPjwvc3ZnPg==')]"></div>
-        
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.8 }}
-          className="z-10 text-center"
-        >
-          <ChhapaiLogo size="lg" className="mx-auto mb-8" />
-          <h1 className="text-4xl font-bold mb-4 tracking-tight">Order Management</h1>
-          <p className="text-xl text-muted-foreground max-w-md">
-            Streamline your printing operations with our comprehensive order management system
-          </p>
-          
-          <div className="mt-16 grid grid-cols-2 gap-6 max-w-md mx-auto">
-            <div className="p-4 rounded-lg bg-background/50 backdrop-blur shadow-sm border border-border/30">
-              <div className="font-semibold text-lg mb-2">Streamlined Workflow</div>
-              <p className="text-sm text-muted-foreground">Manage orders from quote to delivery in one place</p>
+    <div className="flex items-center justify-center min-h-screen bg-muted/40">
+      <Card className="w-full max-w-sm mx-4">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-bold text-center">OrderFlow</CardTitle>
+          <CardDescription className="text-center">
+            Enter your credentials to login
+          </CardDescription>
+        </CardHeader>
+        <form onSubmit={handleSubmit}>
+          <CardContent className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="m@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
             </div>
-            <div className="p-4 rounded-lg bg-background/50 backdrop-blur shadow-sm border border-border/30">
-              <div className="font-semibold text-lg mb-2">Real-time Updates</div>
-              <p className="text-sm text-muted-foreground">Stay informed with instant status notifications</p>
+            <div className="grid gap-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
             </div>
-          </div>
-        </motion.div>
-      </div>
-      
-      {/* Form section */}
-      <div className="w-full md:w-1/2 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="w-full max-w-md space-y-8"
-          id="login-container"
-          data-testid="login-container"
-        >
-          {/* Mobile Logo - only shown on mobile */}
-          <div className="md:hidden text-center mb-6">
-            <ChhapaiLogo size="lg" className="mx-auto" />
-            <p className="text-muted-foreground mt-2">Order Management System</p>
-          </div>
-          
-          <LoginForm />
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} Chhapai Order Management System
-          </p>
-        </motion.div>
-      </div>
+            <div className="text-sm text-muted-foreground">
+              <p>Demo Logins:</p>
+              <ul className="list-disc list-inside">
+                <li>admin@example.com / password</li>
+                <li>sales@example.com / password</li>
+                <li>design@example.com / password</li>
+                <li>prepress@example.com / password</li>
+                <li>production@example.com / password</li>
+              </ul>
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button className="w-full" type="submit" disabled={isLoading}>
+              {isLoading ? "Logging in..." : "Login"}
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
     </div>
   );
-}
+};
+
+export default Login;

@@ -4,20 +4,40 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { Department } from "@/types";
 
 interface OrderStatusTabsProps {
   activeStatus: string;
   onChange: (status: string) => void;
   countByStatus: Record<string, number>;
+  department?: Department;
 }
 
 const OrderStatusTabs: React.FC<OrderStatusTabsProps> = ({
   activeStatus,
   onChange,
-  countByStatus
+  countByStatus,
+  department = "Sales"
 }) => {
   const isMobile = useIsMobile();
-  const statuses = ["All", "New", "In Progress", "Pending Approval", "Issue", "Ready to Dispatch", "Completed", "On Hold"];
+  
+  // Define department-specific tabs
+  const getStatusesByDepartment = (): string[] => {
+    switch (department) {
+      case "Sales":
+        return ["All", "New", "In Progress", "Pending Approval", "Issue", "Ready to Dispatch", "Completed", "On Hold"];
+      case "Design":
+        return ["All", "Pending Design", "Design Approved", "In Progress"];
+      case "Prepress":
+        return ["All", "Pending Prepress", "Prepress Approved", "In Progress"];
+      case "Production":
+        return ["All", "New", "In Progress", "Completed", "Issue", "On Hold"];
+      default:
+        return ["All", "New", "In Progress", "Pending Approval", "Issue", "Ready to Dispatch", "Completed", "On Hold"];
+    }
+  };
+  
+  const statuses = getStatusesByDepartment();
   
   // Get status-specific color
   const getStatusColor = (status: string): string => {
@@ -25,6 +45,8 @@ const OrderStatusTabs: React.FC<OrderStatusTabsProps> = ({
       case "Completed":
         return "bg-green-600 text-white hover:bg-green-700 border-green-600";
       case "New":
+      case "Pending Design":
+      case "Pending Prepress":
         return "bg-blue-600 text-white hover:bg-blue-700 border-blue-600";
       case "In Progress":
         return "bg-amber-600 text-white hover:bg-amber-700 border-amber-600";
@@ -34,6 +56,9 @@ const OrderStatusTabs: React.FC<OrderStatusTabsProps> = ({
         return "bg-purple-600 text-white hover:bg-purple-700 border-purple-600";
       case "Pending Approval":
         return "bg-indigo-600 text-white hover:bg-indigo-700 border-indigo-600";
+      case "Design Approved":
+      case "Prepress Approved":
+        return "bg-teal-600 text-white hover:bg-teal-700 border-teal-600";
       case "On Hold":
         return "bg-gray-600 text-white hover:bg-gray-700 border-gray-600";
       default:
@@ -51,6 +76,8 @@ const OrderStatusTabs: React.FC<OrderStatusTabsProps> = ({
       case "Completed":
         return "bg-white/90 text-green-700";
       case "New":
+      case "Pending Design":
+      case "Pending Prepress":
         return "bg-white/90 text-blue-700";
       case "In Progress":
         return "bg-white/90 text-amber-700";
@@ -60,6 +87,9 @@ const OrderStatusTabs: React.FC<OrderStatusTabsProps> = ({
         return "bg-white/90 text-purple-700";
       case "Pending Approval":
         return "bg-white/90 text-indigo-700";
+      case "Design Approved":
+      case "Prepress Approved":
+        return "bg-white/90 text-teal-700";
       case "On Hold":
         return "bg-white/90 text-gray-700";
       default:

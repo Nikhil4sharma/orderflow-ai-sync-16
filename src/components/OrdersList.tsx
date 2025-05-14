@@ -1,6 +1,6 @@
 
 import React, { useCallback, useMemo } from "react";
-import { Order } from "@/types";
+import { Department, Order } from "@/types";
 import OrderCard from "./OrderCard";
 import { AnimatePresence, motion } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,6 +13,8 @@ interface OrdersListProps {
   showFilters?: boolean;
   onFilterChange?: (filter: string) => void;
   activeFilter?: string;
+  department?: Department;
+  getTabStatus?: (order: Order) => string;
 }
 
 const OrdersList: React.FC<OrdersListProps> = ({
@@ -21,31 +23,87 @@ const OrdersList: React.FC<OrdersListProps> = ({
   showFilters = true,
   onFilterChange,
   activeFilter = "all",
+  department = "Sales",
+  getTabStatus
 }) => {
+  // Define department-specific tabs
+  const getDepartmentTabs = () => {
+    switch (department) {
+      case "Sales":
+        return [
+          { id: "all", label: "All" },
+          { id: "new", label: "New Order" },
+          { id: "inProgress", label: "In Progress" },
+          { id: "completed", label: "Completed" }
+        ];
+      case "Design":
+        return [
+          { id: "all", label: "All" },
+          { id: "pendingDesign", label: "Pending Design" },
+          { id: "designApproved", label: "Design Approved" }
+        ];
+      case "Prepress":
+        return [
+          { id: "all", label: "All" },
+          { id: "pendingPrepress", label: "Pending Prepress" },
+          { id: "prepressApproved", label: "Prepress Approved" }
+        ];
+      case "Production":
+        return [
+          { id: "all", label: "All" },
+          { id: "new", label: "New" },
+          { id: "inProgress", label: "In Progress" },
+          { id: "completed", label: "Completed" }
+        ];
+      default:
+        return [
+          { id: "all", label: "All" },
+          { id: "inProgress", label: "In Progress" },
+          { id: "completed", label: "Completed" }
+        ];
+    }
+  };
+  
+  const tabs = getDepartmentTabs();
+
   // Filter orders based on active filter
   const filteredOrders = useMemo(() => {
     if (!showFilters || activeFilter === "all") {
       return orders;
     }
 
-    // Filter by status
+    // Filter by custom function if provided
+    if (getTabStatus) {
+      return orders.filter(order => getTabStatus(order).toLowerCase() === activeFilter.toLowerCase());
+    }
+
+    // Filter by department-specific logic
     return orders.filter((order) => {
       switch (activeFilter) {
+        case "new":
+          return order.status === "New" || 
+                (department === "Production" && order.status === "Forwarded to Production");
+        case "pendingDesign":
+          return order.status === "Pending Design" || order.status === "Forwarded to Design";
+        case "pendingPrepress":
+          return order.status === "Forwarded to Prepress";
+        case "designApproved":
+          return order.status === "Design Approved";
+        case "prepressApproved":
+          return order.status === "Prepress Approved";
         case "inProgress":
           return order.status === "In Progress";
         case "completed":
           return order.status === "Completed";
-        case "dispatched":
-          return order.status === "Dispatched";
+        case "pendingApproval":
+          return order.status === "Pending Approval" || order.status === "Approval Requested";
         case "onHold":
           return order.status === "On Hold";
-        case "pending":
-          return order.status === "Pending Approval" || order.status === "Pending Payment";
         default:
           return true;
       }
     });
-  }, [orders, activeFilter, showFilters]);
+  }, [orders, activeFilter, showFilters, getTabStatus, department]);
 
   const handleTabChange = useCallback(
     (value: string) => {
@@ -72,13 +130,10 @@ const OrdersList: React.FC<OrdersListProps> = ({
           className="w-full"
         >
           <div className="flex justify-between items-center mb-3">
-            <TabsList className="grid grid-cols-6 w-auto">
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="inProgress">In Progress</TabsTrigger>
-              <TabsTrigger value="completed">Completed</TabsTrigger>
-              <TabsTrigger value="dispatched">Dispatched</TabsTrigger>
-              <TabsTrigger value="onHold">On Hold</TabsTrigger>
-              <TabsTrigger value="pending">Pending</TabsTrigger>
+            <TabsList className={`grid grid-cols-${tabs.length} w-auto`}>
+              {tabs.map(tab => (
+                <TabsTrigger key={tab.id} value={tab.id}>{tab.label}</TabsTrigger>
+              ))}
             </TabsList>
 
             {activeFilter !== "all" && showFilters && (

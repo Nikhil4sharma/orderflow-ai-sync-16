@@ -1,6 +1,7 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
-import { Order } from "@/types";
+import { Order, OrderStatus } from "@/types";
 import StatusBadge from "./StatusBadge";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
