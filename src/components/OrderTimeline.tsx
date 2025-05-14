@@ -116,7 +116,7 @@ const OrderTimeline: React.FC<OrderTimelineProps> = ({
 
     await undoStatusUpdate(update.id);
     toast.success("Status update has been undone");
-    await notifyOrderStatusChanged(order.id, order.orderNumber, newStatus, order.department);
+    await notifyOrderStatusChanged(order.id, order.orderNumber, update.status, order.department);
   };
 
   // Get department-specific styles for visual differentiation
@@ -161,7 +161,7 @@ const OrderTimeline: React.FC<OrderTimelineProps> = ({
     
     return hoursDiff < 1;
   };
-
+  
   return (
     <div className="space-y-4 mt-4 glass-card p-6 rounded-lg">
       <h3 className="text-lg font-medium flex items-center mb-4">

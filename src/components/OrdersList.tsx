@@ -1,6 +1,5 @@
-
 import React, { useCallback, useMemo } from "react";
-import { Department, Order } from "@/types";
+import { Department, Order, OrderStatus } from "@/types";
 import OrderCard from "./OrderCard";
 import { AnimatePresence, motion } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

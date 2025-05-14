@@ -1,4 +1,3 @@
-
 import { Department, Order, OrderStatus } from "@/types";
 import { updateDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -107,48 +106,48 @@ export const updateOrderStatus = async (
     };
 
     // Handle department-specific workflow logic
-    if (newStatus === "Forwarded to Design") {
+    if (newStatus === "Forwarded to Design" as OrderStatus) {
       updatedOrder.currentDepartment = "Design";
-      updatedOrder.status = "Pending Design";
+      updatedOrder.status = "Pending Design" as OrderStatus;
     } 
-    else if (newStatus === "Approval Requested") {
+    else if (newStatus === "Approval Requested" as OrderStatus) {
       updatedOrder.pendingApprovalFrom = "Sales";
       updatedOrder.status = "Pending Approval";
     }
-    else if (newStatus === "Design Approved") {
+    else if (newStatus === "Design Approved" as OrderStatus) {
       // Design has been approved, update status accordingly
       updatedOrder.designStatus = "Forwarded to Prepress";
       updatedOrder.currentDepartment = "Prepress";
-      updatedOrder.status = "Pending Prepress";
+      updatedOrder.status = "Pending Prepress" as OrderStatus;
       delete updatedOrder.pendingApprovalFrom;
     }
-    else if (newStatus === "Design Rejected") {
+    else if (newStatus === "Design Rejected" as OrderStatus) {
       // Design rejected, send back to Design
       updatedOrder.designStatus = "Working on it";
       updatedOrder.status = "In Progress";
       updatedOrder.currentDepartment = "Design";
       delete updatedOrder.pendingApprovalFrom;
     }
-    else if (newStatus === "Prepress Approved") {
+    else if (newStatus === "Prepress Approved" as OrderStatus) {
       // Prepress approved, send to Production
       updatedOrder.prepressStatus = "Forwarded to production";
       updatedOrder.currentDepartment = "Production";
       updatedOrder.status = "New";
       delete updatedOrder.pendingApprovalFrom;
     }
-    else if (newStatus === "Prepress Rejected") {
+    else if (newStatus === "Prepress Rejected" as OrderStatus) {
       // Prepress rejected, send back to Prepress
       updatedOrder.prepressStatus = "Working on it";
       updatedOrder.status = "In Progress";
       updatedOrder.currentDepartment = "Prepress";
       delete updatedOrder.pendingApprovalFrom;
     }
-    else if (newStatus === "Forwarded to Prepress") {
+    else if (newStatus === "Forwarded to Prepress" as OrderStatus) {
       // Design is sending to Prepress
       updatedOrder.currentDepartment = "Prepress";
-      updatedOrder.status = "Pending Prepress";
+      updatedOrder.status = "Pending Prepress" as OrderStatus;
     }
-    else if (newStatus === "Forwarded to Production") {
+    else if (newStatus === "Forwarded to Production" as OrderStatus) {
       // Prepress is sending to Production
       updatedOrder.currentDepartment = "Production";
       updatedOrder.status = "New";

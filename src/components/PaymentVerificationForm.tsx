@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useOrders } from "@/contexts/OrderContext";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { CreditCard, CheckCircle2, Ban, AlertTriangle, CreditCardIcon, IndianRupee } from "lucide-react";
-import { Order } from "@/types/common";
+import { Order, OrderStatus } from "@/types/common";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";

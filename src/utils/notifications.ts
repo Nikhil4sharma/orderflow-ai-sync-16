@@ -13,7 +13,7 @@ export const notifyOrderStatusChanged = async (
   orderId: string,
   orderNumber: string,
   newStatus: OrderStatus | string,
-  department: Department
+  department: Department | string
 ): Promise<void> => {
   // In a real application, this would handle sending notifications to the database,
   // email notifications, push notifications, etc.
@@ -48,6 +48,22 @@ export const notifyPaymentReceived = async (
   // For now, just show a toast
   toast.success(`Payment of ₹${amount} received for order #${orderNumber}`, {
     description: `Payment has been recorded successfully`,
+    duration: 3000,
+  });
+  
+  return Promise.resolve();
+};
+
+/**
+ * Notify about user created
+ * @param userId User ID
+ * @param userName User name
+ */
+export const notifyUserCreated = async (
+  userId: string,
+  userName: string
+): Promise<void> => {
+  toast.success(`User ${userName} created successfully`, {
     duration: 3000,
   });
   

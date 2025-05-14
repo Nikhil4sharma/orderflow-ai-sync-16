@@ -60,6 +60,7 @@ export interface Order {
   productStatus?: ProductStatus[];
   paymentHistory?: PaymentRecord[];
   createdAt: string;
+  lastUpdated: string;
   status: OrderStatus;
   currentDepartment: Department;
   productionStages?: ProductionStageStatus[];

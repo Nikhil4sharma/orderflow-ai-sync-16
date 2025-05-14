@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useUsers } from "@/contexts/UserContext";
 import { toast } from "sonner";
 import { demoLogin } from "@/utils/orderWorkflow";
-import { Department, User } from "@/types";
+import { Department, Role } from "@/types";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -25,13 +24,13 @@ const Login = () => {
       // For development mode, use the demo login (simulated authentication)
       const result = await demoLogin(email, password);
       
-      // Set the user in the context with type assertion for department
+      // Set the user in the context with type assertion
       if (login && result.user) {
-        const typedUser: User = {
+        login({
           ...result.user,
-          department: result.user.department as Department
-        };
-        login(typedUser);
+          department: result.user.department as Department,
+          role: result.user.role as Role
+        });
         
         // Show success toast
         toast.success(`Welcome, ${result.user.name}!`, {
