@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useContext,
@@ -5,7 +6,16 @@ import React, {
   useEffect,
   useCallback,
 } from 'react';
-import { Order, Department, OrderStatus, User, OrderFilters, PermissionKey } from '@/types';
+import { 
+  Order, 
+  Department, 
+  OrderStatus, 
+  User, 
+  PermissionKey,
+  StatusUpdate,
+  OrderFilters,
+  PaymentStatus
+} from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
 import { useUsers } from '@/contexts/UserContext';

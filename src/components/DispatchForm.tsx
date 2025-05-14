@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Truck, Calendar, Package, Phone, MapPin } from "lucide-react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { useOrders } from "@/contexts/OrderContext";
-import { Order, CourierPartner, DeliveryType, OrderStatus } from "@/types";
+import { Order, CourierPartner, DeliveryType, OrderStatus, Department } from "@/types";
 import { notifyOrderStatusChanged } from "@/utils/notifications";
 
 interface DispatchFormProps {
@@ -70,6 +70,7 @@ export const DispatchForm: React.FC<DispatchFormProps> = ({ order }) => {
       
       // Add status update
       await addStatusUpdate(order.id, {
+        department: (currentUser?.department || 'Sales') as Department,
         status: "Dispatched" as OrderStatus,
         remarks: `Order dispatched via ${courierPartner} (${deliveryType}). ${remarks ? `Remarks: ${remarks}` : ''}`
       });

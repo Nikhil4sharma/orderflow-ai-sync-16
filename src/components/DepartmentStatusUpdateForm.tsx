@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useOrders } from '@/contexts/OrderContext';
-import { Order, OrderStatus } from '@/types';
+import { Order, OrderStatus, Department } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -45,7 +45,7 @@ const DepartmentStatusUpdateForm: React.FC<DepartmentStatusUpdateFormProps> = ({
     
     // Add status update with estimated time
     addStatusUpdate(order.id, {
-      department: currentUser?.department || 'Unknown',
+      department: (currentUser?.department || 'Sales') as Department,
       status,
       remarks,
       estimatedTime

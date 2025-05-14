@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, PermissionKey } from '@/types';
 
@@ -14,6 +15,8 @@ export interface UserContextType {
   removeUser: (userId: string) => void;
   updateUser: (user: User) => void;
   logout: () => void;
+  login: (email: string, password: string) => Promise<any>;
+  hasPermission: (permission: PermissionKey) => boolean;
 }
 
 const UserContext = createContext<UserContextType>({
@@ -29,6 +32,8 @@ const UserContext = createContext<UserContextType>({
   removeUser: () => {},
   updateUser: () => {},
   logout: () => {},
+  login: async () => null,
+  hasPermission: () => false,
 });
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -128,6 +133,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     signOut();
   };
+  
+  // Alias for signIn to match expected API
+  const login = async (email: string, password: string) => {
+    return await signIn(email, password);
+  };
 
   const addUser = (user: User) => {
     setUsers([...users, user]);
@@ -139,6 +149,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateUser = (user: User) => {
     setUsers(users.map(u => u.id === user.id ? user : u));
+  };
+  
+  const hasPermission = (permission: PermissionKey): boolean => {
+    return currentUser?.permissions?.includes(permission) || false;
   };
 
   return (
@@ -155,6 +169,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       removeUser,
       updateUser,
       logout,
+      login,
+      hasPermission,
     }}>
       {children}
     </UserContext.Provider>

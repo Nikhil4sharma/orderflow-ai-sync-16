@@ -1,6 +1,7 @@
+
 import React from "react";
 import { useUsers } from "@/contexts/UserContext";
-import { PermissionKey } from "@/types/common";
+import { PermissionKey } from "@/types";
 
 interface CanAccessProps {
   permission?: PermissionKey;
@@ -8,10 +9,10 @@ interface CanAccessProps {
 }
 
 export const CanAccess: React.FC<CanAccessProps> = ({ permission, children }) => {
-  const { hasPermission } = useUsers();
+  const { currentUser } = useUsers();
   
   // If no permission is specified, or user has the permission, render children
-  if (!permission || hasPermission(permission)) {
+  if (!permission || currentUser?.permissions?.includes(permission)) {
     return <>{children}</>;
   }
   

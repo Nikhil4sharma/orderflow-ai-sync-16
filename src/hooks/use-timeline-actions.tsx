@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useOrders } from '@/contexts/OrderContext';
 import { toast } from 'sonner';
@@ -17,7 +16,7 @@ import {
 } from 'lucide-react';
 
 export function useTimelineActions() {
-  const { orders, updateOrder, currentUser } = useOrders();
+  const { currentUser, orders, undoStatusUpdate, updateStatusUpdate } = useOrders();
 
   // Format date for timeline display
   const formatDate = (dateString: string) => {
@@ -84,7 +83,7 @@ export function useTimelineActions() {
   // Handle undo update action
   const handleUndoUpdate = async (update: StatusUpdate) => {
     try {
-      await removeStatusUpdate(update.orderId, update.id);
+      await undoStatusUpdate(update.orderId, update.id);
     } catch (error) {
       console.error('Error undoing update:', error);
       toast.error('Failed to undo update');
@@ -217,45 +216,50 @@ export function useTimelineActions() {
     }
   };
 
-  const addStatusUpdate = async (order: Order, status: string, remarks: string = '') => {
-    if (!order) {
-      toast.error('Order not found');
-      return;
-    }
-
-    const newUpdate: StatusUpdate = {
-      id: nanoid(),
-      orderId: order.id,
-      timestamp: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
-      department: currentUser?.department || 'Unknown',
-      status: status as any,
-      remarks: remarks,
-      updatedBy: currentUser?.name || 'Unknown',
-      editableUntil: format(new Date(Date.now() + 30 * 60000), 'yyyy-MM-dd HH:mm:ss'),
-    };
-
-    const updatedHistory = [...(order.statusHistory || []), newUpdate];
-    
+  const addStatusUpdate = useCallback(async (order: Order, status: string, remarks?: string) => {
     try {
-      await updateOrder({
-        ...order,
+      // Find the order
+      const existingOrder = orders.find(o => o.id === order.id);
+      if (!existingOrder) {
+        toast.error('Order not found');
+        return;
+      }
+
+      // Create new status update
+      const newUpdate: StatusUpdate = {
+        id: Date.now().toString(),
+        orderId: order.id,
+        department: (currentUser?.department || 'Sales') as Department,
+        status: status as any, // Cast needed due to string parameter vs OrderStatus
+        remarks: remarks || '',
+        timestamp: new Date().toISOString(),
+        updatedBy: currentUser?.name || 'System',
+        editableUntil: new Date(Date.now() + 30 * 60000).toISOString() // 30 min
+      };
+
+      // Get existing status updates or empty array
+      const existingUpdates = existingOrder.statusHistory || [];
+      
+      // Add the new update
+      const updatedHistory = [...existingUpdates, newUpdate];
+      
+      // Create updated order with new status history
+      const updatedOrder = {
+        ...existingOrder,
         statusHistory: updatedHistory,
-        status: status as any,
-      });
+        lastUpdated: new Date().toISOString(),
+      };
       
-      await notifyOrderStatusChanged(
-        order.id,
-        order.orderNumber,
-        status,
-        currentUser?.department || ''
-      );
+      // Log the update for debugging
+      console.log('Adding status update:', newUpdate);
+      console.log('Updated order:', updatedOrder);
       
-      toast.success('Status updated successfully');
+      toast.success('Status update added');
     } catch (error) {
       console.error('Error adding status update:', error);
-      toast.error('Failed to update status');
+      toast.error('Failed to add status update');
     }
-  };
+  }, [currentUser, orders]);
 
   return {
     canEditStatusUpdate,
