@@ -1,143 +1,95 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useOrders } from "@/contexts/OrderContext";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ArrowLeft, User, Save } from "lucide-react";
-import { toast } from "sonner";
 
-const Profile: React.FC = () => {
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { useUsers } from '@/contexts/UserContext';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+
+const Profile = () => {
+  const { currentUser, logout } = useUsers();
   const navigate = useNavigate();
-  const { currentUser, setCurrentUser } = useOrders();
-  
-  const [name, setName] = useState(currentUser?.name || "");
-  const [email, setEmail] = useState(currentUser?.email || "");
-  const [isSaving, setIsSaving] = useState(false);
-  
-  const handleSaveProfile = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSaving(true);
-    
-    try {
-      // In a real app, this would make an API call to update the user profile
-      // For now, we'll just update the context
-      if (currentUser) {
-        const updatedUser = {
-          ...currentUser,
-          name,
-          email
-        };
-        
-        // Simulate API call delay
-        setTimeout(() => {
-          setCurrentUser(updatedUser);
-          toast.success("Profile updated successfully");
-          setIsSaving(false);
-        }, 1000);
-      }
-      
-    } catch (error) {
-      toast.error("Failed to update profile");
-      setIsSaving(false);
-    }
+
+  const handleLogout = () => {
+    logout();
+    toast.success('Logged out successfully');
+    navigate('/login');
   };
-  
+
+  if (!currentUser) {
+    return <div>Loading...</div>;
+  }
+
+  const getInitials = (name: string) => {
+    return name.split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase();
+  };
+
   return (
-    <div className="container mx-auto py-8 px-4">
-      <Button
-        variant="ghost"
-        className="mb-4"
-        onClick={() => navigate("/")}
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" /> Back to Dashboard
-      </Button>
-      
-      <div className="max-w-2xl mx-auto">
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <User className="h-5 w-5 mr-2" />
-              User Profile
-            </CardTitle>
-            <CardDescription>
-              View and update your profile information
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSaveProfile} className="space-y-6">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Your name"
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="your.email@example.com"
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="department">Department</Label>
-                  <Input
-                    id="department"
-                    value={currentUser.department || ""}
-                    readOnly
-                    disabled
-                    className="bg-muted"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="role">Role</Label>
-                  <Input
-                    id="role"
-                    value={currentUser.role || ""}
-                    readOnly
-                    disabled
-                    className="bg-muted"
-                  />
-                </div>
-              </div>
+    <div className="max-w-3xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6">My Profile</h1>
+
+      <Card className="mb-6">
+        <CardHeader className="pb-2">
+          <CardTitle>User Information</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            <Avatar className="h-24 w-24">
+              <AvatarImage src="" alt={currentUser.name} />
+              <AvatarFallback className="text-2xl">{getInitials(currentUser.name)}</AvatarFallback>
+            </Avatar>
+            
+            <div className="space-y-2 flex-1">
+              <h2 className="text-2xl font-bold">{currentUser.name}</h2>
+              <p className="text-muted-foreground">{currentUser.email}</p>
               
-              <div className="flex justify-end pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="mr-2"
-                  onClick={() => navigate("/")}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isSaving}>
-                  <Save className="h-4 w-4 mr-2" />
-                  {isSaving ? "Saving..." : "Save Changes"}
-                </Button>
+              <div className="flex flex-wrap gap-2 mt-2">
+                <Badge variant="secondary">{currentUser.department}</Badge>
+                <Badge variant="outline">{currentUser.role}</Badge>
               </div>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-6">
+        <CardHeader className="pb-2">
+          <CardTitle>Permissions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-2">
+            {currentUser.permissions.map(permission => (
+              <Badge key={permission} variant="outline">
+                {permission.replace(/_/g, ' ')}
+              </Badge>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle>Account Options</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <Button variant="ghost" className="w-full justify-start">
+              Change Password
+            </Button>
+            <Button variant="ghost" className="w-full justify-start">
+              Notification Preferences
+            </Button>
+            <Button variant="destructive" onClick={handleLogout} className="w-full">
+              Logout
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

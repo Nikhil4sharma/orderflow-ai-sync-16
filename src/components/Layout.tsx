@@ -2,8 +2,8 @@
 import React from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { useUsers } from "@/contexts/UserContext";
-import Header from "./Header";
-import Sidebar from "./Sidebar";
+import Header from "@/components/layout/Header";
+import Sidebar from "@/components/layout/SidebarNav";
 
 const Layout: React.FC = () => {
   const { isAuthenticated, logout } = useUsers();

@@ -2,289 +2,269 @@
 import React, { useState } from 'react';
 import { useOrders } from '@/contexts/OrderContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import StatusBadge from '@/components/StatusBadge';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
-import { Upload, Send, CheckCircle, AlertCircle, Clock, FileCheck } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { useUsers } from '@/contexts/UserContext';
+import { toast } from 'sonner';
+import { Order, OrderStatus } from '@/types';
 
-const PrepressDashboard: React.FC = () => {
-  const { orders, currentUser, addStatusUpdate } = useOrders();
-  const [activeTab, setActiveTab] = useState('assigned');
-  const navigate = useNavigate();
-  
-  // Filter orders for Prepress department
-  const prepressOrders = orders.filter(order => 
-    order.currentDepartment === 'Prepress' ||
-    (order.prepressStatus && ['Working on it', 'Waiting for approval'].includes(order.prepressStatus))
-  );
-  
-  // Orders waiting for Sales approval
-  const pendingApprovalOrders = orders.filter(order => 
-    order.prepressStatus === 'Waiting for approval' || 
-    (order.statusHistory?.some(update => 
-      update.department === 'Prepress' && update.status.includes('Approval Requested')
-    ))
-  );
-  
-  // Orders ready to forward to Production
-  const readyToForwardOrders = orders.filter(order => 
-    order.currentDepartment === 'Prepress' && 
-    order.statusHistory?.some(update => 
-      update.status.includes('Prepress Approved') || 
-      (update.department === 'Sales' && update.status.includes('Approved'))
-    )
+const PrepressDashboard = () => {
+  const { orders, updateOrder, currentUser, addStatusUpdate } = useOrders();
+  const { hasPermission } = useUsers();
+  const [activeTab, setActiveTab] = useState<string>('new');
+
+  // Filter orders assigned to Prepress department
+  const prepressOrders = orders.filter(
+    (order) => order.currentDepartment === 'Prepress'
   );
 
-  // Forward to Production
-  const handleForwardToProduction = async (orderId: string) => {
+  // Split prepress orders by status
+  const newPrepressOrders = prepressOrders.filter(
+    (order) => !order.prepressStatus || order.prepressStatus === 'Waiting for approval'
+  );
+  
+  const inProgressPrepressOrders = prepressOrders.filter(
+    (order) => order.prepressStatus === 'Working on it'
+  );
+  
+  const completedPrepressOrders = prepressOrders.filter(
+    (order) => order.prepressStatus === 'Forwarded to production'
+  );
+  
+  const handleStartWorking = async (order: Order) => {
     try {
-      await addStatusUpdate(orderId, {
-        status: 'Forwarded to Production',
-        department: 'Production',
-        remarks: 'Prepress completed and forwarded to Production'
+      // Update order status
+      const updatedOrder = {
+        ...order,
+        status: 'In Progress' as OrderStatus,
+        prepressStatus: 'Working on it',
+        lastUpdated: new Date().toISOString(),
+      };
+      
+      await updateOrder(updatedOrder);
+      
+      // Add status update
+      await addStatusUpdate(order.id, {
+        department: currentUser?.department || 'Prepress',
+        status: 'In Progress' as OrderStatus,
+        remarks: 'Started working on prepress'
       });
+      
+      toast.success('Started working on prepress');
     } catch (error) {
-      console.error("Error forwarding to production:", error);
+      toast.error('Failed to update status');
+      console.error(error);
     }
   };
-
-  // Request approval from Sales
-  const handleRequestApproval = async (orderId: string) => {
+  
+  const handleForwardToProduction = async (order: Order) => {
     try {
-      await addStatusUpdate(orderId, {
-        status: 'Approval Requested',
-        remarks: 'Prepress completed, waiting for Sales approval'
+      // Update order status
+      const updatedOrder = {
+        ...order,
+        status: 'Forwarded to Production' as unknown as OrderStatus,
+        prepressStatus: 'Forwarded to production',
+        currentDepartment: 'Production',
+        lastUpdated: new Date().toISOString(),
+      };
+      
+      await updateOrder(updatedOrder);
+      
+      // Add status update
+      await addStatusUpdate(order.id, {
+        department: currentUser?.department || 'Prepress',
+        status: 'Forwarded to Production' as unknown as OrderStatus,
+        remarks: 'Prepress completed and forwarded to production'
       });
+      
+      toast.success('Forwarded to production');
     } catch (error) {
-      console.error("Error requesting approval:", error);
+      toast.error('Failed to forward to production');
+      console.error(error);
+    }
+  };
+  
+  const handleRequestApproval = async (order: Order) => {
+    try {
+      // Update order status
+      const updatedOrder = {
+        ...order,
+        status: 'Approval Requested' as unknown as OrderStatus,
+        pendingApprovalFrom: 'Sales',
+        approvalReason: 'Prepress approval needed',
+        lastUpdated: new Date().toISOString(),
+      };
+      
+      await updateOrder(updatedOrder);
+      
+      // Add status update
+      await addStatusUpdate(order.id, {
+        department: currentUser?.department || 'Prepress',
+        status: 'Approval Requested' as unknown as OrderStatus,
+        remarks: 'Requesting approval for prepress work'
+      });
+      
+      toast.success('Approval requested from Sales team');
+    } catch (error) {
+      toast.error('Failed to request approval');
+      console.error(error);
     }
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Prepress Team Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage prepress activities, approvals, and production forwarding
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="h-9 gap-1">
-            <Upload className="h-4 w-4" />
-            Upload Prepress Files
-          </Button>
-        </div>
-      </div>
-
-      <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="mb-8">
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold">Prepress Dashboard</h1>
+      
+      <Tabs defaultValue="new" value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="assigned">
-            Assigned Orders <span className="ml-2 bg-primary/10 px-2 py-0.5 rounded-full">{prepressOrders.length}</span>
+          <TabsTrigger value="new">
+            New <Badge className="ml-2">{newPrepressOrders.length}</Badge>
           </TabsTrigger>
-          <TabsTrigger value="pending-approval">
-            Pending Approval <span className="ml-2 bg-primary/10 px-2 py-0.5 rounded-full">{pendingApprovalOrders.length}</span>
+          <TabsTrigger value="inProgress">
+            In Progress <Badge className="ml-2">{inProgressPrepressOrders.length}</Badge>
           </TabsTrigger>
-          <TabsTrigger value="ready-to-forward">
-            Ready for Production <span className="ml-2 bg-primary/10 px-2 py-0.5 rounded-full">{readyToForwardOrders.length}</span>
+          <TabsTrigger value="completed">
+            Completed <Badge className="ml-2">{completedPrepressOrders.length}</Badge>
           </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="assigned" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {prepressOrders.length === 0 ? (
-              <Card className="col-span-full">
-                <CardContent className="py-8 text-center">
-                  <p className="text-muted-foreground">No assigned orders at the moment</p>
-                </CardContent>
-              </Card>
-            ) : (
-              prepressOrders.map(order => (
-                <Card key={order.id} className="overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between">
-                      <CardTitle className="text-lg">{order.orderNumber}</CardTitle>
-                      <StatusBadge status={order.prepressStatus || order.status} />
-                    </div>
-                    <p className="text-sm text-muted-foreground">{order.clientName}</p>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="mb-4">
-                      <p className="text-sm mb-1">
-                        <Clock className="inline mr-1 h-4 w-4" />
-                        Received: {new Date(order.createdAt).toLocaleDateString()}
-                      </p>
-                      <p className="text-sm mb-3 line-clamp-2">
-                        {order.prepressRemarks || 'No specific prepress requirements provided.'}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => handleRequestApproval(order.id)}
-                      >
-                        <Send className="mr-1 h-4 w-4" />
-                        Request Approval
-                      </Button>
-                      <Button 
-                        variant="default" 
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => navigate(`/orders/${order.id}`)}
-                      >
-                        View Details
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
+        <TabsContent value="new" className="mt-6">
+          {newPrepressOrders.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {newPrepressOrders.map((order) => (
+                <PrepressCard 
+                  key={order.id}
+                  order={order}
+                  onStartWorking={() => handleStartWorking(order)}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-10">
+              No new prepress tasks available
+            </p>
+          )}
         </TabsContent>
         
-        <TabsContent value="pending-approval" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {pendingApprovalOrders.length === 0 ? (
-              <Card className="col-span-full">
-                <CardContent className="py-8 text-center">
-                  <p className="text-muted-foreground">No orders pending approval</p>
-                </CardContent>
-              </Card>
-            ) : (
-              pendingApprovalOrders.map(order => (
-                <Card key={order.id} className="overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between">
-                      <CardTitle className="text-lg">{order.orderNumber}</CardTitle>
-                      <StatusBadge status="Pending Approval" />
-                    </div>
-                    <p className="text-sm text-muted-foreground">{order.clientName}</p>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="mb-4">
-                      <p className="text-sm mb-3">
-                        <AlertCircle className="inline mr-1 h-4 w-4" />
-                        Waiting for Sales team feedback
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="default" 
-                        size="sm"
-                        className="w-full"
-                        onClick={() => navigate(`/orders/${order.id}`)}
-                      >
-                        View Details
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
+        <TabsContent value="inProgress" className="mt-6">
+          {inProgressPrepressOrders.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {inProgressPrepressOrders.map((order) => (
+                <PrepressCard 
+                  key={order.id}
+                  order={order}
+                  inProgress
+                  onForwardToProduction={() => handleForwardToProduction(order)}
+                  onRequestApproval={() => handleRequestApproval(order)}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-10">
+              No in-progress prepress tasks
+            </p>
+          )}
         </TabsContent>
         
-        <TabsContent value="ready-to-forward" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {readyToForwardOrders.length === 0 ? (
-              <Card className="col-span-full">
-                <CardContent className="py-8 text-center">
-                  <p className="text-muted-foreground">No orders ready for production</p>
-                </CardContent>
-              </Card>
-            ) : (
-              readyToForwardOrders.map(order => (
-                <Card key={order.id} className="overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between">
-                      <CardTitle className="text-lg">{order.orderNumber}</CardTitle>
-                      <StatusBadge status="Prepress Approved" />
-                    </div>
-                    <p className="text-sm text-muted-foreground">{order.clientName}</p>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="mb-4">
-                      <p className="text-sm mb-3">
-                        <CheckCircle className="inline mr-1 h-4 w-4 text-green-500" />
-                        Prepress approved by Sales team
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => navigate(`/orders/${order.id}`)}
-                      >
-                        View Details
-                      </Button>
-                      <Button 
-                        variant="default" 
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => handleForwardToProduction(order.id)}
-                      >
-                        <Send className="mr-1 h-4 w-4" />
-                        Forward to Production
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
+        <TabsContent value="completed" className="mt-6">
+          {completedPrepressOrders.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {completedPrepressOrders.map((order) => (
+                <PrepressCard 
+                  key={order.id}
+                  order={order}
+                  completed
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-10">
+              No completed prepress tasks
+            </p>
+          )}
         </TabsContent>
       </Tabs>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl">File Upload Area</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="border-2 border-dashed rounded-md p-8 text-center">
-              <FileCheck className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="font-medium text-lg mb-2">Upload Production-Ready Files</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Drag and drop files here or click to select files
-              </p>
-              <Button variant="outline">Select Files</Button>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl">Sales Feedback</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {pendingApprovalOrders.length === 0 ? (
-                <p className="text-muted-foreground">No feedback to display</p>
-              ) : (
-                pendingApprovalOrders.slice(0, 5).map(order => (
-                  <div key={order.id} className="p-3 rounded-md border">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-medium">{order.orderNumber}</p>
-                        <p className="text-sm text-muted-foreground">{order.clientName}</p>
-                      </div>
-                      <Button size="sm" variant="outline" onClick={() => navigate(`/orders/${order.id}`)}>
-                        View
-                      </Button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
+  );
+};
+
+interface PrepressCardProps {
+  order: Order;
+  inProgress?: boolean;
+  completed?: boolean;
+  onStartWorking?: () => void;
+  onForwardToProduction?: () => void;
+  onRequestApproval?: () => void;
+}
+
+const PrepressCard: React.FC<PrepressCardProps> = ({
+  order,
+  inProgress,
+  completed,
+  onStartWorking,
+  onForwardToProduction,
+  onRequestApproval
+}) => {
+  const [remarks, setRemarks] = useState('');
+  
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{order.orderNumber}</CardTitle>
+        <p className="text-sm text-muted-foreground">{order.clientName}</p>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <p><strong>Items:</strong> {order.items.join(', ')}</p>
+          <p><strong>Status:</strong> {order.status}</p>
+          {order.prepressRemarks && (
+            <p><strong>Prepress Notes:</strong> {order.prepressRemarks}</p>
+          )}
+          
+          {!inProgress && !completed && onStartWorking && (
+            <Button 
+              onClick={onStartWorking}
+              className="w-full"
+              variant="default"
+            >
+              Start Working
+            </Button>
+          )}
+          
+          {inProgress && (
+            <div className="space-y-4">
+              <textarea
+                placeholder="Add remarks"
+                className="w-full border rounded p-2 h-24"
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
+              />
+              <div className="flex space-x-2">
+                {onForwardToProduction && (
+                  <Button 
+                    onClick={onForwardToProduction}
+                    className="flex-1"
+                    variant="default"
+                  >
+                    Forward to Production
+                  </Button>
+                )}
+                {onRequestApproval && (
+                  <Button 
+                    onClick={onRequestApproval}
+                    className="flex-1"
+                    variant="outline"
+                  >
+                    Request Approval
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

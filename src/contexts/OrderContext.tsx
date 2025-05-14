@@ -48,6 +48,7 @@ export interface OrderContextType {
   getFilteredOrders: (filters: OrderFilters) => Order[];
   getSortedOrders: (orders: Order[], sortBy: string, sortDirection: 'asc' | 'desc') => Order[];
   canUserSeeElement: (elementId: string) => boolean;
+  markReadyForDispatch: (orderId: string) => Promise<void>;
 }
 
 export const useOrders = () => useContext(OrderContext);
@@ -71,6 +72,7 @@ export const OrderContext = createContext<OrderContextType>({
   getFilteredOrders: () => [],
   getSortedOrders: () => [],
   canUserSeeElement: () => true,
+  markReadyForDispatch: async () => {},
 });
 
 export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -97,9 +99,9 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
           items: ['Product A', 'Product B'],
           createdAt: new Date().toISOString(),
           lastUpdated: new Date().toISOString(),
-          status: 'In Progress',
-          currentDepartment: 'Sales',
-          paymentStatus: 'Partial',
+          status: 'In Progress' as OrderStatus,
+          currentDepartment: 'Sales' as Department,
+          paymentStatus: 'Partial' as PaymentStatus,
           statusHistory: [],
           paymentHistory: [],
         },
@@ -113,13 +115,13 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
           items: ['Product C', 'Product D', 'Product E'],
           createdAt: new Date().toISOString(),
           lastUpdated: new Date().toISOString(),
-          status: 'Completed',
-          currentDepartment: 'Production',
-          paymentStatus: 'Paid',
+          status: 'Completed' as OrderStatus,
+          currentDepartment: 'Production' as Department,
+          paymentStatus: 'Paid' as PaymentStatus,
           statusHistory: [],
           paymentHistory: [],
         },
-      ];
+      ] as Order[];
       setOrders(mockOrders);
     } else {
       // Fetch orders from Firebase (replace with your actual Firebase fetching logic)
@@ -189,7 +191,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [orders]);
 
   const hasPermission = (permission: PermissionKey) => {
-    return currentUser?.permissions?.includes(permission);
+    return currentUser?.permissions?.includes(permission) || false;
   };
 
   const addStatusUpdate = async (orderId: string, statusUpdate: { 
@@ -215,7 +217,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
       remarks: statusUpdate.remarks,
       updatedBy: currentUser?.name || 'Unknown',
       editableUntil: format(new Date(Date.now() + 30 * 60000), 'yyyy-MM-dd HH:mm:ss'),
-    };
+    } as StatusUpdate;
 
     if (statusUpdate.estimatedTime) {
       newUpdate.estimatedTime = statusUpdate.estimatedTime;
@@ -345,7 +347,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
       updatedPendingAmount = Math.max(updatedPendingAmount, 0);
       
       // Determine the new paymentStatus based on the updated amounts
-      let updatedPaymentStatus: Order['paymentStatus'] = 'Partial';
+      let updatedPaymentStatus: PaymentStatus = 'Partial';
       if (updatedPendingAmount <= 0) {
         updatedPaymentStatus = 'Paid';
       } else if (updatedPaidAmount === 0) {
@@ -470,6 +472,36 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
     return true;
   }, [currentUser]);
 
+  const markReadyForDispatch = async (orderId: string) => {
+    const order = orders.find(o => o.id === orderId);
+    if (!order) {
+      toast.error('Order not found');
+      return;
+    }
+
+    try {
+      const updatedOrder = {
+        ...order,
+        status: 'Ready to Dispatch' as OrderStatus,
+        lastUpdated: new Date().toISOString(),
+      };
+
+      await updateOrder(updatedOrder);
+      
+      // Add a status update
+      await addStatusUpdate(orderId, {
+        department: currentUser?.department || 'Production' as Department,
+        status: 'Ready to Dispatch' as OrderStatus,
+        remarks: 'Order is ready for dispatch',
+      });
+      
+      toast.success('Order marked as ready for dispatch');
+    } catch (error) {
+      console.error('Error marking order as ready for dispatch:', error);
+      toast.error('Failed to mark order as ready for dispatch');
+    }
+  };
+
   return (
     <OrderContext.Provider
       value={{
@@ -490,7 +522,8 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
         setFilters,
         getFilteredOrders,
         getSortedOrders,
-        canUserSeeElement
+        canUserSeeElement,
+        markReadyForDispatch
       }}
     >
       {children}

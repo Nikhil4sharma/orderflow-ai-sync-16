@@ -1,7 +1,8 @@
-import React from 'react';
+
+import React, { useCallback } from 'react';
 import { useOrders } from '@/contexts/OrderContext';
 import { toast } from 'sonner';
-import { StatusUpdate, Order } from '@/types';
+import { StatusUpdate, Order, Department } from '@/types';
 import { format, parseISO, formatDistanceToNow } from 'date-fns';
 import { nanoid } from 'nanoid';
 import { notifyOrderStatusChanged } from '@/utils/notifications';
@@ -9,14 +10,14 @@ import {
   Clipboard, 
   FileText, 
   ShoppingBag,
-  Paint, 
+  Palette, 
   Printer, 
   Package,
   Settings
 } from 'lucide-react';
 
 export function useTimelineActions() {
-  const { currentUser, orders, undoStatusUpdate, updateStatusUpdate } = useOrders();
+  const { currentUser, orders, undoStatusUpdate, updateStatusUpdate, updateOrder } = useOrders();
 
   // Format date for timeline display
   const formatDate = (dateString: string) => {
@@ -83,7 +84,7 @@ export function useTimelineActions() {
   // Handle undo update action
   const handleUndoUpdate = async (update: StatusUpdate) => {
     try {
-      await undoStatusUpdate(update.orderId, update.id);
+      await undoStatusUpdate(update.id);
     } catch (error) {
       console.error('Error undoing update:', error);
       toast.error('Failed to undo update');
@@ -114,7 +115,7 @@ export function useTimelineActions() {
       case 'Sales':
         return <ShoppingBag className="h-4 w-4 text-white" />;
       case 'Design':
-        return <Paint className="h-4 w-4 text-white" />;
+        return <Palette className="h-4 w-4 text-white" />;
       case 'Prepress':
         return <FileText className="h-4 w-4 text-white" />;
       case 'Production':

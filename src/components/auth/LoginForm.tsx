@@ -1,133 +1,119 @@
 
-import React, { useState } from 'react';
+import React from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useUsers } from '@/contexts/UserContext';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { ChhapaiLogo } from '@/components/ChhapaiLogo';
+import { LoaderCircle } from 'lucide-react';
 
-const LoginForm = () => {
-  const { login, isAuthenticated } = useUsers();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+const formSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+});
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+export type LoginFormValues = z.infer<typeof formSchema>;
 
-    try {
-      await login(email, password);
-      toast.success('Logged in successfully');
-      navigate('/dashboard');
-    } catch (error) {
-      toast.error('Invalid credentials');
-      console.error(error);
-    } finally {
-      setIsLoading(false);
+interface LoginFormProps {
+  onSubmit: (data: LoginFormValues) => void;
+  loading?: boolean;
+}
+
+const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, loading = false }) => {
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      form.handleSubmit(onSubmit)();
     }
   };
-
-  // Sample login credentials for demo
-  const handleDemoLogin = async (userType: string) => {
-    setIsLoading(true);
-    let demoEmail = '';
-    
-    switch (userType) {
-      case 'admin':
-        demoEmail = 'admin@example.com';
-        break;
-      case 'sales':
-        demoEmail = 'sales@example.com';
-        break;
-      case 'design':
-        demoEmail = 'design@example.com';
-        break;
-      default:
-        demoEmail = 'admin@example.com';
-    }
-    
-    try {
-      await login(demoEmail, 'password');
-      toast.success(`Logged in as ${userType} user`);
-      navigate('/dashboard');
-    } catch (error) {
-      toast.error('Failed to log in with demo account');
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (isAuthenticated) {
-    navigate('/dashboard');
-    return null;
-  }
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2 text-center">
-        <h1 className="text-3xl font-bold">Welcome Back</h1>
-        <p className="text-gray-500 dark:text-gray-400">Enter your credentials to sign in</p>
-      </div>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <label htmlFor="email" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-            Email
-          </label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="m@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+    <Card className="w-full">
+      <CardHeader className="space-y-1 flex items-center flex-col">
+        <div className="w-20 h-20 mb-4">
+          <ChhapaiLogo />
         </div>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <label htmlFor="password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-              Password
-            </label>
-            <a href="#" className="text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400">
-              Forgot password?
-            </a>
-          </div>
-          <Input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+        <CardTitle className="text-2xl">Login</CardTitle>
+        <CardDescription>Enter your credentials to access your account</CardDescription>
+      </CardHeader>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} onKeyDown={handleKeyDown}>
+          <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="email@example.com"
+                      {...field}
+                      autoComplete="username"
+                      disabled={loading}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="password"
+                      placeholder="Enter your password"
+                      {...field}
+                      autoComplete="current-password"
+                      disabled={loading}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </CardContent>
+          <CardFooter>
+            <Button
+              className="w-full"
+              type="submit"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> Please wait
+                </>
+              ) : (
+                'Sign In'
+              )}
+            </Button>
+          </CardFooter>
+        </form>
+      </Form>
+      <CardFooter className="flex flex-col space-y-2 border-t pt-4">
+        <div className="text-center text-sm text-muted-foreground">
+          <p>Demo Logins:</p>
+          <p><strong>Admin:</strong> admin@example.com</p>
+          <p><strong>Sales:</strong> sales@example.com</p>
+          <p><strong>Design:</strong> design@example.com</p>
+          <p>Password: <strong>password123</strong></p>
         </div>
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? 'Signing in...' : 'Sign In'}
-        </Button>
-      </form>
-      <div className="space-y-4">
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">Demo Accounts</span>
-          </div>
-        </div>
-        <div className="grid grid-cols-3 gap-2">
-          <Button variant="outline" onClick={() => handleDemoLogin('admin')} disabled={isLoading}>
-            Admin
-          </Button>
-          <Button variant="outline" onClick={() => handleDemoLogin('sales')} disabled={isLoading}>
-            Sales
-          </Button>
-          <Button variant="outline" onClick={() => handleDemoLogin('design')} disabled={isLoading}>
-            Design
-          </Button>
-        </div>
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   );
 };
 

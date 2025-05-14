@@ -1,4 +1,4 @@
-export type Department = 'Sales' | 'Production' | 'Design' | 'Prepress' | 'Admin';
+export type Department = 'Sales' | 'Production' | 'Design' | 'Prepress' | 'Admin' | 'Unknown';
 
 export type Role = 'Admin' | 'Manager' | 'Staff' | string;
 
@@ -42,7 +42,8 @@ export type OrderStatus =
   | 'Archived'
   | 'Cancelled'
   | 'Pending Design'
-  | 'Pending Prepress';
+  | 'Pending Prepress'
+  | string;
 
 export type StatusType = 'completed' | 'processing' | 'issue';
 

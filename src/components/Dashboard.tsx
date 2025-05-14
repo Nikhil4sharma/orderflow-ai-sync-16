@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useOrders } from '@/contexts/OrderContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,8 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
-import { Order, Department, OrderStatus, PaymentStatus } from '@/types';
-import { OrderFilters } from '@/types';
+import { Department, OrderStatus, PaymentStatus, OrderFilters } from '@/types';
 import { formatIndianRupees } from '@/lib/utils';
 import { Search, ArrowUpDown, Filter, ArrowDown, ArrowUp } from 'lucide-react';
 import { DateRange } from 'react-day-picker';

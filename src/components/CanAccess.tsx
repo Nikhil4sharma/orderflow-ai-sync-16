@@ -9,10 +9,10 @@ interface CanAccessProps {
 }
 
 export const CanAccess: React.FC<CanAccessProps> = ({ permission, children }) => {
-  const { currentUser } = useUsers();
+  const { hasPermission } = useUsers();
   
   // If no permission is specified, or user has the permission, render children
-  if (!permission || currentUser?.permissions?.includes(permission)) {
+  if (!permission || hasPermission(permission)) {
     return <>{children}</>;
   }
   
