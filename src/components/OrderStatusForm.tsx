@@ -14,7 +14,7 @@ interface OrderStatusFormProps {
 }
 
 const OrderStatusForm: React.FC<OrderStatusFormProps> = ({ order, onComplete }) => {
-  const { updateOrder, addStatusUpdate } = useOrders();
+  const { updateOrder, addStatusUpdate, currentUser } = useOrders();
   const [status, setStatus] = useState<OrderStatus>(order.status);
   const [remarks, setRemarks] = useState("");
   
@@ -32,6 +32,7 @@ const OrderStatusForm: React.FC<OrderStatusFormProps> = ({ order, onComplete }) 
       
       // Add status update
       await addStatusUpdate(order.id, {
+        department: currentUser?.department || 'Unknown',
         status,
         remarks
       });

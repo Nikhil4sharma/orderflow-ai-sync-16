@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useOrders } from '@/contexts/OrderContext';
 import { Order, OrderStatus } from '@/types';
@@ -44,9 +45,10 @@ const DepartmentStatusUpdateForm: React.FC<DepartmentStatusUpdateFormProps> = ({
     
     // Add status update with estimated time
     addStatusUpdate(order.id, {
+      department: currentUser?.department || 'Unknown',
       status,
       remarks,
-      estimatedTime,
+      estimatedTime
     });
     
     toast.success(`Order status updated to ${status}`);

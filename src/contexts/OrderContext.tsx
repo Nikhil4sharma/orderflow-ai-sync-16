@@ -5,11 +5,10 @@ import React, {
   useEffect,
   useCallback,
 } from 'react';
-// Import OrderFilters from types
-import { Order, Department, OrderStatus, User, OrderFilters } from '@/types';
+import { Order, Department, OrderStatus, User, OrderFilters, PermissionKey } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
-import { useUsers } from './UserContext';
+import { useUsers } from '@/contexts/UserContext';
 import { createOrder, updateOrderStatus } from '@/utils/orderWorkflow';
 import { format } from 'date-fns';
 
@@ -22,16 +21,28 @@ export interface OrderContextType {
   deleteOrder: (orderId: string) => Promise<void>;
   getOrder: (orderId: string) => Order | undefined;
   currentUser: User | null;
-  hasPermission: (permission: string) => boolean;
-  addStatusUpdate: (orderId: string, statusUpdate: { department: Department; status: OrderStatus; remarks: string }) => Promise<void>;
+  hasPermission: (permission: PermissionKey) => boolean;
+  addStatusUpdate: (orderId: string, statusUpdate: { 
+    department: Department; 
+    status: OrderStatus; 
+    remarks: string;
+    estimatedTime?: string;
+    selectedProduct?: string;
+    orderId?: string;
+  }) => Promise<void>;
   undoStatusUpdate: (updateId: string) => Promise<void>;
   updateStatusUpdate: (updateId: string, newData: any) => Promise<void>;
   addPayment: (orderId: string, payment: any) => Promise<void>;
   filters: OrderFilters;
   setFilters: React.Dispatch<React.SetStateAction<OrderFilters>>;
+  getFilteredOrders: (filters: OrderFilters) => Order[];
+  getSortedOrders: (orders: Order[], sortBy: string, sortDirection: 'asc' | 'desc') => Order[];
+  canUserSeeElement: (elementId: string) => boolean;
 }
 
-const OrderContext = createContext<OrderContextType>({
+export const useOrders = () => useContext(OrderContext);
+
+export const OrderContext = createContext<OrderContextType>({
   orders: [],
   loading: false,
   error: null,
@@ -46,10 +57,11 @@ const OrderContext = createContext<OrderContextType>({
   updateStatusUpdate: async () => {},
   addPayment: async () => {},
   filters: {},
-  setFilters: () => {}
+  setFilters: () => {},
+  getFilteredOrders: () => [],
+  getSortedOrders: () => [],
+  canUserSeeElement: () => true,
 });
-
-export const useOrders = () => useContext(OrderContext);
 
 export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -166,11 +178,18 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
     return orders.find((order) => order.id === orderId);
   }, [orders]);
 
-  const hasPermission = (permission: string) => {
+  const hasPermission = (permission: PermissionKey) => {
     return currentUser?.permissions?.includes(permission);
   };
 
-  const addStatusUpdate = async (orderId: string, statusUpdate: { department: Department; status: OrderStatus; remarks: string }) => {
+  const addStatusUpdate = async (orderId: string, statusUpdate: { 
+    department: Department; 
+    status: OrderStatus; 
+    remarks: string;
+    estimatedTime?: string;
+    selectedProduct?: string;
+    orderId?: string;
+  }) => {
     const order = orders.find(o => o.id === orderId);
     if (!order) {
       toast.error('Order not found');
@@ -187,6 +206,14 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
       updatedBy: currentUser?.name || 'Unknown',
       editableUntil: format(new Date(Date.now() + 30 * 60000), 'yyyy-MM-dd HH:mm:ss'),
     };
+
+    if (statusUpdate.estimatedTime) {
+      newUpdate.estimatedTime = statusUpdate.estimatedTime;
+    }
+
+    if (statusUpdate.selectedProduct) {
+      newUpdate.selectedProduct = statusUpdate.selectedProduct;
+    }
 
     const updatedHistory = [...(order.statusHistory || []), newUpdate];
     
@@ -341,6 +368,98 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const getFilteredOrders = useCallback((filters: OrderFilters) => {
+    return orders.filter(order => {
+      // Apply department filter
+      if (filters.department && order.currentDepartment !== filters.department) {
+        return false;
+      }
+      
+      // Apply status filter
+      if (filters.status && order.status !== filters.status) {
+        return false;
+      }
+      
+      // Apply payment status filter
+      if (filters.paymentStatus && order.paymentStatus !== filters.paymentStatus) {
+        return false;
+      }
+      
+      // Apply search term filter
+      if (filters.searchTerm) {
+        const searchLower = filters.searchTerm.toLowerCase();
+        const matchesOrderNumber = order.orderNumber.toLowerCase().includes(searchLower);
+        const matchesClientName = order.clientName.toLowerCase().includes(searchLower);
+        
+        if (!matchesOrderNumber && !matchesClientName) {
+          return false;
+        }
+      }
+      
+      // Apply amount range filter
+      if (filters.amountRange) {
+        if (filters.amountRange.min !== undefined && order.amount < filters.amountRange.min) {
+          return false;
+        }
+        if (filters.amountRange.max !== undefined && order.amount > filters.amountRange.max) {
+          return false;
+        }
+      }
+      
+      // Apply date range filter
+      if (filters.dateRange) {
+        const orderDate = new Date(order.createdAt);
+        if (filters.dateRange.from && orderDate < filters.dateRange.from) {
+          return false;
+        }
+        if (filters.dateRange.to) {
+          // Include the entire end date by setting time to end of day
+          const endOfDay = new Date(filters.dateRange.to);
+          endOfDay.setHours(23, 59, 59, 999);
+          if (orderDate > endOfDay) {
+            return false;
+          }
+        }
+      }
+      
+      return true;
+    });
+  }, [orders]);
+
+  const getSortedOrders = useCallback((filteredOrders: Order[], sortBy: string, sortDirection: 'asc' | 'desc') => {
+    return [...filteredOrders].sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortBy) {
+        case 'date':
+          comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          break;
+        case 'amount':
+          comparison = a.amount - b.amount;
+          break;
+        case 'status':
+          comparison = a.status.localeCompare(b.status);
+          break;
+        case 'clientName':
+          comparison = a.clientName.localeCompare(b.clientName);
+          break;
+        case 'orderNumber':
+          comparison = a.orderNumber.localeCompare(b.orderNumber);
+          break;
+        default:
+          comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      }
+      
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  }, []);
+
+  const canUserSeeElement = useCallback((elementId: string) => {
+    // Implement your logic here to determine if the user can see the element
+    // This is a placeholder implementation
+    return true;
+  }, [currentUser]);
+
   return (
     <OrderContext.Provider
       value={{
@@ -358,7 +477,10 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
         updateStatusUpdate,
         addPayment,
         filters,
-        setFilters
+        setFilters,
+        getFilteredOrders,
+        getSortedOrders,
+        canUserSeeElement
       }}
     >
       {children}
