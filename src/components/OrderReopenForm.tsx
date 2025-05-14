@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Order } from '@/types/common';
+import { Order } from '@/types';
 import { notifyOrderStatusChanged } from '@/utils/notifications';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
@@ -14,7 +14,7 @@ interface OrderReopenFormProps {
 const OrderReopenForm: React.FC<OrderReopenFormProps> = ({ order, onReopen }) => {
   const handleReopen = async () => {
     try {
-      await notifyOrderStatusChanged(order.id, order.orderNumber, 'Reopened', order.currentDepartment);
+      await notifyOrderStatusChanged(order.id, order.orderNumber, 'In Progress', order.currentDepartment);
       toast.success(`Order #${order.orderNumber} reopened`);
       if (onReopen) onReopen();
     } catch (error) {

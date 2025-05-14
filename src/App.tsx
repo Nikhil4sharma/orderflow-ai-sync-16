@@ -5,8 +5,7 @@ import AppRoutes from "@/components/routes/AppRoutes";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { OrderProvider } from "@/contexts/OrderContext";
 import { UserProvider } from "@/contexts/UserContext";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as SonnerToaster } from "sonner";
+import { Toaster } from "sonner";
 
 function App() {
   return (
@@ -15,8 +14,7 @@ function App() {
         <OrderProvider>
           <Router>
             <AppRoutes />
-            <Toaster />
-            <SonnerToaster position="top-right" />
+            <Toaster position="top-right" />
           </Router>
         </OrderProvider>
       </UserProvider>

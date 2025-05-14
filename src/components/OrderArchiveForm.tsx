@@ -13,7 +13,7 @@ import {
 import { Archive } from "lucide-react";
 import { toast } from "sonner";
 import { notifyOrderStatusChanged } from '@/utils/notifications';
-import { OrderStatus } from "@/types/common";
+import { Order } from "@/types";
 
 interface OrderArchiveFormProps {
   orderId: string;
@@ -33,11 +33,11 @@ const OrderArchiveForm: React.FC<OrderArchiveFormProps> = ({ orderId }) => {
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
-      const updatedOrder = { ...order, status: "Archived" as OrderStatus };
+      const updatedOrder = { ...order, status: "On Hold" };
       await updateOrder(updatedOrder);
       
-      // Notify about status change
-      await notifyOrderStatusChanged(order.id, order.orderNumber, 'Archived', order.currentDepartment);
+      // Notify about status change using type assertion
+      await notifyOrderStatusChanged(order.id, order.orderNumber, "On Hold", order.currentDepartment);
       
       toast.success("Order archived successfully");
       setIsDialogOpen(false);

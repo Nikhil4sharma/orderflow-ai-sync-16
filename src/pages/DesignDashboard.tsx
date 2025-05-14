@@ -7,6 +7,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Upload, Send, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { OrderStatus } from '@/types';
 
 const DesignDashboard: React.FC = () => {
   const { orders, currentUser, addStatusUpdate } = useOrders();
@@ -23,7 +24,7 @@ const DesignDashboard: React.FC = () => {
   const pendingApprovalOrders = orders.filter(order => 
     order.designStatus === 'Pending Feedback from Sales Team' || 
     (order.statusHistory?.some(update => 
-      update.department === 'Design' && update.status.includes('Approval Requested')
+      update.department === 'Design' && update.status.includes('Pending Approval')
     ))
   );
   
@@ -31,7 +32,7 @@ const DesignDashboard: React.FC = () => {
   const readyToForwardOrders = orders.filter(order => 
     order.currentDepartment === 'Design' && 
     order.statusHistory?.some(update => 
-      update.status.includes('Design Approved') || update.status.includes('Approved')
+      update.status === 'Design Approved' || update.status === 'Approved'
     )
   );
 
@@ -39,7 +40,7 @@ const DesignDashboard: React.FC = () => {
   const handleForwardToPrepress = async (orderId: string) => {
     try {
       await addStatusUpdate(orderId, {
-        status: 'Forwarded to Prepress',
+        status: 'In Progress' as OrderStatus,
         department: 'Prepress',
         remarks: 'Design completed and forwarded to Prepress'
       });
@@ -52,7 +53,7 @@ const DesignDashboard: React.FC = () => {
   const handleRequestApproval = async (orderId: string) => {
     try {
       await addStatusUpdate(orderId, {
-        status: 'Approval Requested',
+        status: 'Pending Approval' as OrderStatus,
         remarks: 'Design completed, waiting for Sales approval'
       });
     } catch (error) {

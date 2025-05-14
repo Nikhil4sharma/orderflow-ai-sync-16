@@ -82,21 +82,22 @@ const OrdersList: React.FC<OrdersListProps> = ({
       switch (activeFilter) {
         case "new":
           return order.status === "New" || 
-                (department === "Production" && order.status === "Forwarded to Production");
+                (department === "Production" && order.status === "In Progress");
         case "pendingDesign":
-          return order.status === "Pending Design" || order.status === "Forwarded to Design";
+          return order.status === "In Progress" || 
+                (order.currentDepartment === "Design" && order.status === "In Progress");
         case "pendingPrepress":
-          return order.status === "Forwarded to Prepress";
+          return order.currentDepartment === "Prepress" && order.status === "In Progress";
         case "designApproved":
-          return order.status === "Design Approved";
+          return order.status === "Design Approved" || order.status === "Approved";
         case "prepressApproved":
-          return order.status === "Prepress Approved";
+          return order.status === "Prepress Approved" || order.status === "Approved";
         case "inProgress":
           return order.status === "In Progress";
         case "completed":
           return order.status === "Completed";
         case "pendingApproval":
-          return order.status === "Pending Approval" || order.status === "Approval Requested";
+          return order.status === "Pending Approval" || order.status === "In Progress";
         case "onHold":
           return order.status === "On Hold";
         default:

@@ -21,16 +21,12 @@ export type {
   StatusUpdate,
 } from './common';
 
-// Export types from department.ts (avoiding duplicates)
-export type {
-  // These are imported from department.ts specifically to avoid conflicts
-  // with any similar types from common.ts
+// Re-export ProductionStage, DesignStatus and PrepressStatus
+export {
+  ProductionStage,
 } from './department';
 
-// Re-export ProductionStage, DesignStatus and PrepressStatus from department.ts
-// instead of common.ts to avoid ambiguity
-export { 
-  ProductionStage,
+export {
   DesignStatus,
   PrepressStatus,
-} from './department';
+} from './common';

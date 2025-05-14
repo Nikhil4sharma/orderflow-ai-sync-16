@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Order } from '@/types/common';
+import { Order } from '@/types';
 import { notifyOrderStatusChanged } from '@/utils/notifications';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
