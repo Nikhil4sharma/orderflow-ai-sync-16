@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { ChhapaiLogo } from '@/components/ChhapaiLogo';
+import ChhapaiLogo from '@/components/ChhapaiLogo';
 import { LoaderCircle } from 'lucide-react';
 
 const formSchema = z.object({

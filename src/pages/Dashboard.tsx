@@ -1,39 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { useOrders } from '@/contexts/OrderContext';
-import { useUsers } from '@/contexts/UserContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { CanAccess } from '@/components/CanAccess';
-import { OrderFilters } from '@/types';
-import { 
-  BarChart, 
-  LineChart, 
-  PieChart, 
-  Calendar, 
-  Clock, 
-  DollarSign, 
-  Package, 
-  ShoppingCart, 
-  Users, 
-  CheckCircle, 
-  AlertCircle, 
-  Truck, 
-  ClipboardList 
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { Link } from 'react-router-dom';
-import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-
-interface DashboardElementProps {
-  children: React.ReactNode;
-  elementId: string;
-  title: string;
-}
+import React, { useState, useEffect } from "react";
+import { useOrders } from "@/contexts/OrderContext";
+import { useUsers } from "@/contexts/UserContext";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import StatusSummaryCard from "@/components/StatusSummaryCard";
+import RecentOrdersList from "@/components/RecentOrdersList";
+import FinancialSummaryCard from "@/components/FinancialSummaryCard";
+import DashboardElement from "@/components/DashboardElement";
+import { OrderFilters } from "@/types";
 
 const DashboardElement: React.FC<DashboardElementProps> = ({ children, elementId, title }) => {
   const { canUserSeeElement } = useOrders();

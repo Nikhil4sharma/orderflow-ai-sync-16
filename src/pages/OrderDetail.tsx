@@ -265,6 +265,10 @@ const OrderDetail: React.FC = () => {
     toast.success("Approval completed successfully");
   };
 
+  const handleProductStatusUpdate = (updatedProductStatus: StatusType) => {
+    setProductStatus(updatedProductStatus);
+  };
+
   return (
     <div className="container mx-auto py-8 px-4 min-h-screen dark:bg-slate-900 transition-colors duration-300">
       <MobileBackButton to="/" label="Back to Dashboard" className="mb-4 block md:hidden" />
@@ -518,7 +522,10 @@ const OrderDetail: React.FC = () => {
           {currentUser.role === 'Admin' && (
             <>
               {/* Admin sees all forms for debugging/override */}
-              <ProductStatusUpdateForm order={order} department={order.currentDepartment} />
+              <ProductStatusUpdateForm
+                order={order}
+                onUpdate={handleProductStatusUpdate}
+              />
               <DepartmentStatusForm order={order} department={order.currentDepartment} />
               <ForwardOrderForm order={order} />
               <ProductionStageForm order={order} />

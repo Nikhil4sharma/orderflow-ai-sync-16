@@ -1,532 +1,344 @@
-
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-} from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { collection, getDocs, getDoc, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { 
   Order, 
-  Department, 
   OrderStatus, 
-  User, 
-  PermissionKey,
-  StatusUpdate,
-  OrderFilters,
-  PaymentStatus
+  Department, 
+  StatusUpdate, 
+  OrderFilters 
 } from '@/types';
-import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
-import { useUsers } from '@/contexts/UserContext';
-import { createOrder, updateOrderStatus } from '@/utils/orderWorkflow';
-import { format } from 'date-fns';
 
+// Define the shape of the context
 export interface OrderContextType {
   orders: Order[];
   loading: boolean;
-  error: Error | null;
-  addOrder: (order: Order) => Promise<void>;
-  updateOrder: (order: Order) => Promise<void>;
-  deleteOrder: (orderId: string) => Promise<void>;
-  getOrder: (orderId: string) => Order | undefined;
-  currentUser: User | null;
-  hasPermission: (permission: PermissionKey) => boolean;
-  addStatusUpdate: (orderId: string, statusUpdate: { 
-    department: Department; 
-    status: OrderStatus; 
-    remarks: string;
-    estimatedTime?: string;
-    selectedProduct?: string;
-    orderId?: string;
-  }) => Promise<void>;
-  undoStatusUpdate: (updateId: string) => Promise<void>;
-  updateStatusUpdate: (updateId: string, newData: any) => Promise<void>;
-  addPayment: (orderId: string, payment: any) => Promise<void>;
-  filters: OrderFilters;
-  setFilters: React.Dispatch<React.SetStateAction<OrderFilters>>;
+  addOrder: (order: Omit<Order, 'id'>) => Promise<string | undefined>;
+  getOrder: (id: string) => Promise<Order | undefined>;
+  updateOrder: (id: string, updates: Partial<Order>) => Promise<void>;
+  deleteOrder: (id: string) => Promise<void>;
+  updateOrderStatus: (
+    orderId: string,
+    statusData: {
+      department: Department;
+      status: OrderStatus;
+      remarks: string;
+      estimatedTime?: string;
+      selectedProduct?: string;
+    }
+  ) => Promise<void>;
   getFilteredOrders: (filters: OrderFilters) => Order[];
   getSortedOrders: (orders: Order[], sortBy: string, sortDirection: 'asc' | 'desc') => Order[];
-  canUserSeeElement: (elementId: string) => boolean;
   markReadyForDispatch: (orderId: string) => Promise<void>;
+  canUserSeeElement: (elementId: string) => boolean;
 }
 
-export const useOrders = () => useContext(OrderContext);
-
-export const OrderContext = createContext<OrderContextType>({
+// Create the context
+const OrderContext = createContext<OrderContextType>({
   orders: [],
-  loading: false,
-  error: null,
-  addOrder: async () => {},
+  loading: true,
+  addOrder: async () => { return undefined },
+  getOrder: async () => { return undefined },
   updateOrder: async () => {},
   deleteOrder: async () => {},
-  getOrder: () => undefined,
-  currentUser: null,
-  hasPermission: () => false,
-  addStatusUpdate: async () => {},
-  undoStatusUpdate: async () => {},
-  updateStatusUpdate: async () => {},
-  addPayment: async () => {},
-  filters: {},
-  setFilters: () => {},
+  updateOrderStatus: async () => {},
   getFilteredOrders: () => [],
   getSortedOrders: () => [],
-  canUserSeeElement: () => true,
   markReadyForDispatch: async () => {},
+  canUserSeeElement: () => true,
 });
 
-export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+// Provider component
+export const OrderProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const { currentUser } = useUsers();
-  const [filters, setFilters] = useState<OrderFilters>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+  // Fetch orders from Firestore
   useEffect(() => {
-    // Mock data loading for demo purposes
-    if (process.env.NODE_ENV === 'development' && !process.env.REACT_APP_USE_FIREBASE) {
-      // Load mock orders
-      const mockOrders = [
-        {
-          id: uuidv4(),
-          orderNumber: 'ORD-12345',
-          clientName: 'John Doe',
-          amount: 500,
-          paidAmount: 200,
-          pendingAmount: 300,
-          items: ['Product A', 'Product B'],
-          createdAt: new Date().toISOString(),
-          lastUpdated: new Date().toISOString(),
-          status: 'In Progress' as OrderStatus,
-          currentDepartment: 'Sales' as Department,
-          paymentStatus: 'Partial' as PaymentStatus,
-          statusHistory: [],
-          paymentHistory: [],
-        },
-        {
-          id: uuidv4(),
-          orderNumber: 'ORD-67890',
-          clientName: 'Jane Smith',
-          amount: 1200,
-          paidAmount: 1200,
-          pendingAmount: 0,
-          items: ['Product C', 'Product D', 'Product E'],
-          createdAt: new Date().toISOString(),
-          lastUpdated: new Date().toISOString(),
-          status: 'Completed' as OrderStatus,
-          currentDepartment: 'Production' as Department,
-          paymentStatus: 'Paid' as PaymentStatus,
-          statusHistory: [],
-          paymentHistory: [],
-        },
-      ] as Order[];
-      setOrders(mockOrders);
-    } else {
-      // Fetch orders from Firebase (replace with your actual Firebase fetching logic)
-      // const fetchOrders = async () => {
-      //   setLoading(true);
-      //   try {
-      //     // Fetch data from Firebase
-      //     // setOrders(fetchedOrders);
-      //   } catch (err: any) {
-      //     setError(err);
-      //     toast.error('Failed to fetch orders');
-      //   } finally {
-      //     setLoading(false);
-      //   }
-      // };
-      // fetchOrders();
-    }
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        const ordersCollection = collection(db, 'orders');
+        const orderSnapshot = await getDocs(ordersCollection);
+        const ordersList = orderSnapshot.docs.map(doc => {
+          const data = doc.data();
+          // Cast the data to ensure it conforms to the Order type
+          return {
+            ...data,
+            id: doc.id,
+            status: data.status as OrderStatus,
+            currentDepartment: data.currentDepartment as Department,
+            // Add missing properties if they don't exist in the data
+            lastUpdated: data.lastUpdated || new Date().toISOString(),
+            paymentHistory: data.paymentHistory || []
+          } as Order;
+        });
+        setOrders(ordersList);
+      } catch (error) {
+        console.error("Error fetching orders:", error);
+        toast.error("Failed to load orders");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
   }, []);
 
-  const addOrder = useCallback(async (order: Order) => {
-    setLoading(true);
+  // Function to add a new order
+  const addOrder = async (order: Omit<Order, 'id'>): Promise<string | undefined> => {
     try {
-      // Add order to Firebase or mock store
-      const newOrder = await createOrder(order, currentUser?.name || 'Unknown');
-      setOrders((prevOrders) => [...prevOrders, newOrder]);
-      toast.success('Order created successfully');
-    } catch (err: any) {
-      setError(err);
-      toast.error('Failed to create order');
-    } finally {
-      setLoading(false);
+      const ordersCollection = collection(db, 'orders');
+      const docRef = await addDoc(ordersCollection, order);
+      toast.success("Order created successfully!");
+      return docRef.id; // Return the new order ID
+    } catch (error) {
+      console.error("Error adding order:", error);
+      toast.error("Failed to create order");
+      setError("Failed to create order");
+      return undefined;
     }
-  }, [currentUser]);
-
-  const updateOrder = useCallback(async (order: Order) => {
-    setLoading(true);
-    try {
-      // Update order in Firebase or mock store
-      setOrders((prevOrders) =>
-        prevOrders.map((o) => (o.id === order.id ? order : o))
-      );
-      toast.success('Order updated successfully');
-    } catch (err: any) {
-      setError(err);
-      toast.error('Failed to update order');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const deleteOrder = useCallback(async (orderId: string) => {
-    setLoading(true);
-    try {
-      // Delete order from Firebase or mock store
-      setOrders((prevOrders) => prevOrders.filter((order) => order.id !== orderId));
-      toast.success('Order deleted successfully');
-    } catch (err: any) {
-      setError(err);
-      toast.error('Failed to delete order');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const getOrder = useCallback((orderId: string) => {
-    return orders.find((order) => order.id === orderId);
-  }, [orders]);
-
-  const hasPermission = (permission: PermissionKey) => {
-    return currentUser?.permissions?.includes(permission) || false;
   };
 
-  const addStatusUpdate = async (orderId: string, statusUpdate: { 
-    department: Department; 
-    status: OrderStatus; 
+  // Function to get a single order by ID
+  const getOrder = async (id: string): Promise<Order | undefined> => {
+    try {
+      const orderDoc = doc(db, 'orders', id);
+      const docSnapshot = await getDoc(orderDoc);
+
+      if (docSnapshot.exists()) {
+        const data = docSnapshot.data();
+        return {
+          id: docSnapshot.id,
+          ...data,
+          status: data.status as OrderStatus,
+          currentDepartment: data.currentDepartment as Department,
+        } as Order;
+      } else {
+        toast.error(`Order with ID ${id} not found`);
+        return undefined;
+      }
+    } catch (error) {
+      console.error("Error fetching order:", error);
+      toast.error("Failed to load order");
+      return undefined;
+    }
+  };
+
+  // Function to update an order
+  const updateOrder = async (id: string, updates: Partial<Order>): Promise<void> => {
+    try {
+      const orderDoc = doc(db, 'orders', id);
+      await updateDoc(orderDoc, updates);
+      // Update local state
+      setOrders(prevOrders =>
+        prevOrders.map(order => (order.id === id ? { ...order, ...updates } : order))
+      );
+      toast.success("Order updated successfully!");
+    } catch (error) {
+      console.error("Error updating order:", error);
+      toast.error("Failed to update order");
+    }
+  };
+
+  // Function to delete an order
+  const deleteOrder = async (id: string): Promise<void> => {
+    try {
+      const orderDoc = doc(db, 'orders', id);
+      await deleteDoc(orderDoc);
+      // Update local state
+      setOrders(prevOrders => prevOrders.filter(order => order.id !== id));
+      toast.success("Order deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting order:", error);
+      toast.error("Failed to delete order");
+    }
+  };
+
+  // Function to update order status
+  const updateOrderStatus = async (orderId: string, statusData: {
+    department: Department;
+    status: OrderStatus;
     remarks: string;
     estimatedTime?: string;
     selectedProduct?: string;
-    orderId?: string;
   }) => {
-    const order = orders.find(o => o.id === orderId);
-    if (!order) {
-      toast.error('Order not found');
-      return;
+    try {
+      const orderRef = doc(db, 'orders', orderId);
+      const orderSnapshot = await getDoc(orderRef);
+  
+      if (!orderSnapshot.exists()) {
+        throw new Error("Order not found");
+      }
+  
+      const orderData = orderSnapshot.data() as Order;
+      const updates: Partial<Order> = {
+        status: statusData.status,
+        currentDepartment: statusData.department,
+        lastUpdated: new Date().toISOString(),
+      };
+  
+      // Update the order in Firestore
+      await updateDoc(orderRef, updates);
+  
+      // Update the local state
+      setOrders(prevOrders =>
+        prevOrders.map(order =>
+          order.id === orderId ? { ...order, ...updates } : order
+        )
+      );
+  
+      toast.success(`Order status updated to ${statusData.status}`);
+
+      // Create a status update record
+      const statusUpdate: StatusUpdate = {
+        id: Date.now().toString(),
+        orderId,
+        timestamp: new Date().toISOString(),
+        department: statusData.department,
+        status: statusData.status,
+        remarks: statusData.remarks,
+        updatedBy: "Current User", // Replace with actual user
+        editableUntil: new Date(Date.now() + 15 * 60000).toISOString(), // 15 minutes from now
+        estimatedTime: statusData.estimatedTime,
+        selectedProduct: statusData.selectedProduct
+      };
+  
+      // Add the status update to the order's status history
+      const updatedPaymentHistory = [...orderData.statusHistory || [], statusUpdate];
+      await updateDoc(orderRef, { statusHistory: updatedPaymentHistory });
+  
+      // Optionally, update the local state with the new status history
+      setOrders(prevOrders =>
+        prevOrders.map(order =>
+          order.id === orderId ? { ...order, statusHistory: updatedPaymentHistory } : order
+        )
+      );
+    } catch (error) {
+      console.error("Error updating order status:", error);
+      throw error;
     }
+  };
 
-    const newUpdate = {
-      id: uuidv4(),
-      orderId: order.id,
-      timestamp: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
-      department: statusUpdate.department,
-      status: statusUpdate.status,
-      remarks: statusUpdate.remarks,
-      updatedBy: currentUser?.name || 'Unknown',
-      editableUntil: format(new Date(Date.now() + 30 * 60000), 'yyyy-MM-dd HH:mm:ss'),
-    } as StatusUpdate;
-
-    if (statusUpdate.estimatedTime) {
-      newUpdate.estimatedTime = statusUpdate.estimatedTime;
-    }
-
-    if (statusUpdate.selectedProduct) {
-      newUpdate.selectedProduct = statusUpdate.selectedProduct;
-    }
-
-    const updatedHistory = [...(order.statusHistory || []), newUpdate];
+  // Function to filter orders based on criteria
+  const getFilteredOrders = (filters: OrderFilters): Order[] => {
+    if (!filters) return orders;
     
-    try {
-      await updateOrder({
-        ...order,
-        statusHistory: updatedHistory,
-        lastUpdated: new Date().toISOString(),
-      });
-      toast.success('Status updated successfully');
-    } catch (error) {
-      console.error('Error adding status update:', error);
-      toast.error('Failed to update status');
-    }
-  };
-
-  const undoStatusUpdate = async (updateId: string) => {
-    setLoading(true);
-    try {
-      // Find the order that contains the status update
-      const orderToUpdate = orders.find(order =>
-        order.statusHistory.some(update => update.id === updateId)
-      );
-  
-      if (!orderToUpdate) {
-        toast.error('Status update not found');
-        return;
-      }
-  
-      // Filter out the status update to be undone
-      const updatedHistory = orderToUpdate.statusHistory.filter(
-        update => update.id !== updateId
-      );
-  
-      // Update the order with the modified status history
-      const updatedOrder = {
-        ...orderToUpdate,
-        statusHistory: updatedHistory,
-        lastUpdated: new Date().toISOString(),
-      };
-  
-      // Update the order in the orders state
-      setOrders(prevOrders =>
-        prevOrders.map(order =>
-          order.id === updatedOrder.id ? updatedOrder : order
-        )
-      );
-  
-      toast.success('Status update undone successfully');
-    } catch (error) {
-      console.error('Error undoing status update:', error);
-      toast.error('Failed to undo status update');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateStatusUpdate = async (updateId: string, newData: any) => {
-    setLoading(true);
-    try {
-      // Find the order that contains the status update
-      const orderToUpdate = orders.find(order =>
-        order.statusHistory.some(update => update.id === updateId)
-      );
-  
-      if (!orderToUpdate) {
-        toast.error('Status update not found');
-        return;
-      }
-  
-      // Map through the status history and update the matching item
-      const updatedHistory = orderToUpdate.statusHistory.map(update =>
-        update.id === updateId ? { ...update, ...newData } : update
-      );
-  
-      // Create a new order object with the updated status history
-      const updatedOrder = {
-        ...orderToUpdate,
-        statusHistory: updatedHistory,
-        lastUpdated: new Date().toISOString(),
-      };
-  
-      // Update the order in the orders state
-      setOrders(prevOrders =>
-        prevOrders.map(order =>
-          order.id === updatedOrder.id ? updatedOrder : order
-        )
-      );
-  
-      toast.success('Status update updated successfully');
-    } catch (error) {
-      console.error('Error updating status update:', error);
-      toast.error('Failed to update status update');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const addPayment = async (orderId: string, payment: any) => {
-    setLoading(true);
-    try {
-      // Find the order to add the payment to
-      const orderToUpdate = orders.find(order => order.id === orderId);
-      
-      if (!orderToUpdate) {
-        toast.error('Order not found');
-        return;
-      }
-      
-      // Add the new payment to the paymentHistory array
-      const updatedPaymentHistory = [...(orderToUpdate.paymentHistory || []), payment];
-      
-      // Calculate the updated paidAmount and pendingAmount
-      let updatedPaidAmount = orderToUpdate.paidAmount + payment.amount;
-      let updatedPendingAmount = orderToUpdate.amount - updatedPaidAmount;
-      
-      // Ensure amounts are not negative
-      updatedPaidAmount = Math.max(updatedPaidAmount, 0);
-      updatedPendingAmount = Math.max(updatedPendingAmount, 0);
-      
-      // Determine the new paymentStatus based on the updated amounts
-      let updatedPaymentStatus: PaymentStatus = 'Partial';
-      if (updatedPendingAmount <= 0) {
-        updatedPaymentStatus = 'Paid';
-      } else if (updatedPaidAmount === 0) {
-        updatedPaymentStatus = 'Not Paid';
-      }
-      
-      // Create a new order object with the updated payment history and amounts
-      const updatedOrder = {
-        ...orderToUpdate,
-        paymentHistory: updatedPaymentHistory,
-        paidAmount: updatedPaidAmount,
-        pendingAmount: updatedPendingAmount,
-        paymentStatus: updatedPaymentStatus,
-        lastUpdated: new Date().toISOString(),
-      };
-      
-      // Update the order in the orders state
-      setOrders(prevOrders =>
-        prevOrders.map(order =>
-          order.id === updatedOrder.id ? updatedOrder : order
-        )
-      );
-      
-      toast.success('Payment added successfully');
-    } catch (error) {
-      console.error('Error adding payment:', error);
-      toast.error('Failed to add payment');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getFilteredOrders = useCallback((filters: OrderFilters) => {
     return orders.filter(order => {
-      // Apply department filter
-      if (filters.department && order.currentDepartment !== filters.department) {
+      if (filters.status && filters.status.length > 0 && !filters.status.includes(order.status)) {
         return false;
       }
-      
-      // Apply status filter
-      if (filters.status && order.status !== filters.status) {
+  
+      if (filters.department && filters.department.length > 0 && !filters.department.includes(order.currentDepartment)) {
         return false;
       }
-      
-      // Apply payment status filter
-      if (filters.paymentStatus && order.paymentStatus !== filters.paymentStatus) {
+  
+      if (filters.paymentStatus && filters.paymentStatus.length > 0 && !filters.paymentStatus.includes(order.paymentStatus)) {
         return false;
       }
-      
-      // Apply search term filter
-      if (filters.searchTerm) {
-        const searchLower = filters.searchTerm.toLowerCase();
-        const matchesOrderNumber = order.orderNumber.toLowerCase().includes(searchLower);
-        const matchesClientName = order.clientName.toLowerCase().includes(searchLower);
-        
-        if (!matchesOrderNumber && !matchesClientName) {
-          return false;
-        }
-      }
-      
-      // Apply amount range filter
-      if (filters.amountRange) {
-        if (filters.amountRange.min !== undefined && order.amount < filters.amountRange.min) {
-          return false;
-        }
-        if (filters.amountRange.max !== undefined && order.amount > filters.amountRange.max) {
-          return false;
-        }
-      }
-      
-      // Apply date range filter
+  
       if (filters.dateRange) {
-        const orderDate = new Date(order.createdAt);
-        if (filters.dateRange.from && orderDate < filters.dateRange.from) {
+        const orderDate = new Date(order.orderDate);
+        const fromDate = filters.dateRange.from;
+        const toDate = filters.dateRange.to;
+  
+        if (fromDate && orderDate < fromDate) {
           return false;
         }
-        if (filters.dateRange.to) {
-          // Include the entire end date by setting time to end of day
-          const endOfDay = new Date(filters.dateRange.to);
-          endOfDay.setHours(23, 59, 59, 999);
-          if (orderDate > endOfDay) {
-            return false;
-          }
+  
+        if (toDate && orderDate > toDate) {
+          return false;
         }
       }
-      
-      return true;
-    });
-  }, [orders]);
-
-  const getSortedOrders = useCallback((filteredOrders: Order[], sortBy: string, sortDirection: 'asc' | 'desc') => {
-    return [...filteredOrders].sort((a, b) => {
-      let comparison = 0;
-      
-      switch (sortBy) {
-        case 'date':
-          comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-          break;
-        case 'amount':
-          comparison = a.amount - b.amount;
-          break;
-        case 'status':
-          comparison = a.status.localeCompare(b.status);
-          break;
-        case 'clientName':
-          comparison = a.clientName.localeCompare(b.clientName);
-          break;
-        case 'orderNumber':
-          comparison = a.orderNumber.localeCompare(b.orderNumber);
-          break;
-        default:
-          comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  
+      if (filters.searchTerm && !order.orderName.toLowerCase().includes(filters.searchTerm.toLowerCase())) {
+        return false;
       }
-      
+      return true; // Replace with actual filtering logic
+    });
+  };
+
+  // Function to sort orders
+  const getSortedOrders = (
+    ordersToSort: Order[], 
+    sortBy: string, 
+    sortDirection: 'asc' | 'desc'
+  ): Order[] => {
+    const sortedOrders = [...ordersToSort]; // Create a copy to avoid mutating the original array
+  
+    sortedOrders.sort((a, b) => {
+      const aValue = a[sortBy as keyof Order];
+      const bValue = b[sortBy as keyof Order];
+  
+      if (aValue === undefined || bValue === undefined) {
+        return 0; // Handle undefined values gracefully
+      }
+  
+      let comparison = 0;
+  
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        comparison = aValue.localeCompare(bValue);
+      } else if (typeof aValue === 'number' && typeof bValue === 'number') {
+        comparison = aValue - bValue;
+      } else if (aValue instanceof Date && bValue instanceof Date) {
+        comparison = aValue.getTime() - bValue.getTime();
+      } else {
+        // If the types are not directly comparable, attempt to convert to string
+        comparison = String(aValue).localeCompare(String(bValue));
+      }
+  
       return sortDirection === 'asc' ? comparison : -comparison;
     });
-  }, []);
+  
+    return sortedOrders; // Replace with actual sorting logic
+  };
 
-  const canUserSeeElement = useCallback((elementId: string) => {
-    // Implement your logic here to determine if the user can see the element
-    // This is a placeholder implementation
-    return true;
-  }, [currentUser]);
-
-  const markReadyForDispatch = async (orderId: string) => {
-    const order = orders.find(o => o.id === orderId);
-    if (!order) {
-      toast.error('Order not found');
-      return;
-    }
-
+  // Function to mark order as ready for dispatch
+  const markReadyForDispatch = async (orderId: string): Promise<void> => {
     try {
-      const updatedOrder = {
-        ...order,
-        status: 'Ready to Dispatch' as OrderStatus,
-        lastUpdated: new Date().toISOString(),
-      };
-
-      await updateOrder(updatedOrder);
-      
-      // Add a status update
-      await addStatusUpdate(orderId, {
-        department: currentUser?.department || 'Production' as Department,
-        status: 'Ready to Dispatch' as OrderStatus,
-        remarks: 'Order is ready for dispatch',
+      const orderRef = doc(db, 'orders', orderId);
+      await updateDoc(orderRef, {
+        status: 'Ready to Dispatch',
       });
-      
-      toast.success('Order marked as ready for dispatch');
+      setOrders(prevOrders =>
+        prevOrders.map(order =>
+          order.id === orderId ? { ...order, status: 'Ready to Dispatch' } : order
+        )
+      );
+      toast.success('Order marked as Ready for Dispatch!');
     } catch (error) {
       console.error('Error marking order as ready for dispatch:', error);
-      toast.error('Failed to mark order as ready for dispatch');
+      toast.error('Failed to mark order as Ready for Dispatch');
     }
+  };
+
+  // Function to check if user can see a dashboard element
+  const canUserSeeElement = (elementId: string): boolean => {
+    // Implement your logic here to determine if the user can see the element
+    // based on the elementId and the user's role or permissions.
+    return true; // Default implementation
   };
 
   return (
-    <OrderContext.Provider
-      value={{
-        orders,
-        loading,
-        error,
-        addOrder,
-        updateOrder,
-        deleteOrder,
-        getOrder,
-        currentUser,
-        hasPermission,
-        addStatusUpdate,
-        undoStatusUpdate,
-        updateStatusUpdate,
-        addPayment,
-        filters,
-        setFilters,
-        getFilteredOrders,
-        getSortedOrders,
-        canUserSeeElement,
-        markReadyForDispatch
-      }}
-    >
+    <OrderContext.Provider value={{
+      orders,
+      loading,
+      addOrder,
+      getOrder,
+      updateOrder,
+      deleteOrder,
+      updateOrderStatus,
+      getFilteredOrders,
+      getSortedOrders,
+      markReadyForDispatch,
+      canUserSeeElement
+    }}>
       {children}
     </OrderContext.Provider>
   );
 };
+
+// Custom hook to use the order context
+export const useOrders = () => useContext(OrderContext);
